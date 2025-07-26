@@ -8,11 +8,6 @@
 </p>
 <br/>
 
-**📌 진행 사항 확인**
-
-- **Notion**에서 자세한 진행사항 보러가기 -> 
-  [![Notion](https://www.notion.so/22cc5b9abf9c80a6bd1fec010b8a7e6c?style=flat-square&logo=notion&logoColor=white)](https://sapphire-lamprey-5db.notion.site/1f393020f65580e2a504d2e1538e2c73?source=copy_link)
-<br>
 
 ### 🙌 팀원 소개
 
