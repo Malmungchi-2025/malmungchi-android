@@ -63,7 +63,17 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
-    // Core & Design 모듈
+    // ✅ Retrofit (feature 모듈에서도 필요)
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // ✅ Hilt + KSP (이미 있음)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    ksp(libs.androidx.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+
+    // ✅ Core & Design 모듈
     implementation(project(":core"))
     implementation(project(":design"))
 }
