@@ -19,7 +19,7 @@
 |채윤지|
 |:---:|
 <img src="https://github.com/KateteDeveloper.png"  width="300" height="230">|
-|[@KateteDeveloper](https://github.com/KateteDeveloper))|
+|[@KateteDeveloper](https://github.com/KateteDeveloper)|
 <br/>
 
 # Tech Stack
