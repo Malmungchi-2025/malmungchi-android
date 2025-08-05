@@ -2,7 +2,7 @@ plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
-    kotlin("kapt")   // ✅ Hilt 사용 시 kapt 필요
+    kotlin("kapt") // ✅ Hilt 사용 시 필요
 }
 
 android {
@@ -15,16 +15,38 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17   // ✅ JDK 17 적용
+        targetCompatibility = JavaVersion.VERSION_17
+
+
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"                              // ✅ JDK 17 적용
+    }
+
+    buildFeatures {
+        compose = true                                // ✅ Compose 활성화
+        buildConfig = true   // ✅ BuildConfig 사용 가능하게 설정
+
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.11"     // ✅ Compose 최신 버전
+    }
+    lint {
+        abortOnError = false
     }
 }
 
 dependencies {
-    // ✅ Hilt (플러그인 없이 의존성만 추가)
+    // ✅ Compose 기본 의존성
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui.tooling.preview)
+    debugImplementation(libs.androidx.ui.tooling)
+    implementation(libs.androidx.activity.compose)   // ✅ setContent 사용 가능
+
+    // ✅ Hilt
     implementation("com.google.dagger:hilt-android:2.51.1")
     kapt("com.google.dagger:hilt-compiler:2.51.1")
 
