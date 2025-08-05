@@ -1,3 +1,5 @@
+import java.util.Properties
+import java.io.FileInputStream
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -20,6 +22,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // ✅ 간단하게 BASE_URL 하드코딩 (local.properties 제거)
+        buildConfigField("String", "BASE_URL", "\"https://malmungchi-server.onrender.com\"")
+
     }
 
     buildTypes {
@@ -31,12 +37,16 @@ android {
             )
         }
     }
+
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -45,6 +55,7 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.11"
     }
+
 }
 
 dependencies {
@@ -77,6 +88,8 @@ dependencies {
     // Core & Design 모듈 참조
     implementation(project(":core"))
     implementation(project(":design"))
+    implementation(project(":data"))
+    //implementation(project(":feature"))
 
     //다른 모듈 참조
     implementation(project(":feature:ai"))
@@ -85,4 +98,6 @@ dependencies {
     implementation(project(":feature:study"))
     implementation(project(":feature:mypage"))
     implementation(project(":feature:login"))
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

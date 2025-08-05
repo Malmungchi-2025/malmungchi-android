@@ -206,7 +206,11 @@ fun WordCollectBottomSheetContent(
                 }
                 Spacer(Modifier.width(8.dp))
                 Button(
-                    onClick = { onSaveClick() },
+                    onClick = {
+
+                        // 🔥 [연동 예정] 여기서 ViewModel → Repository → API 호출 연결
+                        // onSaveClick() → 실제 단어 저장 로직 추가 예정
+                              },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
                     modifier = Modifier
                         .height(36.dp)
