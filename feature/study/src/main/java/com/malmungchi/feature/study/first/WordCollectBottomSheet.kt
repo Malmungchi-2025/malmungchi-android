@@ -5,8 +5,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,6 +21,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.malmungchi.feature.study.Pretendard
 
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WordCollectBottomSheet(
     word: String,
@@ -26,102 +31,53 @@ fun WordCollectBottomSheet(
     onDismiss: () -> Unit,
     onSaveClick: () -> Unit
 ) {
-    Dialog(onDismissRequest = { onDismiss() }) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = { onDismiss() },
+        sheetState = sheetState,
+        containerColor = Color.Transparent // ✅ 기존 디자인 유지 위해 투명 배경
+    ) {
+        // ✅ 기존 Surface 디자인 그대로 사용
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
             color = Color.White,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             Column(
                 modifier = Modifier
                     .background(Color.White)
                     .padding(24.dp)
             ) {
-                // ✅ 상단 제목
-                Text(
-                    text = "단어 수집",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = Pretendard,
-                    color = Color(0xFF195FCF)
-                )
-
+                Text("단어 수집", fontSize = 14.sp, fontWeight = FontWeight.Medium, fontFamily = Pretendard, color = Color(0xFF195FCF))
                 Spacer(Modifier.height(16.dp))
 
-                // ✅ 원형 단어
-                Text(
-                    text = word,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = Pretendard,
-                    color = Color(0xFF333333)
-                )
-
+                Text(word, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, fontFamily = Pretendard, color = Color(0xFF333333))
                 Spacer(Modifier.height(8.dp))
 
-                // ✅ 뜻
-                Text(
-                    text = ": $definition",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = Pretendard,
-                    color = Color(0xFF333333)
-                )
-
+                Text(": $definition", fontSize = 14.sp, fontWeight = FontWeight.Medium, fontFamily = Pretendard, color = Color(0xFF333333))
                 Spacer(Modifier.height(8.dp))
 
-                // ✅ 예문
-                Text(
-                    text = example,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = Pretendard,
-                    color = Color(0xFF666666)
-                )
-
+                Text(example, fontSize = 12.sp, fontWeight = FontWeight.Medium, fontFamily = Pretendard, color = Color(0xFF666666))
                 Spacer(Modifier.height(24.dp))
 
-                // ✅ 버튼 영역
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    // 취소 버튼
+                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                     Button(
                         onClick = { onDismiss() },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        modifier = Modifier
-                            .height(36.dp)
-                            .weight(1f)
+                        modifier = Modifier.weight(1f).height(36.dp)
                     ) {
-                        Text(
-                            text = "취소",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = Pretendard,
-                            color = Color(0xFF195FCF)
-                        )
+                        Text("취소", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, fontFamily = Pretendard, color = Color(0xFF195FCF))
                     }
-
                     Spacer(Modifier.width(8.dp))
-
-                    // 저장 버튼
                     Button(
                         onClick = { onSaveClick() },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
-                        modifier = Modifier
-                            .height(36.dp)
-                            .weight(1f)
+                        modifier = Modifier.weight(1f).height(36.dp)
                     ) {
-                        Text(
-                            text = "저장",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = Pretendard,
-                            color = Color.White
-                        )
+                        Text("저장", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, fontFamily = Pretendard, color = Color.White)
                     }
                 }
             }
@@ -210,7 +166,7 @@ fun WordCollectBottomSheetContent(
 
                         // 🔥 [연동 예정] 여기서 ViewModel → Repository → API 호출 연결
                         // onSaveClick() → 실제 단어 저장 로직 추가 예정
-                              },
+                    },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
                     modifier = Modifier
                         .height(36.dp)
@@ -233,3 +189,115 @@ fun PreviewWordCollectBottomSheetContent() {
         example = "보고서를 작성하여 제출하세요."
     )
 }
+
+//@Composable
+//fun WordCollectBottomSheet(
+//    word: String,
+//    definition: String,
+//    example: String,
+//    onDismiss: () -> Unit,
+//    onSaveClick: () -> Unit
+//) {
+//    Dialog(onDismissRequest = { onDismiss() }) {
+//        Surface(
+//            shape = RoundedCornerShape(12.dp),
+//            color = Color.White,
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(16.dp)
+//        ) {
+//            Column(
+//                modifier = Modifier
+//                    .background(Color.White)
+//                    .padding(24.dp)
+//            ) {
+//                // ✅ 상단 제목
+//                Text(
+//                    text = "단어 수집",
+//                    fontSize = 14.sp,
+//                    fontWeight = FontWeight.Medium,
+//                    fontFamily = Pretendard,
+//                    color = Color(0xFF195FCF)
+//                )
+//
+//                Spacer(Modifier.height(16.dp))
+//
+//                // ✅ 원형 단어
+//                Text(
+//                    text = word,
+//                    fontSize = 18.sp,
+//                    fontWeight = FontWeight.SemiBold,
+//                    fontFamily = Pretendard,
+//                    color = Color(0xFF333333)
+//                )
+//
+//                Spacer(Modifier.height(8.dp))
+//
+//                // ✅ 뜻
+//                Text(
+//                    text = ": $definition",
+//                    fontSize = 14.sp,
+//                    fontWeight = FontWeight.Medium,
+//                    fontFamily = Pretendard,
+//                    color = Color(0xFF333333)
+//                )
+//
+//                Spacer(Modifier.height(8.dp))
+//
+//                // ✅ 예문
+//                Text(
+//                    text = example,
+//                    fontSize = 12.sp,
+//                    fontWeight = FontWeight.Medium,
+//                    fontFamily = Pretendard,
+//                    color = Color(0xFF666666)
+//                )
+//
+//                Spacer(Modifier.height(24.dp))
+//
+//                // ✅ 버튼 영역
+//                Row(
+//                    horizontalArrangement = Arrangement.SpaceBetween,
+//                    modifier = Modifier.fillMaxWidth()
+//                ) {
+//                    // 취소 버튼
+//                    Button(
+//                        onClick = { onDismiss() },
+//                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+//                        modifier = Modifier
+//                            .height(36.dp)
+//                            .weight(1f)
+//                    ) {
+//                        Text(
+//                            text = "취소",
+//                            fontSize = 16.sp,
+//                            fontWeight = FontWeight.SemiBold,
+//                            fontFamily = Pretendard,
+//                            color = Color(0xFF195FCF)
+//                        )
+//                    }
+//
+//                    Spacer(Modifier.width(8.dp))
+//
+//                    // 저장 버튼
+//                    Button(
+//                        onClick = { onSaveClick() },
+//                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
+//                        modifier = Modifier
+//                            .height(36.dp)
+//                            .weight(1f)
+//                    ) {
+//                        Text(
+//                            text = "저장",
+//                            fontSize = 16.sp,
+//                            fontWeight = FontWeight.SemiBold,
+//                            fontFamily = Pretendard,
+//                            color = Color.White
+//                        )
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
+

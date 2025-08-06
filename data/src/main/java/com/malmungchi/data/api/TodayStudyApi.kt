@@ -13,19 +13,19 @@ interface TodayStudyApi {
         @Header("Authorization") token: String
     ): ApiResponse<String>
 
-    @POST("/api/vocabulary/search")
+    @POST("/api/gpt/vocabulary/search")
     suspend fun searchWord(
         @Header("Authorization") token: String,
         @Body request: WordRequest
-    ): ApiResponse<WordItem>
+    ): ApiResponse<List<WordItem>>
 
-    @POST("/api/vocabulary")
+    @POST("/api/gpt/vocabulary")
     suspend fun saveWord(
         @Header("Authorization") token: String,
         @Body request: WordSaveRequest
     ): ApiResponse<Unit>
 
-    @GET("/api/vocabulary/{studyId}")
+    @GET("/api/gpt/vocabulary/{studyId}")
     suspend fun getVocabularyList(
         @Header("Authorization") token: String,
         @Path("studyId") studyId: Int
