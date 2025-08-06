@@ -16,4 +16,10 @@ interface TodayStudyRepository {
 
     /** ✅ 단어 목록 조회 (오늘의 학습 문단 단어 목록) */
     suspend fun getVocabularyList(token: String, studyId: Int): Result<List<WordItem>>
+
+    // ✅ [추가] 필사 내용 저장
+    suspend fun saveHandwriting(token: String, studyId: Int, content: String): Result<Unit>
+
+    //필사한 내용 불러오기
+    suspend fun getHandwriting(token: String, studyId: Int): Result<String>
 }

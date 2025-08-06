@@ -30,6 +30,23 @@ interface TodayStudyApi {
         @Header("Authorization") token: String,
         @Path("studyId") studyId: Int
     ): ApiResponse<List<WordItem>>
+
+    //필사한 내용 저장
+    @POST("/api/study/handwriting")
+    suspend fun saveHandwriting(
+        @Header("Authorization") token: String,
+        @Body request: HandwritingRequest
+    ): ApiResponse<Unit>
+
+    //필사한 내용 불러오기
+    // TodayStudyApi.kt
+    @GET("/api/study/handwriting/{studyId}")
+    suspend fun getHandwriting(
+        @Header("Authorization") token: String,
+        @Path("studyId") studyId: Int
+    ): ApiResponse<String>
+
+    data class HandwritingRequest(val study_id: Int, val content: String)
 }
 
 // ✅ 공통 응답 모델
