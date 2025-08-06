@@ -8,8 +8,10 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
@@ -18,10 +20,20 @@ object TodayStudyModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(): Retrofit =
+    fun provideOkHttpClient(): OkHttpClient =
+        OkHttpClient.Builder()
+            .connectTimeout(0, TimeUnit.SECONDS) // ✅ 연결 무제한 대기
+            .readTimeout(0, TimeUnit.SECONDS)    // ✅ 응답 무제한 대기
+            .writeTimeout(0, TimeUnit.SECONDS)   // ✅ 요청 전송 무제한 대기
+            .build()
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(client: OkHttpClient): Retrofit =
         Retrofit.Builder()
-            .baseUrl("https://malmungchi-server.onrender.com") // ✅ NetworkConfig 제거 → 직접 URL 사용
-            .addConverterFactory(GsonConverterFactory.create()) // ✅ 정상 import
+            .baseUrl("https://malmungchi-server.onrender.com")
+            .client(client) // ✅ 커스텀 클라이언트 적용
+            .addConverterFactory(GsonConverterFactory.create())
             .build()
 
     @Provides

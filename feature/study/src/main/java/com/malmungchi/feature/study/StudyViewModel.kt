@@ -3,7 +3,6 @@ package com.malmungchi.feature.study
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.malmungchi.core.model.TodayQuote
 import com.malmungchi.core.model.WordItem
 import com.malmungchi.core.repository.TodayStudyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,10 +28,9 @@ class StudyReadingViewModel @Inject constructor(
     private val _highlightWords = MutableStateFlow<List<String>>(emptyList())
     val highlightWords: StateFlow<List<String>> = _highlightWords
 
-    /** ✅ 오늘의 학습 글감 API 호출 (DB 자동 저장) */
+    /** ✅ 오늘의 학습 글감 API 호출 */
     fun fetchTodayQuote(token: String) {
         Log.d("API_FETCH_QUOTE", "📡 [요청] /api/gpt/generate-quote")
-        Log.d("API_FETCH_QUOTE", "👉 Header.Authorization = Bearer $token")
         viewModelScope.launch {
             repository.generateTodayQuote(token)
                 .onSuccess {
@@ -49,8 +47,7 @@ class StudyReadingViewModel @Inject constructor(
 
     /** ✅ 단어 검색 */
     fun searchWord(token: String, word: String) {
-        Log.d("API_SEARCH_WORD", "📡 [요청] /api/word/search?query=$word")
-        Log.d("API_SEARCH_WORD", "👉 Header.Authorization = Bearer $token")
+        Log.d("API_SEARCH_WORD", "📡 [요청] POST /api/vocabulary/search")
         viewModelScope.launch {
             repository.searchWordDefinition(token, word)
                 .onSuccess {
@@ -67,8 +64,7 @@ class StudyReadingViewModel @Inject constructor(
     /** ✅ 단어 저장 후 하이라이트 갱신 */
     fun saveWord(token: String, wordItem: WordItem, onSaved: () -> Unit) {
         val id = _studyId.value ?: return
-        Log.d("API_SAVE_WORD", "📡 [요청] /api/word/save (studyId=$id, word=${wordItem.word})")
-        Log.d("API_SAVE_WORD", "👉 Header.Authorization = Bearer $token")
+        Log.d("API_SAVE_WORD", "📡 [요청] POST /api/vocabulary (studyId=$id, word=${wordItem.word})")
         viewModelScope.launch {
             repository.saveWord(token, id, wordItem)
                 .onSuccess {
@@ -84,8 +80,7 @@ class StudyReadingViewModel @Inject constructor(
 
     /** ✅ 서버에서 단어 목록 가져와 하이라이트 적용 */
     fun loadVocabularyList(token: String, studyId: Int) {
-        Log.d("API_LOAD_VOCAB", "📡 [요청] /api/word/list?studyId=$studyId")
-        Log.d("API_LOAD_VOCAB", "👉 Header.Authorization = Bearer $token")
+        Log.d("API_LOAD_VOCAB", "📡 [요청] GET /api/vocabulary/$studyId")
         viewModelScope.launch {
             repository.getVocabularyList(token, studyId)
                 .onSuccess { words ->
@@ -99,7 +94,7 @@ class StudyReadingViewModel @Inject constructor(
         }
     }
 
-    /** ✅ 단어 수동 선택 (노란펜 → UI용) */
+    /** ✅ 노란펜 모드 UI용 (단어 수동 선택) */
     fun setSelectedWord(wordItem: WordItem) {
         Log.d("API_UI", "🟡 [UI 이벤트] 단어 선택: ${wordItem.word}")
         _selectedWord.value = wordItem
