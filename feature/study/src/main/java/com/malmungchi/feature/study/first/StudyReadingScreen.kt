@@ -32,7 +32,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.malmungchi.core.model.WordItem
 import com.malmungchi.feature.study.Pretendard
 import com.malmungchi.feature.study.R
-import com.malmungchi.feature.study.StudyReadingViewModel
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -44,6 +43,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import com.malmungchi.feature.study.StudyReadingViewModel
 
 
 @Composable
