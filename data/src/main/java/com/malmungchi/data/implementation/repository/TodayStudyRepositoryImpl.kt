@@ -4,6 +4,7 @@ import com.malmungchi.data.api.ServerApi
 import com.malmungchi.data.preference.AuthPreference
 import javax.inject.Inject
 
+
 import android.util.Log
 import com.malmungchi.core.model.TodayQuote
 import com.malmungchi.core.model.WordItem
@@ -18,9 +19,10 @@ class TodayStudyRepositoryImpl(
     private val api: TodayStudyApi
 ) : TodayStudyRepository {
 
+    /** ✅ 오늘의 학습 글감 가져오기 */
     override suspend fun generateTodayQuote(token: String): Result<TodayQuote> = withContext(Dispatchers.IO) {
         Log.d("API_GENERATE_QUOTE", "📡 [요청] POST /api/gpt/generate-quote")
-        Log.d("API_GENERATE_QUOTE", "👉 Header.Authorization = Bearer ${token.take(10)}...") // 토큰 일부만 로그
+        Log.d("API_GENERATE_QUOTE", "👉 Header.Authorization = Bearer ${token.take(10)}...")
 
         try {
             val res = api.generateQuote("Bearer $token")
@@ -38,17 +40,19 @@ class TodayStudyRepositoryImpl(
         }
     }
 
+    /** ✅ 단어 검색 (서버 응답이 배열이므로 첫 번째 단어만 사용) */
     override suspend fun searchWordDefinition(token: String, word: String): Result<WordItem> = withContext(Dispatchers.IO) {
-        Log.d("API_SEARCH_WORD", "📡 [요청] POST /api/word/search")
+        Log.d("API_SEARCH_WORD", "📡 [요청] POST /api/vocabulary/search")
         Log.d("API_SEARCH_WORD", "👉 Header.Authorization = Bearer ${token.take(10)}...")
         Log.d("API_SEARCH_WORD", "👉 Body = WordRequest(word=$word)")
 
         try {
-            val res = api.searchWord("Bearer $token", WordRequest(word))
-            Log.d("API_SEARCH_WORD", "📥 [응답] success=${res.success}, message=${res.message}, result=${res.result}")
+            val res = api.searchWord("Bearer $token", WordRequest(word)) // ✅ ApiResponse<List<WordItem>> 로 변경됨
+            Log.d("API_SEARCH_WORD", "📥 [응답] success=${res.success}, message=${res.message}, resultCount=${res.result?.size ?: 0}")
 
-            if (res.success && res.result != null) {
-                Result.success(res.result)
+            if (res.success && !res.result.isNullOrEmpty()) {
+                val firstWord = res.result.first() // ✅ 첫 번째 단어만 사용
+                Result.success(firstWord)
             } else {
                 Log.e("API_SEARCH_WORD", "❌ [실패] ${res.message}")
                 Result.failure(Exception(res.message ?: "단어 검색 실패"))
@@ -59,8 +63,9 @@ class TodayStudyRepositoryImpl(
         }
     }
 
+    /** ✅ 단어 저장 */
     override suspend fun saveWord(token: String, studyId: Int, wordItem: WordItem): Result<Unit> = withContext(Dispatchers.IO) {
-        Log.d("API_SAVE_WORD", "📡 [요청] POST /api/word/save")
+        Log.d("API_SAVE_WORD", "📡 [요청] POST /api/vocabulary")
         Log.d("API_SAVE_WORD", "👉 Header.Authorization = Bearer ${token.take(10)}...")
         Log.d("API_SAVE_WORD", "👉 Body = WordSaveRequest(studyId=$studyId, word=${wordItem.word}, meaning=${wordItem.meaning}, example=${wordItem.example})")
 
@@ -80,8 +85,9 @@ class TodayStudyRepositoryImpl(
         }
     }
 
+    /** ✅ 단어 목록 조회 */
     override suspend fun getVocabularyList(token: String, studyId: Int): Result<List<WordItem>> = withContext(Dispatchers.IO) {
-        Log.d("API_VOCAB_LIST", "📡 [요청] GET /api/word/list?studyId=$studyId")
+        Log.d("API_VOCAB_LIST", "📡 [요청] GET /api/vocabulary/$studyId")
         Log.d("API_VOCAB_LIST", "👉 Header.Authorization = Bearer ${token.take(10)}...")
 
         try {

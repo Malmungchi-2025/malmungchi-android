@@ -34,6 +34,16 @@ import com.malmungchi.feature.study.Pretendard
 import com.malmungchi.feature.study.R
 import com.malmungchi.feature.study.StudyReadingViewModel
 import androidx.compose.material3.IconButton
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 
 
 @Composable
@@ -53,17 +63,65 @@ fun StudyReadingScreen(
     var showBottomSheet by remember { mutableStateOf(false) }
     var yellowPenMode by remember { mutableStateOf(false) }
 
+    // ✅ UI 하이라이트용 임시 단어 상태 (펜 상태 변경에도 유지)
+    var tempSelectedWord by remember { mutableStateOf<String?>(null) }
+
     val penStates = listOf(R.drawable.img_pen_black, R.drawable.img_pen_yellow, R.drawable.img_pen_blue)
     var currentPenIndex by remember { mutableStateOf(0) }
 
+    //수집 말풍선
+    var showCollectBubble by remember { mutableStateOf(false) }
+    var bubblePosition by remember { mutableStateOf(Offset.Zero) }
+
     // ✅ 오늘의 학습 글감 API 호출
     LaunchedEffect(Unit) { viewModel.fetchTodayQuote(token) }
+
+    // ✅ 공통 Modifier (노란펜/파란펜 모드 동일 적용)
+    val contentModifier = Modifier
+        .padding(16.dp)
+        .verticalScroll(rememberScrollState())
+
+    // ✅ Box 전체 좌표 저장
+    var boxCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+
+    // 🔥 [FIX] ✅ 공통 텍스트 스타일 추가 (펜 모드 관계없이 동일 적용)
+    val commonTextStyle = androidx.compose.ui.text.TextStyle(
+        fontSize = 14.sp,
+        lineHeight = 22.sp,
+        color = Color(0xFF333333),
+        textAlign = TextAlign.Start
+    )
+    val density = LocalDensity.current
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .onGloballyPositioned { coords -> boxCoords = coords } // ✅ Box 좌표 기록
     ) {
+        // 🔥 [FIX] ✅ "수집" 말풍선 크기 및 위치 보정
+        if (showCollectBubble && boxCoords != null) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_collect_bubble),
+                contentDescription = "수집",
+                modifier = Modifier
+                    .zIndex(1f)
+                    .offset {
+                        // 🔥 [FIX] ✅ 위치 보정: 단어 위 중앙 + 최소 y 오프셋
+                        IntOffset(
+                            (bubblePosition.x - with(density) { 24.dp.toPx() }).toInt(),
+                            bubblePosition.y.toInt()
+                        )
+                    }
+                    .size(48.dp) // 🔥 [FIX] ✅ 기존 90dp → 48dp 축소
+                    .clickable {
+                        viewModel.searchWord(token, tempSelectedWord ?: "")
+                        showBottomSheet = true
+                        showCollectBubble = false
+                    }
+            )
+        }
+
         Column(Modifier.fillMaxSize().padding(16.dp)) {
 
             // ✅ 상단 바 (뒤로가기 + 타이틀)
@@ -82,69 +140,107 @@ fun StudyReadingScreen(
                     text = "오늘의 학습",
                     fontSize = 20.sp,
                     fontFamily = Pretendard,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center
                 )
                 Spacer(Modifier.width(48.dp)) // 오른쪽 균형 맞춤
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(24.dp))
             Text(
                 "학습 진행률",
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 color = Color.Black,              // ✅ 글씨 색상 변경
+                fontWeight = FontWeight.Normal,
                 modifier = Modifier.padding(start = 4.dp) // ✅ ProgressBar와 X축 정렬 맞춤
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(16.dp))
             StepProgressBar(totalSteps, currentStep)
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(24.dp))
 
             // ✅ 본문
+            // ✅ 본문 영역
+            // ✅ 본문
             Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF9F9F9), modifier = Modifier.weight(1f)) {
-                if (yellowPenMode) {
-                    // 🟡 노란펜 모드 → 단어 클릭 가능
-                    ClickableHighlightedText(text = quote) { word ->
-                        viewModel.searchWord(token, word)
-                        showBottomSheet = true
+                when (currentPenIndex) {
+                    1 -> {
+                        // 🔥 [FIX] ✅ 노란펜에도 공통 스타일 적용
+                        ClickableHighlightedText(
+                            text = quote,
+                            selectedWord = tempSelectedWord,
+                            onWordClick = { word, offset ->
+                                tempSelectedWord = word
+                                bubblePosition = offset
+                                showCollectBubble = true
+                            },
+                            modifier = contentModifier,
+                            textStyle = commonTextStyle // 🔥 추가
+                        )
                     }
-                } else {
-                    // 일반 모드 or 파란펜 하이라이트
-                    RegexHighlightedText(text = quote, highlights = highlightWords)
+                    2 -> {
+                        // 🔥 [FIX] ✅ 파란펜도 동일한 스타일 적용
+                        RegexHighlightedText(
+                            text = quote,
+                            highlights = highlightWords,
+                            modifier = contentModifier,
+                            textStyle = commonTextStyle // 🔥 추가
+                        )
+                    }
+                    else -> {
+                        // 🔥 [FIX] ✅ 검정펜도 동일 스타일 적용
+                        Text(
+                            text = quote,
+                            style = commonTextStyle, // 🔥 변경
+                            modifier = contentModifier
+                        )
+                    }
                 }
             }
 
             Spacer(Modifier.height(16.dp))
 
             // ✅ 하단 버튼 (펜 동작)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            // ✅ 하단 버튼 (펜 동작)
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically   // ✅ 두 컴포넌트 Y축 정렬 고정
+            ) {
                 Image(
                     painter = painterResource(id = penStates[currentPenIndex]),
                     contentDescription = "펜",
-                    modifier = Modifier.size(64.dp).clickable {
-                        currentPenIndex = (currentPenIndex + 1) % penStates.size
-                        when (currentPenIndex) {
-                            1 -> { // 🟡 노란펜 → 단어 클릭 활성화
-                                yellowPenMode = true
+                    modifier = Modifier
+                        .size(64.dp)
+                        .align(Alignment.CenterVertically)       // ✅ 버튼과 평행 정렬
+                        .clickable {
+                            currentPenIndex = (currentPenIndex + 1) % penStates.size
+                            when (currentPenIndex) {
+                                1 -> yellowPenMode = true
+                                2 -> {
+                                    yellowPenMode = false
+                                    studyId?.let { viewModel.loadVocabularyList(token, it) }
+                                }
+                                else -> yellowPenMode = false
                             }
-                            2 -> { // 🔵 파란펜 → 서버 단어 목록 하이라이트
-                                yellowPenMode = false
-                                studyId?.let { viewModel.loadVocabularyList(token, it) }
-                            }
-                            else -> yellowPenMode = false
                         }
-                    }
                 )
 
                 Button(
                     onClick = onNextClick,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
                     shape = RoundedCornerShape(50),
-                    modifier = Modifier.height(42.dp).width(160.dp)
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)       // ✅ 펜과 같은 Y축
+                        .height(42.dp)
+                        .width(160.dp)
                 ) {
                     Text("다음 단계", fontSize = 16.sp, fontFamily = Pretendard, color = Color.White)
                 }
             }
+
         }
+
     }
 
     // ✅ 단어 BottomSheet
@@ -153,10 +249,14 @@ fun StudyReadingScreen(
             word = selectedWord!!.word,
             definition = selectedWord!!.meaning,
             example = selectedWord!!.example ?: "",
-            onDismiss = { showBottomSheet = false },
+            onDismiss = {
+                showBottomSheet = false
+                tempSelectedWord = null // ✅ 취소 시 하이라이트 제거
+            },
             onSaveClick = {
                 viewModel.saveWord(token, selectedWord!!) {
                     showBottomSheet = false
+                    tempSelectedWord = null // ✅ 저장 후도 하이라이트 제거
                 }
             }
         )
@@ -164,47 +264,109 @@ fun StudyReadingScreen(
 }
 
 /** ✅ 노란펜: 모든 단어 클릭 가능 텍스트 */
+/** ✅ 노란펜: 모든 단어 클릭 가능 텍스트 */
+/** ✅ 노란펜: 모든 단어 클릭 가능 텍스트 */
 @Composable
-fun ClickableHighlightedText(text: String, onWordClick: (String) -> Unit) {
+fun ClickableHighlightedText(
+    text: String,
+    selectedWord: String? = null,
+    onWordClick: (String, Offset) -> Unit,
+    modifier: Modifier = Modifier,
+    textStyle: TextStyle = TextStyle.Default // 🔥 [FIX] textStyle 파라미터 추가
+) {
+    val density = LocalDensity.current
     val words = text.split(" ")
     val annotated = buildAnnotatedString {
-        var startIndex = 0
-        for (word in words) {
-            val endIndex = startIndex + word.length
-            pushStringAnnotation(tag = "WORD", annotation = word)
-            withStyle(SpanStyle(color = Color(0xFF333333), textDecoration = TextDecoration.None)) {
-                append(word)
-            }
+        var currentIndex = 0
+        words.forEachIndexed { index, rawWord ->
+            val cleanWord = rawWord.replace(Regex("[^ㄱ-ㅎ가-힣a-zA-Z]"), "")
+            pushStringAnnotation(tag = "WORD", annotation = cleanWord)
+            withStyle(
+                style = SpanStyle(
+                    color = Color(0xFF333333),
+                    background = if (cleanWord == selectedWord) Color(0xFFFFD91C) else Color.Transparent
+                )
+            ) { append(rawWord) }
             pop()
-            append(" ")
-            startIndex = endIndex + 1
+            currentIndex += rawWord.length
+            if (index != words.lastIndex) {
+                append(" ")
+                currentIndex++
+            }
         }
     }
-    ClickableText(text = annotated, onClick = { offset ->
-        annotated.getStringAnnotations("WORD", offset, offset).firstOrNull()?.let { sa ->
-            val cleanWord = sa.item.replace(Regex("[^ㄱ-ㅎ가-힣a-zA-Z]"), "")
-            if (cleanWord.isNotEmpty()) onWordClick(cleanWord)
+
+    // ✅ 단어 → Rect 매핑 (단어별 위치 저장)
+    val wordPositions = remember { mutableStateMapOf<String, Rect>() }
+    var textLayoutCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+
+    ClickableText(
+        text = annotated,
+        modifier = modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { coords -> textLayoutCoords = coords },
+        style = textStyle, // 🔥 [FIX] 공통 스타일 적용
+        onTextLayout = { layoutResult ->
+            wordPositions.clear()
+            var startIndex = 0
+            words.forEach { rawWord ->
+                val cleanWord = rawWord.replace(Regex("[^ㄱ-ㅎ가-힣a-zA-Z]"), "")
+                val endIndex = startIndex + rawWord.length
+
+                // ✅ 단어 전체 BoundingBox 계산
+                val boxes = (startIndex until endIndex).map { layoutResult.getBoundingBox(it) }
+                if (boxes.isNotEmpty()) {
+                    val left = boxes.minOf { it.left }
+                    val top = boxes.minOf { it.top }
+                    val right = boxes.maxOf { it.right }
+                    val bottom = boxes.maxOf { it.bottom }
+                    wordPositions[cleanWord] = Rect(left, top, right, bottom)
+                }
+                startIndex = endIndex + 1 // 공백 포함
+            }
+        },
+        onClick = { offset ->
+            annotated.getStringAnnotations("WORD", offset, offset).firstOrNull()?.let { annotation ->
+                val rect = wordPositions[annotation.item]
+                if (rect != null && textLayoutCoords != null) {
+                    // ✅ 단어 중심 좌표 계산
+                    val globalCenter = textLayoutCoords!!.localToRoot(
+                        Offset(rect.left + rect.width / 2, rect.top)
+                    )
+                    // 🔥 [FIX] Density 변환으로 y좌표 보정
+                    val yOffset = with(density) { 8.dp.toPx() }
+                    val finalPos = Offset(globalCenter.x, globalCenter.y - rect.height - yOffset)
+                    onWordClick(annotation.item, finalPos)
+                } else {
+                    onWordClick(annotation.item, Offset.Zero)
+                }
+            }
         }
-    }, modifier = Modifier.padding(16.dp))
+    )
 }
 
 /** ✅ 파란펜: 서버 단어 목록 Regex 하이라이트 */
 @Composable
-fun RegexHighlightedText(text: String, highlights: List<String>) {
+fun RegexHighlightedText(
+    text: String,
+    highlights: List<String>,
+    modifier: Modifier = Modifier,
+    textStyle: TextStyle = TextStyle.Default // 🔥 [FIX] textStyle 추가
+) {
     val annotated: AnnotatedString = buildAnnotatedString {
         append(text)
         highlights.forEach { word ->
             val regex = Regex(Regex.escape(word))
             regex.findAll(text).forEach { match ->
                 addStyle(
-                    style = SpanStyle(background = Color(0xFFB2C9FF)),
+                    style = SpanStyle(background = Color(0xFFCCFF00)),
                     start = match.range.first,
                     end = match.range.last + 1
                 )
             }
         }
     }
-    Text(annotated, fontSize = 14.sp, color = Color(0xFF333333), modifier = Modifier.padding(16.dp))
+    Text(annotated, style = textStyle, modifier = modifier) // 🔥 [FIX] 공통 스타일 적용
 }
 
 
@@ -233,7 +395,7 @@ fun StepProgressBar(totalSteps: Int = 3, currentStep: Int = 1) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         repeat(totalSteps) { index ->
             Box(
-                modifier = Modifier.weight(1f).height(14.dp).background(
+                modifier = Modifier.weight(1f).height(16.dp).background(
                     color = if (index == currentStep - 1) Color(0xFF195FCF) else Color(0xFFF2F2F2),
                     shape = RoundedCornerShape(50)
                 )
