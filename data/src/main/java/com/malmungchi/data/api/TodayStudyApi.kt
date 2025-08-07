@@ -1,5 +1,8 @@
 package com.malmungchi.data.api
 
+import com.malmungchi.core.model.QuizAnswerRequest
+import com.malmungchi.core.model.QuizGenerationRequest
+import com.malmungchi.core.model.QuizItem
 import com.malmungchi.core.model.WordItem
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -46,6 +49,25 @@ interface TodayStudyApi {
         @Path("studyId") studyId: Int
     ): ApiResponse<String>
 
+    //퀴즈 부분
+    @POST("/api/gpt/generate-quiz")
+    suspend fun generateQuiz(
+        @Header("Authorization") token: String,
+        @Body request: QuizGenerationRequest
+    ): ApiResponse<List<QuizItem>>
+
+    @GET("/api/gpt/quiz/{studyId}")
+    suspend fun getQuizList(
+        @Header("Authorization") token: String,
+        @Path("studyId") studyId: Int
+    ): ApiResponse<List<QuizItem>>
+
+    @POST("/api/gpt/quiz/answer")
+    suspend fun saveQuizAnswer(
+        @Header("Authorization") token: String,
+        @Body request: QuizAnswerRequest
+    ): ApiResponse<Unit>
+
     data class HandwritingRequest(val study_id: Int, val content: String)
 }
 
@@ -60,3 +82,5 @@ data class ApiResponse<T>(
 // ✅ Request DTO
 data class WordRequest(val word: String)
 data class WordSaveRequest(val study_id: Int, val word: String, val meaning: String, val example: String?)
+
+

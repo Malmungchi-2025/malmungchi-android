@@ -3,6 +3,8 @@ package com.malmungchi.feature.study
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.malmungchi.core.model.QuizAnswerRequest
+import com.malmungchi.core.model.QuizItem
 import com.malmungchi.core.model.WordItem
 import com.malmungchi.core.repository.TodayStudyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -224,6 +226,51 @@ class StudyReadingViewModel @Inject constructor(
     fun saveAllInputs(inputs: Map<Int, String>) {
         savedInputs.clear()
         savedInputs.putAll(inputs)
+    }
+
+    //퀴즈
+    private val _quizList = MutableStateFlow<List<QuizItem>>(emptyList())
+    val quizList: StateFlow<List<QuizItem>> = _quizList
+
+    fun tryGenerateQuiz(token: String) {
+        val text = quote.value
+        val id = studyId.value
+
+        if (!text.isNullOrBlank() && id != null) {
+            Log.d("QUIZ", "🧠 generateQuiz 호출 준비 완료 - studyId=$id")
+            generateQuiz(token, text, id)
+        } else {
+            Log.w("QUIZ", "❌ generateQuiz 호출 실패 - quote or studyId null")
+        }
+    }
+
+
+    fun generateQuiz(token: String, text: String, studyId: Int) {
+        viewModelScope.launch {
+            repository.generateQuiz(token, studyId, text)
+                .onSuccess { _quizList.value = it }
+                .onFailure { Log.e("QUIZ", "❌ 퀴즈 생성 실패: ${it.message}") }
+        }
+    }
+
+
+
+    fun loadQuizList(token: String, studyId: Int) {
+        viewModelScope.launch {
+            repository.getQuizList(token, studyId)
+                .onSuccess { _quizList.value = it }
+                .onFailure { Log.e("QUIZ", "❌ 퀴즈 조회 실패: ${it.message}") }
+        }
+    }
+
+    fun submitQuizAnswer(token: String, studyId: Int, index: Int, userChoice: String, answer: String) {
+        val isCorrect = userChoice == answer
+        val request = QuizAnswerRequest(studyId, index, userChoice, isCorrect)
+        viewModelScope.launch {
+            repository.saveQuizAnswer(token, request)
+                .onSuccess { Log.d("QUIZ", "✅ 응답 저장 완료") }
+                .onFailure { Log.e("QUIZ", "❌ 응답 저장 실패: ${it.message}") }
+        }
     }
 }
 
