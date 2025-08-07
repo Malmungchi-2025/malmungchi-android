@@ -6,6 +6,9 @@ import javax.inject.Inject
 
 
 import android.util.Log
+import com.malmungchi.core.model.QuizAnswerRequest
+import com.malmungchi.core.model.QuizGenerationRequest
+import com.malmungchi.core.model.QuizItem
 import com.malmungchi.core.model.TodayQuote
 import com.malmungchi.core.model.WordItem
 import com.malmungchi.core.repository.TodayStudyRepository
@@ -157,6 +160,39 @@ class TodayStudyRepositoryImpl(
                 } else {
                     Result.failure(Exception(res.message ?: "필사 로드 실패"))
                 }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    override suspend fun generateQuiz(token: String, studyId: Int, text: String): Result<List<QuizItem>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val res = api.generateQuiz("Bearer $token", QuizGenerationRequest(text, studyId))
+                if (res.success && res.result != null) Result.success(res.result)
+                else Result.failure(Exception(res.message ?: "퀴즈 생성 실패"))
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    override suspend fun getQuizList(token: String, studyId: Int): Result<List<QuizItem>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val res = api.getQuizList("Bearer $token", studyId)
+                if (res.success && res.result != null) Result.success(res.result)
+                else Result.failure(Exception(res.message ?: "퀴즈 조회 실패"))
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    override suspend fun saveQuizAnswer(token: String, request: QuizAnswerRequest): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            try {
+                val res = api.saveQuizAnswer("Bearer $token", request)
+                if (res.success) Result.success(Unit)
+                else Result.failure(Exception(res.message ?: "퀴즈 저장 실패"))
             } catch (e: Exception) {
                 Result.failure(e)
             }
