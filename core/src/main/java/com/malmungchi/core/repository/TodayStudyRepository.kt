@@ -1,6 +1,8 @@
 package com.malmungchi.core.repository
 
 
+import com.malmungchi.core.model.QuizAnswerRequest
+import com.malmungchi.core.model.QuizItem
 import com.malmungchi.core.model.TodayQuote
 import com.malmungchi.core.model.WordItem
 
@@ -22,4 +24,9 @@ interface TodayStudyRepository {
 
     //필사한 내용 불러오기
     suspend fun getHandwriting(token: String, studyId: Int): Result<String>
+
+    //퀴즈
+    suspend fun generateQuiz(token: String, studyId: Int, text: String): Result<List<QuizItem>>
+    suspend fun getQuizList(token: String, studyId: Int): Result<List<QuizItem>>
+    suspend fun saveQuizAnswer(token: String, request: QuizAnswerRequest): Result<Unit>
 }
