@@ -255,11 +255,24 @@ class StudyReadingViewModel @Inject constructor(
 
 
 
+//    fun loadQuizList(token: String, studyId: Int) {
+//        viewModelScope.launch {
+//            repository.getQuizList(token, studyId)
+//                .onSuccess { _quizList.value = it }
+//                .onFailure { Log.e("QUIZ", "❌ 퀴즈 조회 실패: ${it.message}") }
+//        }
+//    }
     fun loadQuizList(token: String, studyId: Int) {
         viewModelScope.launch {
+            android.util.Log.d("QUIZ", "📡 GET /api/gpt/quiz/$studyId (Authorization=Bearer ...)")
             repository.getQuizList(token, studyId)
-                .onSuccess { _quizList.value = it }
-                .onFailure { Log.e("QUIZ", "❌ 퀴즈 조회 실패: ${it.message}") }
+                .onSuccess { list ->
+                    android.util.Log.d("QUIZ", "✅ 퀴즈 조회 성공: ${list.size}개")
+                    _quizList.value = list
+                }
+                .onFailure { e ->
+                    android.util.Log.e("QUIZ", "❌ 퀴즈 조회 실패: ${e.message}", e)
+                }
         }
     }
 
