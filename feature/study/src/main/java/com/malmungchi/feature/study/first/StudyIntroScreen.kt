@@ -21,6 +21,7 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun StudyIntroScreen(
+    onStart: () -> Unit,
     levelText: String = "1단계",
     onNavigateNext: () -> Unit = {} // ✅ 콜백으로 다음 화면 이동 처리
 ) {
@@ -65,8 +66,8 @@ fun StudyIntroScreen(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewStudyIntroScreen() {
-    StudyIntroScreen(levelText = "1단계")
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewStudyIntroScreen() {
+//    StudyIntroScreen(levelText = "1단계")
+//}
