@@ -57,6 +57,7 @@ fun StudyThirdResultScreenWrapper(
     onBackClick: () -> Unit = {},
     onFinishClick: () -> Unit = {}
 ) {
+    android.util.Log.d("QUIZ_RESULT", "🟢 ResultScreen 들어옴 token=${token.take(8)}..., studyId=$studyId")
     val scope = rememberCoroutineScope()
 
     // 서버에서 불러온 퀴즈 리스트 (QuizItem)
@@ -65,8 +66,14 @@ fun StudyThirdResultScreenWrapper(
     // 사용자 선택 저장용 Map(questionIndex -> 선택된 답 String)
     val userAnswers = remember { mutableStateMapOf<Int, String>() }
 
-    // 화면 진입 시 서버에서 퀴즈 불러오기 요청 (한 번만 실행)
-    LaunchedEffect(Unit) {
+//    // 화면 진입 시 서버에서 퀴즈 불러오기 요청 (한 번만 실행)
+//    LaunchedEffect(studyId, token) {
+//        android.util.Log.d("QUIZ_RESULT", "📡 loadQuizList 호출: studyId=$studyId")
+//        viewModel.loadQuizList(token, studyId)
+//    }
+    // ✅ 변경
+    LaunchedEffect(studyId, token) {
+        android.util.Log.d("QUIZ_RESULT", "📡 loadQuizList 호출: studyId=$studyId")
         viewModel.loadQuizList(token, studyId)
     }
 
@@ -79,11 +86,13 @@ fun StudyThirdResultScreenWrapper(
     }
 
     // 서버에서 받은 QuizItem 리스트를 UI용 StudyResultQuestion 리스트로 변환
-    val resultQuestions = remember(quizList, userAnswers) {
+    val resultQuestions = remember(quizList) {
         quizList.map { quiz ->
-            val correctIndex = quiz.options.indexOf(quiz.answer)
-            val userChoice = userAnswers[quiz.questionIndex]
-            val userIndex = userChoice?.let { quiz.options.indexOf(it) }
+            val correctIndex = quiz.options.indexOf(quiz.answer).coerceAtLeast(0)
+            val userIndex = quiz.userChoice
+                ?.let { quiz.options.indexOf(it) }
+                ?.takeIf { it >= 0 }
+
             StudyResultQuestion(
                 question = quiz.question,
                 choices = quiz.options,
@@ -268,10 +277,13 @@ fun StudyThirdResultScreen(
 
         // ✅ 하단 버튼 (2단계와 동일한 스타일, 텍스트만 "메인으로")
         Row(
-            Modifier.fillMaxWidth(),
+            Modifier
+                .fillMaxWidth()
+                .offset(y = (-20).dp)           // 20dp 위로 올림
+                .padding(end = 24.dp),          // 🔹 오른쪽에서 24dp 여백
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Spacer(modifier = Modifier.width(160.dp)) // 왼쪽 빈칸 확보용
+            Spacer(modifier = Modifier.width(150.dp)) // 왼쪽 빈칸 확보용
 
             Button(
                 onClick = onFinishClick,
