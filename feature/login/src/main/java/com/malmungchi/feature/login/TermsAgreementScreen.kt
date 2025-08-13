@@ -292,7 +292,8 @@ private fun TermsRow(
             .fillMaxWidth()
             .heightIn(min = 44.dp)              // ⬅️ 56→44로 더 촘촘하게
             .clickable { onClick() }
-            .padding(horizontal = 0.dp, vertical = 0.dp), // ⬅️ 가로 패딩 0, 세로 2
+            // padding(end = 16.dp) 제거! 부모 Column이 이미 16을 보장
+            .padding(horizontal = 0.dp, vertical = 0.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Checkbox(
@@ -336,7 +337,7 @@ private fun annotated(base: String, required: Boolean) = buildAnnotatedString {
     backgroundColor = 0xFFF7F8FA,
     widthDp = 360,
     heightDp = 800,          // ← 높이 명시
-    showSystemUi = true
+    showSystemUi = false
 )
 @Composable
 private fun PreviewTermsAgreementScreen() {

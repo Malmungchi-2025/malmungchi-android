@@ -30,7 +30,16 @@ import com.malmungchi.feature.study.third.StudyThirdResultScreenWrapper
 import com.malmungchi.feature.study.third.StudyThirdScreen
 import androidx.compose.material3.Text
 import com.example.malmungchi.navigation.BottomNavItem
+import com.example.malmungchi.navigation.TermsRoute
+import com.malmungchi.feature.login.AppTermsScreen
 import com.malmungchi.feature.login.EmailLoginScreen
+import com.malmungchi.feature.login.MarketingTermsScreen
+import com.malmungchi.feature.login.PrivacyTermsScreen
+import com.malmungchi.feature.login.TermsAgreementScreen
+import com.malmungchi.feature.login.TermsDetailScreen
+import com.malmungchi.feature.login.sampleAppTerms
+import com.malmungchi.feature.login.sampleMarketingTerms
+import com.malmungchi.feature.login.samplePrivacyTerms
 
 @Composable
 fun MainApp() {
@@ -44,10 +53,56 @@ fun MainApp() {
                 },
                 onSignUp = {       // 회원가입 버튼 → 회원가입 화면(미구현 시 TODO)
                     // navController.navigate("sign_up") { launchSingleTop = true }
+                    navController.navigate(TermsRoute.Agreement) //약관 동의 페이지.
                 },
                 onKakao = { /* ... */ },
                 onNaver = { /* ... */ },
                 onGoogle = { /* ... */ }
+            )
+        }
+
+        // 약관 페이지
+        composable(TermsRoute.Agreement) {
+            TermsAgreementScreen(
+                onOpenAppTerms = { navController.navigate(TermsRoute.App) },
+                onOpenPrivacy = { navController.navigate(TermsRoute.Privacy) },
+                onOpenMarketing = { navController.navigate(TermsRoute.Marketing) },
+                onAgreeContinue = {
+                    navController.navigate("main") {
+                        popUpTo(TermsRoute.Agreement) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+        // 앱 서비스 이용약관
+        composable(TermsRoute.App) {
+            AppTermsScreen(
+                agreed = false, // 상태 hoisting 가능
+                onAgreeChange = { /* 필요 시 상태 저장 */ },
+                onBack = { navController.popBackStack() },
+                onDone = { navController.popBackStack() } // 완료도 뒤로
+            )
+        }
+
+        // 개인정보
+        composable(TermsRoute.Privacy) {
+            PrivacyTermsScreen(
+                agreed = false,
+                onAgreeChange = { },
+                onBack = { navController.popBackStack() },
+                onDone = { navController.popBackStack() }
+            )
+        }
+
+        // 마케팅
+        composable(TermsRoute.Marketing) {
+            MarketingTermsScreen(
+                agreed = false,
+                onAgreeChange = { },
+                onBack = { navController.popBackStack() },
+                onDone = { navController.popBackStack() }
             )
         }
 
