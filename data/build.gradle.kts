@@ -17,7 +17,7 @@ android {
         buildConfigField(
             "String",
             "SERVER_BASE_URL",
-            "\"https://dummy-server.local/\"" // 🔥 로컬 테스트용 URL , 무조건 수정!
+            "\"https://malmungchi-server.onrender.com/\"" // 🔥 로컬 테스트용 URL , 무조건 수정!
         )
     }
 
@@ -72,5 +72,10 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
 
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0") // ← 요게 꼭 필요
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
 
 }

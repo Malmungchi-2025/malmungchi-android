@@ -61,6 +61,7 @@ fun TermsScaffold(
     onComplete: () -> Unit,
     buttonText: String = "약관에 동의합니다.",
     requireScrollToEnd: Boolean = true,
+   // extraTopPadding: Dp = 0.dp,
     content: @Composable ColumnScope.(ScrollState) -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -68,6 +69,10 @@ fun TermsScaffold(
     val buttonEnabled = if (requireScrollToEnd) atBottom else true
 
     Column(Modifier.fillMaxSize()) {
+        // 상태바 높이만큼 안전하게 띄우기 (선택)
+        Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+        // 원하는 추가 여백 16dp
+        Spacer(Modifier.height(12.dp))
         // 상단바
         Box(
             Modifier
