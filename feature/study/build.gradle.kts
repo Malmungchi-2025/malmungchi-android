@@ -76,4 +76,5 @@ dependencies {
     // ✅ Core & Design 모듈
     implementation(project(":core"))
     implementation(project(":design"))
+    implementation(project(":data"))
 }

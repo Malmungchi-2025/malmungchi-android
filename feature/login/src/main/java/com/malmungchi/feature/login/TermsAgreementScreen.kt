@@ -76,6 +76,10 @@ fun TermsAgreementScreen(
             .fillMaxSize()
             .padding(horizontal = 16.dp)
     ) {
+        // 상태바 높이만큼 안전하게 띄우기 (선택)
+        Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+        // 원하는 추가 여백 16dp
+        Spacer(Modifier.height(12.dp))
         Spacer(Modifier.height(24.dp))
 
         // 상단 로고 & 타이틀

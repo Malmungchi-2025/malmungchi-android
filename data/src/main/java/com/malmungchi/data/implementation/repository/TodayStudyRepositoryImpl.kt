@@ -55,18 +55,15 @@ class TodayStudyRepositoryImpl(
             Log.d("API_SEARCH_WORD", "👉 Body = WordRequest(word=$word)")
 
             try {
-                val res = api.searchWord(
-                    "Bearer $token",
-                    WordRequest(word)
-                ) // ✅ ApiResponse<List<WordItem>> 로 변경됨
+                val res = api.searchWord("Bearer $token", com.malmungchi.data.api.WordRequest(word))
                 Log.d(
                     "API_SEARCH_WORD",
-                    "📥 [응답] success=${res.success}, message=${res.message}, resultCount=${res.result?.size ?: 0}"
+                    "📥 [응답] success=${res.success}, message=${res.message}"
                 )
 
-                if (res.success && !res.result.isNullOrEmpty()) {
-                    val firstWord = res.result.first() // ✅ 첫 번째 단어만 사용
-                    Result.success(firstWord)
+                val item = res.result
+                if (res.success && item != null) {
+                    Result.success(item)
                 } else {
                     Log.e("API_SEARCH_WORD", "❌ [실패] ${res.message}")
                     Result.failure(Exception(res.message ?: "단어 검색 실패"))
