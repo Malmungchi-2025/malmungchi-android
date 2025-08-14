@@ -35,11 +35,14 @@ import com.malmungchi.feature.login.AppTermsScreen
 import com.malmungchi.feature.login.EmailLoginScreen
 import com.malmungchi.feature.login.MarketingTermsScreen
 import com.malmungchi.feature.login.PrivacyTermsScreen
+import com.malmungchi.feature.login.SignUpFlowScreen
+import com.malmungchi.feature.login.SignUpRoute
 import com.malmungchi.feature.login.TermsAgreementScreen
 import com.malmungchi.feature.login.TermsDetailScreen
 import com.malmungchi.feature.login.sampleAppTerms
 import com.malmungchi.feature.login.sampleMarketingTerms
 import com.malmungchi.feature.login.samplePrivacyTerms
+
 
 @Composable
 fun MainApp() {
@@ -68,43 +71,99 @@ fun MainApp() {
                 onOpenPrivacy = { navController.navigate(TermsRoute.Privacy) },
                 onOpenMarketing = { navController.navigate(TermsRoute.Marketing) },
                 onAgreeContinue = {
-                    navController.navigate("main") {
+                    navController.navigate("sign_up_flow") {
                         popUpTo(TermsRoute.Agreement) { inclusive = true }
                         launchSingleTop = true
                     }
                 }
             )
         }
-
         // 앱 서비스 이용약관
         composable(TermsRoute.App) {
             AppTermsScreen(
-                agreed = false, // 상태 hoisting 가능
-                onAgreeChange = { /* 필요 시 상태 저장 */ },
                 onBack = { navController.popBackStack() },
-                onDone = { navController.popBackStack() } // 완료도 뒤로
+                onDone = { navController.popBackStack() }
             )
         }
 
-        // 개인정보
+// 개인정보
         composable(TermsRoute.Privacy) {
             PrivacyTermsScreen(
-                agreed = false,
-                onAgreeChange = { },
                 onBack = { navController.popBackStack() },
                 onDone = { navController.popBackStack() }
             )
         }
 
-        // 마케팅
+// 마케팅
         composable(TermsRoute.Marketing) {
             MarketingTermsScreen(
-                agreed = false,
-                onAgreeChange = { },
                 onBack = { navController.popBackStack() },
                 onDone = { navController.popBackStack() }
             )
         }
+
+//        // 회원가입 단계형 UI (이름 → 이메일/OTP → 비밀번호)
+//        composable("sign_up_flow") {
+//            SignUpFlowScreen(
+//                onBack = { navController.popBackStack() },
+//
+//                // 서버 연동 전: true 반환으로만 처리해 UI 흐름 확인
+//                onRequestEmailOtp = { _ -> true },
+//                onVerifyEmailOtp = { _, _ -> true },
+//
+//                // 가입 완료 → 메인으로 진입 (login 스택 정리)
+//                onDone = { name, email, _ ->
+//                    // TODO: 실제 가입 API 호출 자리
+//                    navController.navigate("main") {
+//                        popUpTo("login") { inclusive = true }
+//                        launchSingleTop = true
+//                    }
+//                }
+//            )
+//        }
+        // 회원가입 단계형 UI (이름 → 이메일/OTP → 비밀번호)
+        composable("sign_up_flow") {
+            SignUpRoute(
+                onBack = { navController.popBackStack() },
+                onRegistered = {
+                    // 가입 성공 시 이동
+                    navController.navigate("main") {
+                        popUpTo("login") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+//        // 앱 서비스 이용약관
+//        composable(TermsRoute.App) {
+//            AppTermsScreen(
+//                agreed = false, // 상태 hoisting 가능
+//                onAgreeChange = { /* 필요 시 상태 저장 */ },
+//                onBack = { navController.popBackStack() },
+//                onDone = { navController.popBackStack() } // 완료도 뒤로
+//            )
+//        }
+//
+//        // 개인정보
+//        composable(TermsRoute.Privacy) {
+//            PrivacyTermsScreen(
+//                agreed = false,
+//                onAgreeChange = { },
+//                onBack = { navController.popBackStack() },
+//                onDone = { navController.popBackStack() }
+//            )
+//        }
+//
+//        // 마케팅
+//        composable(TermsRoute.Marketing) {
+//            MarketingTermsScreen(
+//                agreed = false,
+//                onAgreeChange = { },
+//                onBack = { navController.popBackStack() },
+//                onDone = { navController.popBackStack() }
+//            )
+//        }
 
     //  신규: 이메일/비번 폼 화면
     composable("email_login") {

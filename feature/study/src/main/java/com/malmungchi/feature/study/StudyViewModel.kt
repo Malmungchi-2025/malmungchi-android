@@ -18,6 +18,11 @@ class StudyReadingViewModel @Inject constructor(
     private val repository: TodayStudyRepository
 ) : ViewModel() {
 
+    // ✅ 기본 토큰 (임시, 로그인 붙이기 전까지)
+   private val devToken get() = com.malmungchi.data.api.DevAuth.TOKEN
+
+//    private val tokenFromStore = authPreference.token ?: DevAuth.TOKEN -> 로그인 구현시 수정.
+
     private val _quote = MutableStateFlow("생성 중…")
     val quote: StateFlow<String> = _quote
 
