@@ -32,7 +32,7 @@ data class StudyQuestion(
 )
 @Composable
 fun StudyThirdScreen(
-    token: String,
+    //token: String,
     studyId: Int,
     text: String,
     viewModel: StudyReadingViewModel = hiltViewModel(),
@@ -44,7 +44,7 @@ fun StudyThirdScreen(
 
     // ✅ 퀴즈 생성: 최초 진입 시 1회만
     LaunchedEffect(Unit) {
-        viewModel.generateQuiz(token, text, studyId)
+        viewModel.generateQuiz(text, studyId)  // ✅ 토큰 제거, 순서: text → studyId
     }
 
     // ✅ 퀴즈가 아직 안 불러와졌다면 로딩 UI
@@ -166,11 +166,9 @@ fun StudyThirdScreen(
                     // ✅ 사용자가 선택한 보기와 정답을 서버에 저장
                     if (userChoice != null) {
                         viewModel.submitQuizAnswer(
-                            token = token,
                             studyId = studyId,
-                            index = currentQuestion.questionIndex,
-                            userChoice = userChoice,
-                            answer = currentQuestion.answer
+                            index = currentQuestion.questionIndex,  // ✅ 서버 1-based 인덱스
+                            userChoice = userChoice
                         )
                     }
 

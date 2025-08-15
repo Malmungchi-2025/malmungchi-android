@@ -19,6 +19,6 @@ data class QuizItem(
 data class QuizAnswerRequest(
     val studyId: Int,
     val questionIndex: Int,
-    val userChoice: String,
-    val isCorrect: Boolean
+    val userChoice: String
 )
+

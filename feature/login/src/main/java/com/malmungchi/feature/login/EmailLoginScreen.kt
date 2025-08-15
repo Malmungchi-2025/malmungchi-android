@@ -27,8 +27,7 @@ import com.malmungchi.feature.login.R
 import com.malmungchi.core.designsystem.Pretendard
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-
-
+import androidx.hilt.navigation.compose.hiltViewModel
 
 
 private val BrandBlue = Color(0xFF195FCF)
@@ -42,13 +41,14 @@ private val ErrorRed = Color(0xFFFF2F2F)
 @Composable
 fun EmailLoginScreen(
     onBack: () -> Unit,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: (userId: Int, token: String) -> Unit,
+    viewModel: AuthViewModel = hiltViewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var pw by remember { mutableStateOf("") }
     var saveId by remember { mutableStateOf(false) }
     var autoLogin by remember { mutableStateOf(false) }
-    var showPw by remember { mutableStateOf(false) }
+    //var showPw by remember { mutableStateOf(false) }
 
     // ⬇️ 로그인 실패/검증 실패 시 보여줄 에러 상태
     var authError by remember { mutableStateOf<String?>(null) }
@@ -276,15 +276,15 @@ fun EmailLoginScreen(
             Button(
                 //onClick = { onLoginSuccess() }, // TODO 실제 로그인 로직
                 onClick = {
-                    // TODO: 실제 로그인 로직 호출
-                    // 예시) 실패 시 에러 노출:
-                    // viewModel.login(email, pw) ...
-                    // onError: authError = "이메일주소 혹은 비밀번호를 다시 확인해주세요!"
-
-                    // 임시: 실패 케이스 미리보기
-                    authError = "이메일주소 혹은 비밀번호를 다시 확인해주세요!"
-                    // 성공 시:
-                    // onLoginSuccess()
+                    authError = null
+                    viewModel.login(email, pw) { ok, userId, token, msg ->
+                        if (ok && userId != null && token != null) {
+                            // 네비게이션(or 콜백)으로 메인에 id/토큰 전달
+                            onLoginSuccess(userId, token)
+                        } else {
+                            authError = msg ?: "이메일주소 혹은 비밀번호를 다시 확인해주세요!"
+                        }
+                    }
                 },enabled = formValid,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -389,7 +389,7 @@ private fun EmailLoginScreenPreview() {
     MaterialTheme {
         EmailLoginScreen(
             onBack = {},
-            onLoginSuccess = {}
+            onLoginSuccess = { _, _ -> }   // ← 파라미터 2개 받는 람다로 수정
         )
     }
 }
