@@ -8,5 +8,5 @@ interface AuthRepository {
     suspend fun register(email: String, password: String, name: String, nickname: String? = null): RegisterResponse
     suspend fun resendVerification(email: String): Boolean
     suspend fun login(email: String, password: String): LoginResponse
-    suspend fun me(token: String): UserDto?
+    suspend fun me(): UserDto?
 }

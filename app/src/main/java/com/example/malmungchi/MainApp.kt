@@ -30,7 +30,9 @@ import com.malmungchi.feature.study.third.StudyThirdResultScreenWrapper
 import com.malmungchi.feature.study.third.StudyThirdScreen
 import androidx.compose.material3.Text
 import com.example.malmungchi.navigation.BottomNavItem
+import com.example.malmungchi.navigation.LogNavDestinations
 import com.example.malmungchi.navigation.TermsRoute
+
 import com.malmungchi.feature.login.AppTermsScreen
 import com.malmungchi.feature.login.EmailLoginScreen
 import com.malmungchi.feature.login.MarketingTermsScreen
@@ -47,7 +49,10 @@ import com.malmungchi.feature.login.samplePrivacyTerms
 @Composable
 fun MainApp() {
     val navController = rememberNavController()
+    LogNavDestinations(navController) // 아래 보조 컴포저블
     NavHost(navController, startDestination = "login") {
+
+
     // 0) 인트로
         composable("login") {
             LoginScreen(
@@ -63,6 +68,7 @@ fun MainApp() {
                 onGoogle = { /* ... */ }
             )
         }
+
 
         // 약관 페이지
         composable(TermsRoute.Agreement) {
@@ -122,13 +128,22 @@ fun MainApp() {
 //            )
 //        }
         // 회원가입 단계형 UI (이름 → 이메일/OTP → 비밀번호)
+        // 기존
         composable("sign_up_flow") {
             SignUpRoute(
                 onBack = { navController.popBackStack() },
                 onRegistered = {
-                    // 가입 성공 시 이동
-                    navController.navigate("main") {
-                        popUpTo("login") { inclusive = true }
+                    // 가입 성공 시 이동 (기존: main)
+                    // navController.navigate("main") {
+                    //     popUpTo("login") { inclusive = true }
+                    //     launchSingleTop = true
+                    // }
+
+                    //  변경: 가입 성공 → 이메일 로그인 화면으로 이동
+                    navController.navigate("email_login") {
+                        // 로그인 전 플로우(약관/회원가입) 스택은 정리하고,
+                        // login 은 남겨둔 뒤 email_login 을 올린다.
+                        popUpTo("login") { inclusive = false }
                         launchSingleTop = true
                     }
                 }
@@ -166,17 +181,20 @@ fun MainApp() {
 //        }
 
     //  신규: 이메일/비번 폼 화면
-    composable("email_login") {
-        EmailLoginScreen(
-            onBack = { navController.popBackStack() },
-            onLoginSuccess = {
-                navController.navigate("main") {
-                    popUpTo("login") { inclusive = true }  // 인트로 스택 제거
-                    launchSingleTop = true
+        composable("email_login") {
+            EmailLoginScreen(
+                onBack = { navController.popBackStack() },
+                onLoginSuccess = { userId, token ->
+                    //  전역 세션에 주입 (모든 API 요청에 자동 반영)
+                    com.malmungchi.data.session.SessionManager.set(userId, token)
+
+                    navController.navigate("main") {
+                        popUpTo("login") { inclusive = true }
+                        launchSingleTop = true
+                    }
                 }
-            }
-        )
-    }
+            )
+        }
 
 
     // 1) 메인(하단바) - 로그인 후 진입
@@ -196,16 +214,20 @@ fun MainApp() {
             route = "study_graph",
             startDestination = "study_intro"
         ) {
-            // 1️⃣ Intro → Reading
+            // study_intro
             composable("study_intro") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("study_graph")
-                }
+                android.util.Log.d("NAV", ">> study_intro")
+                val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("study_graph") }
                 val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
+
                 StudyIntroScreen(
-                    onStart = {                       // ← 이름 통일
+                    onStart = { /* optional */ },
+                    onNavigateNext = {
+                        android.util.Log.d("NAV", ">> onNavigateNext: study_reading로 이동 시도")
                         navController.navigate("study_reading") {
-                            popUpTo("study_intro") { inclusive = true }
+                            launchSingleTop = true
+                            restoreState = true
+                            // popUpTo 금지 (우선은 정리 없이 동작 확인)
                         }
                     }
                 )
@@ -214,6 +236,7 @@ fun MainApp() {
 
             // 2️⃣ StudyReadingScreen → Appendix
             composable("study_reading") { backStackEntry ->
+                android.util.Log.d("NAV", ">> study_reading")
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("study_graph")
                 }
@@ -222,8 +245,11 @@ fun MainApp() {
                     viewModel = vm,
                     onNextClick = {
                         navController.navigate("appendix") {
-                            popUpTo("study_reading") { inclusive = true }
+                            launchSingleTop = true
+                            restoreState = true
+                            popUpTo("study_graph") { inclusive = false } // ✅
                         }
+
                     },
                     onBackClick = { navController.popBackStack() }
                 )
@@ -231,33 +257,60 @@ fun MainApp() {
 
             // 3️⃣ Appendix → 3초 후 AppendixList
             composable("appendix") {
+                android.util.Log.d("NAV", ">> appendix")
                 StudyAppendixScreen(
                     onNavigateNext = {
                         navController.navigate("appendix_list") {
-                            popUpTo("appendix") { inclusive = true }
+                            launchSingleTop = true
+                            restoreState = true
+                            popUpTo("study_graph") { inclusive = false } // ✅
                         }
                     }
                 )
             }
 
-            // 4️⃣ AppendixList → 2단계 Intro 로 이동하도록 수정
-            composable("appendix_list") {
-                val viewModel = hiltViewModel<StudyReadingViewModel>()
-                StudyAppendixListScreen(
-                    token = "dummy_token",
-                    studyId = 1,
-                    viewModel = viewModel,
-                    onBackClick = {
-                        navController.navigate("study_reading") {
-                            popUpTo("appendix_list") { inclusive = true }
-                        }
-                    },
-                    onNavigateNext = {
-                        navController.navigate("study_second_intro") { // ✅ study_second_intro로 변경
-                            popUpTo("appendix_list") { inclusive = true }
-                        }
+            // 4️⃣ AppendixList → 2단계 Intro
+            composable("appendix_list") { backStackEntry ->
+                // ✅ study_graph 스코프의 공유 ViewModel 사용
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("study_graph")
+                }
+                val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
+
+                // ⚠️ sid 먼저 선언
+                val sidState = vm.studyId.collectAsState()
+                val sid = sidState.value
+
+                // ✅ sid 값 로그는 선언 이후에
+                LaunchedEffect(sid) {
+                    android.util.Log.d("NAV", ">> appendix_list (sid=$sid)")
+                }
+
+                if (sid == null) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
                     }
-                )
+                } else {
+                    StudyAppendixListScreen(
+                        studyId = sid,       // ✅ 하드코딩 제거
+                        viewModel = vm,
+                        onBackClick = {
+                            navController.navigate("study_reading") {
+                                launchSingleTop = true
+                                restoreState = true
+                                popUpTo("study_graph") { inclusive = false } // ✅
+                            }
+
+                        },
+                        onNavigateNext = {
+                            navController.navigate("study_second_intro") {
+                                launchSingleTop = true
+                                restoreState = true
+                                popUpTo("study_graph") { inclusive = false }  // ✅ 그래프 루트
+                            }
+                        }
+                    )
+                }
             }
 
             // ✅ 5️⃣ 2단계 Intro → 2단계 본문 화면
@@ -265,7 +318,9 @@ fun MainApp() {
                 StudySecondIntroScreen(
                     onNavigateNext = {
                         navController.navigate("study_second") {
-                            popUpTo("study_second_intro") { inclusive = true }
+                            launchSingleTop = true
+                            restoreState = true
+                            popUpTo("study_graph") { inclusive = false } // ✅
                         }
                     }
                 )
@@ -273,15 +328,24 @@ fun MainApp() {
 
             // ✅ 6️⃣ 2단계 본문 화면 (StudySecondScreen 연결)
             // StudySecondScreen → onNextClick 에서 다음으로 이동
-            composable("study_second") {
-                val viewModel = hiltViewModel<StudyReadingViewModel>()
+            composable("study_second") { backStackEntry ->   // ✅ 파라미터 추가
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("study_graph")
+                }
+                val viewModel: StudyReadingViewModel = hiltViewModel(parentEntry) // ✅ 그래프 스코프 공유
+//            composable("study_second") {
+////                val viewModel = hiltViewModel<StudyReadingViewModel>()
+//                val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("study_graph") }
+//                val viewModel: StudyReadingViewModel = hiltViewModel(parentEntry) // ✅ 그래프 스코프 공유
                 StudySecondScreen(
-                    token = "dummy_token",
+                    //token = "dummy_token",
                     viewModel = viewModel,
                     onBackClick = { navController.popBackStack() },
                     onNextClick = {
                         navController.navigate("study_third_intro") {
-                            popUpTo("study_second") { inclusive = true }
+                            launchSingleTop = true
+                            restoreState = true
+                            popUpTo("study_graph") { inclusive = false }     // ✅ 그래프 루트
                         }
                     }
                 )
@@ -292,7 +356,9 @@ fun MainApp() {
                 StudyThirdIntroScreen(
                     onNavigateNext = {
                         navController.navigate("study_third") {
-                            popUpTo("study_third_intro") { inclusive = true }
+                            launchSingleTop = true
+                            restoreState = true
+                            popUpTo("study_graph") { inclusive = false } // ✅
                         }
                     }
                 )
@@ -310,7 +376,8 @@ fun MainApp() {
                 // 🔁 혹시 이전 단계에서 못 채웠다면 여기서라도 한 번 확보
                 LaunchedEffect(id, text) {
                     if (id == null || text.isBlank()) {
-                        vm.fetchTodayQuote(token)   // 최소한 진행 가능하도록 방어
+                        //vm.fetchTodayQuote(token)   // 최소한 진행 가능하도록 방어
+                        vm.fetchTodayQuote()
                     }
                 }
 
@@ -320,16 +387,18 @@ fun MainApp() {
                     }
                 } else {
                     StudyThirdScreen(
-                        token = token,
+                        //token = token,
                         studyId = id,
                         text = text,
                         viewModel = vm,
                         onBackClick = { navController.popBackStack() },
                         onNextClick = {
                             navController.navigate("study_third_result/$id") {
-                                // ✅ popUpTo는 “고정 라우트”만!
-                                popUpTo("study_third") { inclusive = true }
+                                launchSingleTop = true
+                                restoreState = true
+                                popUpTo("study_graph") { inclusive = false } // ✅
                             }
+
                         }
                     )
                 }
@@ -349,13 +418,15 @@ fun MainApp() {
                     }
                 } else {
                     StudyThirdResultScreenWrapper(
-                        token = "dummy_token",
+                        //token = "dummy_token",
                         studyId = id,
                         viewModel = vm,
                         onBackClick = { navController.popBackStack() },
                         onFinishClick = {
                             navController.navigate("study_third_complete") {
-                                popUpTo("study_third") { inclusive = true }
+                                launchSingleTop = true
+                                restoreState = true
+                                popUpTo("study_graph") { inclusive = false } // ✅
                             }
                         }
                     )
@@ -418,8 +489,12 @@ fun MainApp() {
                     onNextClick = {
                         // 완료 후 메인으로
                         navController.navigate("main") {
-                            popUpTo("study_third_complete") { inclusive = true }
+                            launchSingleTop = true
+                            popUpTo("study_graph") { inclusive = true } // ✅ 학습 플로우 전체 비움
                         }
+//                        navController.navigate("main") {
+//                            popUpTo("study_third_complete") { inclusive = true }
+//                        }
                     }
                 )
             }

@@ -141,14 +141,14 @@ fun BottomNavigationButtons(onBackClick: () -> Unit, onNextClick: () -> Unit) {
  */
 @Composable
 fun StudySecondScreen(
-    token: String,
+//    token: String,
     viewModel: StudyReadingViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
     onNextClick: () -> Unit = {}
 ) {
     val sentences by viewModel.sentences.collectAsState()
     val currentIndex by viewModel.currentIndex.collectAsState()
-    val savedInputs = remember { mutableStateMapOf<Int, String>() }
+   // val savedInputs = remember { mutableStateMapOf<Int, String>() }
     val listState = rememberLazyListState()
     var showAlert by remember { mutableStateOf(false) } // ✅ Alert 상태 추가
 
@@ -163,12 +163,16 @@ fun StudySecondScreen(
 
     // ✅ 최초 진입 시 서버 데이터 로드 및 UI 동기화
     LaunchedEffect(Unit) {
-        viewModel.initHandwritingStudy(token)
-        viewModel.fetchHandwriting(token) { loaded ->
-            savedInputs.clear()
-            savedInputs.putAll(loaded)
-        }
+        viewModel.initHandwritingStudy()         // ✅ 토큰 인자 제거
+        viewModel.fetchHandwriting()             // ✅ 토큰 인자 제거 (콜백도 선택사항)
     }
+//    LaunchedEffect(Unit) {
+//        viewModel.initHandwritingStudy(token)
+//        viewModel.fetchHandwriting(token) { loaded ->
+//            savedInputs.clear()
+//            savedInputs.putAll(loaded)
+//        }
+//    }
 
     // ✅ 현재 문장으로 스크롤 및 포커스 이동
     LaunchedEffect(currentIndex) {
@@ -200,13 +204,20 @@ fun StudySecondScreen(
                 val isEnabled = index <= currentIndex
 
                 // 🔥 입력이 완성되면 자동으로 다음 문장으로 이동
-                LaunchedEffect(savedInputs[index]) {
-                    val input = savedInputs[index]?.trim() ?: ""
-                    if (isEnabled && input.equals(sentence.trim(), ignoreCase = true) && index == currentIndex) {
-                        viewModel.saveAllInputs(savedInputs.toMap())
-                        if (currentIndex < sentences.size - 1) {
-                            viewModel.nextSentence()
-                        }
+//                LaunchedEffect(savedInputs[index]) {
+//                    val input = savedInputs[index]?.trim() ?: ""
+//                    if (isEnabled && input.equals(sentence.trim(), ignoreCase = true) && index == currentIndex) {
+//                        viewModel.saveAllInputs(savedInputs.toMap())
+//                        if (currentIndex < sentences.size - 1) {
+//                            viewModel.nextSentence()
+//                        }
+//                    }
+//                }
+                LaunchedEffect(viewModel.getInputFor(currentIndex)) {
+                    val input = viewModel.getInputFor(currentIndex).trim()
+                    val target = sentences.getOrNull(currentIndex)?.trim().orEmpty()
+                    if (input.equals(target, ignoreCase = true) && currentIndex < sentences.size - 1) {
+                        viewModel.nextSentence()
                     }
                 }
 
@@ -226,8 +237,10 @@ fun StudySecondScreen(
                         )
                         Spacer(Modifier.height(8.dp))
                         TextField(
-                            value = savedInputs[index] ?: viewModel.getInputFor(index),
-                            onValueChange = { savedInputs[index] = it },
+//                            value = savedInputs[index] ?: viewModel.getInputFor(index),
+//                            onValueChange = { savedInputs[index] = it },
+                            value = viewModel.getInputFor(index),             // ✅ VM 값 사용
+                            onValueChange = { viewModel.setInputFor(index, it) },  // ✅ VM에 직접 반영
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .focusRequester(focusRequesters.getOrNull(index) ?: FocusRequester()),
@@ -256,15 +269,23 @@ fun StudySecondScreen(
                 Text("이전 단계", fontSize = 16.sp, fontFamily = Pretendard)
             }
 
+//            Button(
+//                onClick = {
+//                    viewModel.saveAllInputs(savedInputs.toMap())
+//                    if (currentIndex < sentences.size - 1) {
+//                        // ✅ 아직 필사가 완료되지 않으면 Alert 띄움
+//                        showAlert = true
+//                    } else {
+//                        // ✅ 전부 완료 → 다음 단계
+//                        viewModel.finalizeHandwriting(token, onNextClick)
+//                    }
+//                },
             Button(
                 onClick = {
-                    viewModel.saveAllInputs(savedInputs.toMap())
                     if (currentIndex < sentences.size - 1) {
-                        // ✅ 아직 필사가 완료되지 않으면 Alert 띄움
-                        showAlert = true
+                        showAlert = true  // 아직 미완료 → 알럿
                     } else {
-                        // ✅ 전부 완료 → 다음 단계
-                        viewModel.finalizeHandwriting(token, onNextClick)
+                        viewModel.finalizeHandwriting(onNextClick)  // ✅ 토큰 인자 제거
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),

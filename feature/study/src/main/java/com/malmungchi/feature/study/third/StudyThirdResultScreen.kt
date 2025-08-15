@@ -51,13 +51,14 @@ data class StudyResultQuestion(
  */
 @Composable
 fun StudyThirdResultScreenWrapper(
-    token: String,
+    //token: String,
     studyId: Int,
     viewModel: StudyReadingViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
     onFinishClick: () -> Unit = {}
 ) {
-    android.util.Log.d("QUIZ_RESULT", "🟢 ResultScreen 들어옴 token=${token.take(8)}..., studyId=$studyId")
+    //android.util.Log.d("QUIZ_RESULT", "🟢 ResultScreen 들어옴 token=${token.take(8)}..., studyId=$studyId")
+    android.util.Log.d("QUIZ_RESULT", "🟢 ResultScreen 들어옴 studyId=$studyId")
     val scope = rememberCoroutineScope()
 
     // 서버에서 불러온 퀴즈 리스트 (QuizItem)
@@ -72,11 +73,14 @@ fun StudyThirdResultScreenWrapper(
 //        viewModel.loadQuizList(token, studyId)
 //    }
     // ✅ 변경
-    LaunchedEffect(studyId, token) {
+//    LaunchedEffect(studyId, token) {
+//        android.util.Log.d("QUIZ_RESULT", "📡 loadQuizList 호출: studyId=$studyId")
+//        viewModel.loadQuizList(token, studyId)
+//    }
+    LaunchedEffect(studyId) {
         android.util.Log.d("QUIZ_RESULT", "📡 loadQuizList 호출: studyId=$studyId")
-        viewModel.loadQuizList(token, studyId)
+        viewModel.loadQuizList(studyId)
     }
-
     // 퀴즈가 없으면 로딩 UI 보여줌
     if (quizList.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -114,24 +118,38 @@ fun StudyThirdResultScreenWrapper(
      * 사용자 답변 선택 시 호출 함수
      * 서버에 정답 저장 API 호출 및 로컬 상태 업데이트
      */
-    fun submitAnswer(questionIndex: Int, selectedChoice: String) {
-        // 답변이 맞는지 확인
-        val isCorrect = quizList.find { it.questionIndex == questionIndex }?.answer == selectedChoice
+    fun submitAnswer(localIndex: Int, selectedChoice: String) {
+        val quizItem = quizList[localIndex] // UI index → quiz 데이터
+        val serverIndex = quizItem.questionIndex // 서버에서 준 1-based 값
 
-        // ViewModel에 정답 저장 요청
+        val isCorrect = quizItem.answer == selectedChoice
+
         scope.launch {
             viewModel.submitQuizAnswer(
-                token = token,
                 studyId = studyId,
-                index = questionIndex,
-                userChoice = selectedChoice,
-                answer = quizList.find { it.questionIndex == questionIndex }?.answer ?: ""
+                index = serverIndex, // 서버의 questionIndex 사용
+                userChoice = selectedChoice
             )
         }
 
-        // UI용 상태에 사용자 선택 저장 (화면 갱신용)
-        userAnswers[questionIndex] = selectedChoice
+        userAnswers[serverIndex] = selectedChoice
     }
+//    fun submitAnswer(questionIndex: Int, selectedChoice: String) {
+//        // 답변이 맞는지 확인
+//        val isCorrect = quizList.find { it.questionIndex == questionIndex }?.answer == selectedChoice
+//
+//        // ViewModel에 정답 저장 요청
+//        scope.launch {
+//            viewModel.submitQuizAnswer(
+//                studyId = studyId,
+//                index = questionIndex,      // ⚠️ 서버의 questionIndex(1-based) 사용 권장
+//                userChoice = selectedChoice
+//            )
+//        }
+//
+//        // UI용 상태에 사용자 선택 저장 (화면 갱신용)
+//        userAnswers[questionIndex] = selectedChoice
+//    }
 
     // ※ UI 내부의 선택지 Surface 클릭 시 이 submitAnswer(questionIndex, choice) 함수를 호출
     // ※ UI 변경 금지라 함수만 정의해두고, 실제 클릭 핸들러 연결은 별도 구현 필요

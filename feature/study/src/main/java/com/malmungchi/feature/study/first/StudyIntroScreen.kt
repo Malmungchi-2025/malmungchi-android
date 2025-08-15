@@ -22,14 +22,30 @@ import kotlinx.coroutines.delay
 @Composable
 fun StudyIntroScreen(
     onStart: () -> Unit,
-    levelText: String = "1단계",
-    onNavigateNext: () -> Unit = {} // ✅ 콜백으로 다음 화면 이동 처리
+    onNavigateNext: () -> Unit // 기본값 제거
+    //levelText: String = "1단계",
+    //onNavigateNext: () -> Unit = {} // ✅ 콜백으로 다음 화면 이동 처리
 ) {
-    // 🔹 화면 진입 시 3초 후 자동 이동
+    // ✅ 최신 콜백을 항상 참조
+    val next by rememberUpdatedState(onNavigateNext)
+
+    // 3초 후 자동 이동
+//    LaunchedEffect(Unit) {
+//        kotlinx.coroutines.delay(3000)
+//        android.util.Log.d("NAV", ">> study_intro 타이머 끝, onNavigateNext 호출")
+//        onNext() // ✅ stale 캡처 방지
+//    }
     LaunchedEffect(Unit) {
-        delay(3000) // 3초 대기
-        onNavigateNext() // ✅ 다음 화면 콜백 실행
+        android.util.Log.d("NAV", ">> study_intro 타이머 시작")
+        delay(1500)
+
+        android.util.Log.d("NAV", ">> study_intro 타이머 끝, next() 호출 직전")
+        next()                            // ✅ 진짜 호출 (괄호 필수!)
+        android.util.Log.d("NAV", ">> study_intro next() 호출 완료")
     }
+
+    LaunchedEffect(Unit) { android.util.Log.d("NAV", ">> study_intro 진입") }
+
 
     Box(
         modifier = Modifier
@@ -43,7 +59,7 @@ fun StudyIntroScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = levelText,
+                text = "1단계",
                 color = Color(0xFF3F51B5),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,

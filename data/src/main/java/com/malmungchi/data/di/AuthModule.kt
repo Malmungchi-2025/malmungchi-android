@@ -21,24 +21,31 @@ object AuthModule {
 
     @Provides
     @Singleton
-    fun provideAuthService(): AuthService {
+    fun provideOkHttpClient(): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
-        val client = OkHttpClient.Builder()
+        return OkHttpClient.Builder()
+            .addInterceptor(com.malmungchi.data.network.AuthHeaderInterceptor())
             .addInterceptor(logging)
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .build()
+    }
 
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://malmungchi-server.onrender.com/") // 슬래시 필수
-            .client(client)
+    @Provides
+    @Singleton
+    fun provideRetrofit(client: OkHttpClient): Retrofit =
+        Retrofit.Builder()
+            .baseUrl("https://malmungchi-server.onrender.com/")
+            .client(client) //  인터셉터 포함 클라이언트 사용
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
-        return retrofit.create(AuthService::class.java)
-    }
+    @Provides
+    @Singleton
+    fun provideAuthService(retrofit: Retrofit): AuthService =
+        retrofit.create(AuthService::class.java)
 
     @Provides
     @Singleton

@@ -2,6 +2,7 @@ package com.malmungchi.data.api
 
 
 import com.malmungchi.core.model.*
+import com.malmungchi.data.api.dto.BaseResponse
 import retrofit2.http.*
 
 interface AuthService {
@@ -17,8 +18,9 @@ interface AuthService {
     @POST("/api/auth/login")
     suspend fun login(@Body body: LoginRequest): LoginResponse
 
+    // ✅ 변경:
     @GET("/api/auth/me")
-    suspend fun me(@Header("Authorization") bearer: String): BaseResponse<UserDto>
+    suspend fun me(): BaseResponse<UserDto>
 
     // ==== DEV OTP (서버에 방금 추가한 엔드포인트) ====
     @POST("/api/auth/dev/request-otp")

@@ -32,8 +32,8 @@ class AuthRepositoryImpl @Inject constructor(   // 👈 @Inject 추가
         return api.login(LoginRequest(email, password))
     }
 
-    override suspend fun me(token: String): UserDto? {
-        val r = api.me("Bearer $token")
-        return if (r.success) r.user else null
+    override suspend fun me(): UserDto? {
+        val r = api.me()
+        return if (r.success) r.result else null
     }
 }

@@ -25,7 +25,7 @@ import com.malmungchi.feature.study.StudyReadingViewModel
 
 @Composable
 fun StudyAppendixListScreen(
-    token: String,
+    //token: String,
     studyId: Int,
     viewModel: StudyReadingViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
@@ -35,7 +35,7 @@ fun StudyAppendixListScreen(
 
     // API 연동
     LaunchedEffect(Unit) {
-        viewModel.loadVocabularyList(token, studyId)
+        viewModel.loadVocabularyList(studyId)
     }
 
     StudyAppendixListContent(
