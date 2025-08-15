@@ -153,4 +153,41 @@ class AuthViewModel @Inject constructor(
         if (msg != null) _ui.update { it.copy(error = null) }
         return msg
     }
+
+
+    fun login(
+        email: String,
+        password: String,
+        onResult: (ok: Boolean, userId: Int?, token: String?, message: String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            _ui.update { it.copy(loading = true, error = null) }
+
+            runCatching { repo.login(email.trim(), password) }
+                .onSuccess { res ->
+                    val user = res.user
+                    val token = res.token
+
+                    if (res.success && token != null && user != null) {
+                        val userIdInt = try { user.id.toInt() } catch (_: Exception) { null }
+                        if (userIdInt != null) {
+                            _ui.update { it.copy(loading = false, lastLogin = res) }
+                            onResult(true, userIdInt, token, null)
+                        } else {
+                            _ui.update { it.copy(loading = false) }
+                            onResult(false, null, null, "로그인 실패: 잘못된 사용자 ID 형식")
+                        }
+                    } else {
+                        _ui.update { it.copy(loading = false) }
+                        onResult(false, null, null, res.message ?: "로그인 실패")
+                    }
+                }
+                .onFailure { t ->
+                    _ui.update { it.copy(loading = false) }
+                    onResult(false, null, null, t.message ?: "네트워크 오류")
+                }
+        }
+    }
+
+
 }
