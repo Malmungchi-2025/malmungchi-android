@@ -5,3 +5,4 @@ data class WordItem(
     val meaning: String,
     val example: String?
 )
+

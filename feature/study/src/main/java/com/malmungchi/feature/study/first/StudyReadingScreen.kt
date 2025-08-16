@@ -98,6 +98,12 @@ fun StudyReadingScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .padding(
+                start = 16.dp,
+                end = 16.dp,
+                bottom = 16.dp,
+                top = 32.dp      // ✅ 위는 32, 나머지는 16
+            )
             .onGloballyPositioned { coords -> boxCoords = coords }
     ) {
         // "수집" 말풍선

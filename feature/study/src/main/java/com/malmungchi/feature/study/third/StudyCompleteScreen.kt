@@ -31,7 +31,12 @@ fun StudyCompleteScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(horizontal = 16.dp),
+            .padding(
+                start = 16.dp,
+                end = 16.dp,
+                bottom = 16.dp,
+                top = 32.dp      // ✅ 위는 32, 나머지는 16
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
