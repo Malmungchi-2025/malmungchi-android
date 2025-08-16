@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import java.time.LocalDate
 
 
 @HiltViewModel
@@ -31,16 +32,68 @@ class StudyReadingViewModel @Inject constructor(
     private val _highlightWords = MutableStateFlow<List<String>>(emptyList())
     val highlightWords: StateFlow<List<String>> = _highlightWords
 
+    /** ✅ 지정 날짜의 통합 학습(글감/필사/단어/퀴즈) 한 번에 바인딩 */
+    fun fetchByDate(date: LocalDate) = viewModelScope.launch {
+        // 초기화
+        _studyId.value = null
+        _quote.value = "로딩 중…"
+        _savedWords.value = emptyList()
+        _highlightWords.value = emptyList()
+        _quizList.value = emptyList()
+        savedInputs.clear()
+        _userInput.value = ""
+
+        repository.getStudyByDate(date)
+            .onSuccess { b ->
+                // 기본 바인딩
+                _studyId.value = b.studyId
+                _quote.value = b.content
+
+                // 문장 분리 (필사 UI용)
+                _sentences.value = b.content
+                    .replace("\r\n", "\n")
+                    .split(Regex("(?<=[.!?])\\s+|\n+"))
+                    .map(String::trim)
+                    .filter { it.isNotEmpty() }
+
+                // 단어 하이라이트 & 저장 단어 목록
+                _savedWords.value = b.vocabulary
+                _highlightWords.value = b.vocabulary.map { it.word }
+
+                // 퀴즈 목록
+                _quizList.value = b.quizzes
+
+                // 필사 내용(있다면) 복원
+                if (b.handwriting.isNotBlank()) {
+                    val parts = b.handwriting.split(" ")
+                    parts.forEachIndexed { index, text -> savedInputs[index] = text }
+                    _userInput.value = savedInputs[0] ?: ""
+                }
+            }
+            .onFailure { e ->
+                Log.e("API_STUDY_BY_DATE", "❌ 날짜별 학습 조회 실패: ${e.message}", e)
+                _quote.value = "❗ ${e.message ?: "해당 날짜 학습이 없습니다."}"
+            }
+    }
+
     /** ✅ 오늘의 학습 글감 API 호출 (토큰 인자 제거) */
     fun fetchTodayQuote() {
         Log.d("API_FETCH_QUOTE", "📡 [요청] /api/gpt/generate-quote")
         viewModelScope.launch {
             repository.generateTodayQuote()
                 .onSuccess {
-                    Log.d("API_FETCH_QUOTE", "✅ [응답 성공] studyId=${it.studyId}")
+                    Log.d("API_FETCH_QUOTE", "✅ [응답 성공] studyId=${it.studyId}, level=${it.level}")
                     _quote.value = it.content
                     _studyId.value = it.studyId
+                    // 필요하면 레벨도 상태로 보관해서 UI에 뱃지/라벨 표시
+                    //_level.value = it.level ?: SessionManager.level
                 }
+//            repository.generateTodayQuote()
+//                .onSuccess {
+//                    Log.d("API_FETCH_QUOTE", "✅ [응답 성공] studyId=${it.studyId}")
+//                    _quote.value = it.content
+//                    _studyId.value = it.studyId
+//                }
                 .onFailure { e ->
                     Log.e("API_FETCH_QUOTE", "❌ [응답 실패] ${e.message}", e)
                     _quote.value = "❗ 오류: ${e.message}"

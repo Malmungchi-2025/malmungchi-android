@@ -9,11 +9,12 @@ data class BaseResponse<T>(
 )
 
 data class UserDto(
-    val id: Long,             // ← 서버/DB id가 int라면 Long도 OK (안전)
+    val id: Int,
     val email: String,
     val name: String,
     val nickname: String?,
-    val is_verified: Boolean
+    val is_verified: Boolean,
+    val level: Int          // ✅ 서버가 내려주는 1~4
 )
 
 data class RegisterRequest(
@@ -29,12 +30,11 @@ data class RegisterResponse(
 )
 
 
-
 data class LoginRequest(val email: String, val password: String)
 data class LoginResponse(
     val success: Boolean,
     val token: String?,
-    val user: UserDto?,       // 서버가 user 포함해 주는 형태
+    val user: UserDto?,            // ✅ user.level 포함
     val message: String? = null
 )
 

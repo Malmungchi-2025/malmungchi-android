@@ -35,10 +35,9 @@ fun MainScreen(
                 startDestination = "study/home"
             ) {
                 composable("study/home") {
-                    // 탭 홈 인트로: "시작하기" 버튼만 동작하면 됨 (자동 진행 X)
                     StudyIntroScreen(
                         onStart = onStartStudyFlow,
-                        onNavigateNext = onStartStudyFlow  // ⬅️ 타이머가 호출하는 next를 'study_graph' 진입으로 연결
+                        onNavigateNext = { /* 자동 진행 막기: 아무것도 안 함 */ }
                     )
                 }
             }

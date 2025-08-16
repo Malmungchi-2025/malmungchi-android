@@ -169,7 +169,7 @@ fun StudyThirdResultScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(horizontal = 16.dp)
+            .padding(16.dp)
     ) {
         TopBar(title = "오늘의 학습", onBackClick = onBackClick)
 
