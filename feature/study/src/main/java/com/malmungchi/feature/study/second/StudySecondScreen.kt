@@ -184,7 +184,12 @@ fun StudySecondScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(16.dp)
+            .padding(
+                start = 16.dp,
+                end = 16.dp,
+                bottom = 16.dp,
+                top = 32.dp      // ✅ 위는 32, 나머지는 16
+            )
     ) {
         TopBar(title = "오늘의 학습", onBackClick = onBackClick)
 

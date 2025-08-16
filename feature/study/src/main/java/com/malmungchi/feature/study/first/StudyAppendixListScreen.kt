@@ -58,7 +58,12 @@ fun StudyAppendixListContent(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(16.dp)
+            .padding(
+                start = 16.dp,
+                end = 16.dp,
+                bottom = 16.dp,
+                top = 32.dp      // ✅ 위는 32, 나머지는 16
+            )
     ) {
         // 🔹 상단 UI (오늘의 학습)
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

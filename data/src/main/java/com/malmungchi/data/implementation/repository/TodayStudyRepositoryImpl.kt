@@ -9,6 +9,7 @@ import android.util.Log
 import com.malmungchi.core.model.QuizAnswerRequest
 import com.malmungchi.core.model.QuizGenerationRequest
 import com.malmungchi.core.model.QuizItem
+import com.malmungchi.core.model.StudyBundle
 import com.malmungchi.core.model.TodayQuote
 import com.malmungchi.core.model.WordItem
 import com.malmungchi.core.repository.TodayStudyRepository
@@ -17,11 +18,36 @@ import com.malmungchi.data.api.WordRequest
 import com.malmungchi.data.api.WordSaveRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
+import com.malmungchi.data.api.mapper.toDomain
+import java.time.format.DateTimeFormatter
 
 
 class TodayStudyRepositoryImpl(
     private val api: TodayStudyApi
 ) : TodayStudyRepository {
+
+    /** ✅ 날짜별 통합 조회 (도메인 반환) */
+    override suspend fun getStudyByDate(date: LocalDate): Result<StudyBundle> = withContext(Dispatchers.IO) {
+        val iso = date.format(DateTimeFormatter.ISO_DATE)
+        Log.d("API_STUDY_BY_DATE", "📡 [요청] GET /api/gpt/study/by-date?date=$iso")
+        runCatching {
+            val res = api.getStudyByDate(iso)
+            check(res.success && res.result != null) { res.message ?: "해당 날짜 학습 없음" }
+            res.result!!.toDomain()   // DTO → 도메인
+        }
+    }
+
+    /** ✅ 달력용: 해당 연월의 학습 날짜 목록 */
+    override suspend fun getAvailableDates(year: String, month: String): Result<List<String>> = withContext(Dispatchers.IO) {
+        Log.d("API_STUDY_DATES", "📡 [요청] GET /api/gpt/study/available-dates?year=$year&month=$month")
+        runCatching {
+            val res = api.getAvailableDates(year, month)
+            check(res.success && res.result != null) { res.message ?: "학습 날짜 목록 조회 실패" }
+            res.result!!
+        }
+    }
+
 
     override suspend fun generateTodayQuote(): Result<TodayQuote> = withContext(Dispatchers.IO) {
         Log.d("API_GENERATE_QUOTE", "📡 [요청] POST /api/gpt/generate-quote")

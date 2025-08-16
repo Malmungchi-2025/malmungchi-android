@@ -3,9 +3,18 @@ package com.malmungchi.core.repository
 
 import com.malmungchi.core.model.QuizAnswerRequest
 import com.malmungchi.core.model.QuizItem
+import com.malmungchi.core.model.StudyBundle
 import com.malmungchi.core.model.TodayQuote
 import com.malmungchi.core.model.WordItem
+
+import java.time.LocalDate
+
 interface TodayStudyRepository {
+    // ✅ 지정 날짜의 통합 학습(글감/필사/단어/퀴즈+채점)
+    suspend fun getStudyByDate(date: LocalDate): Result<StudyBundle>
+
+    // ✅ 달력용: 해당 연월의 학습 존재 날짜 목록
+    suspend fun getAvailableDates(year: String, month: String): Result<List<String>>
     suspend fun generateTodayQuote(): Result<TodayQuote>
     suspend fun searchWordDefinition(word: String): Result<WordItem>
     suspend fun saveWord(studyId: Int, word: WordItem): Result<Unit>

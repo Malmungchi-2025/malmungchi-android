@@ -44,6 +44,10 @@ import com.malmungchi.feature.login.TermsDetailScreen
 import com.malmungchi.feature.login.sampleAppTerms
 import com.malmungchi.feature.login.sampleMarketingTerms
 import com.malmungchi.feature.login.samplePrivacyTerms
+import com.malmungchi.feature.study.intro.PastStudyScreenRoute
+import com.malmungchi.feature.study.intro.StudyWeeklyScreen
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 
 @Composable
@@ -185,10 +189,9 @@ fun MainApp() {
             EmailLoginScreen(
                 onBack = { navController.popBackStack() },
                 onLoginSuccess = { userId, token ->
-                    //  전역 세션에 주입 (모든 API 요청에 자동 반영)
                     com.malmungchi.data.session.SessionManager.set(userId, token)
 
-                    navController.navigate("main") {
+                    navController.navigate("study_graph") {
                         popUpTo("login") { inclusive = true }
                         launchSingleTop = true
                     }
@@ -201,20 +204,72 @@ fun MainApp() {
         composable("main") {
             MainScreen(
                 onStartStudyFlow = {
-                    // 메인에서 "시작" 누르면 학습 플로우 그래프로 진입
-                    navController.navigate("study_graph") {
-                        launchSingleTop = true
-                    }
+                    navController.navigate("study_graph") { launchSingleTop = true }
                 }
             )
         }
 
-        // 2) 오늘의 학습 플로우 그래프 (Intro → Reading → … → Complete)
+        // ✅ 1) startDestination을 주간 허브로
         navigation(
             route = "study_graph",
-            startDestination = "study_intro"
+            startDestination = "study_weekly"   // << 기존 "study_intro" 에서 변경
         ) {
-            // study_intro
+            // ✅ 2) 주간 허브 화면
+            composable("study_weekly") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("study_graph") }
+                val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
+
+                val today = LocalDate.now().format(DateTimeFormatter.ISO_DATE) // "YYYY-MM-DD"
+                val body = vm.quote.collectAsState().value                      // 프리뷰용(있으면 표시)
+
+                StudyWeeklyScreen(
+                    initialDateLabel = today,
+                    // 날짜 바뀔 때마다 프리뷰 불러오기 (404면 뷰모델에서 에러 문구 세팅됨)
+                    onDateChange = { label ->
+                        runCatching { LocalDate.parse(label) }
+                            .onSuccess { vm.fetchByDate(it) }
+                    },
+                    bodyText = body,
+                    onBackClick = { navController.popBackStack() },
+                    onGoStudyClick = {
+                        // “학습하러 가기 >” → 인트로로
+                        navController.navigate("study_intro") {
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onOpenPastStudy = { label ->
+                        // 날짜 탭 → 지난 학습 상세
+                        navController.navigate("past_study/$label") {
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
+            }
+
+            // ✅ 3) 지난 학습 상세 화면
+            composable("past_study/{date}") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("study_graph") }
+                val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
+
+                val dateParam = backStackEntry.arguments?.getString("date") // "YYYY-MM-DD"
+                val localDate = dateParam?.let { LocalDate.parse(it) }
+
+                // 진입 시 해당 날짜 통합 조회
+                LaunchedEffect(dateParam) {
+                    localDate?.let { vm.fetchByDate(it) }
+                }
+
+                PastStudyScreenRoute(
+                    dateLabel = dateParam?.replace("-", ".") ?: "", // 표시 전용: "YYYY.MM.DD"
+                    viewModel = vm,
+                    onLoad = null,                                  // 위 LaunchedEffect에서 호출
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            // ✅ 기존 인트로/리딩 이하 플로우는 그대로 유지
             composable("study_intro") { backStackEntry ->
                 android.util.Log.d("NAV", ">> study_intro")
                 val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("study_graph") }
@@ -227,7 +282,6 @@ fun MainApp() {
                         navController.navigate("study_reading") {
                             launchSingleTop = true
                             restoreState = true
-                            // popUpTo 금지 (우선은 정리 없이 동작 확인)
                         }
                     }
                 )
