@@ -3,6 +3,7 @@ package com.malmungchi.feature.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.malmungchi.core.BuildConfig
 import com.malmungchi.core.model.LoginResponse
 import com.malmungchi.core.model.RegisterResponse
 import com.malmungchi.core.repository.AuthRepository
@@ -51,20 +52,30 @@ class AuthViewModel @Inject constructor(
         runCatching { repo.devVerifyOtp(email.trim(), code) }.getOrElse { false }
     }
 
-    /** Gmail만 허용 (요구사항 반영) */
-    private fun isGmail(email: String): Boolean {
-        val normalized = email.trim().lowercase()
-        return normalized.endsWith("@gmail.com") && "@" in normalized
+//    /** Gmail만 허용 (요구사항 반영) */
+//    private fun isGmail(email: String): Boolean {
+//        val normalized = email.trim().lowercase()
+//        return normalized.endsWith("@gmail.com") && "@" in normalized
+//    }
+    //지메일&네이버만 메일 전송
+    private fun isAllowedEmail(email: String): Boolean {
+
+        val e = email.trim().lowercase()
+        return e.endsWith("@gmail.com") || e.endsWith("@naver.com")
+
     }
 
     /** 1) DEV: OTP 요청 */
     fun requestOtp(email: String) {
         viewModelScope.launch {
-            val e = email.trim()
-            if (!isGmail(e)) {
-                _events.send(AuthEvent.Toast("지메일 주소만 가입 가능합니다."))
+            val e = email.trim().lowercase()
+
+            // 🔴 릴리즈 빌드에서는 Gmail/Naver만 허용
+            if (!BuildConfig.DEBUG && !isAllowedEmail(e)) {
+                _events.send(AuthEvent.Toast("허용되지 않은 이메일 도메인입니다."))
                 return@launch
             }
+
             _ui.update { it.copy(loading = true, error = null) }
             runCatching {
                 repo.devRequestOtp(e)
@@ -80,6 +91,7 @@ class AuthViewModel @Inject constructor(
             }
         }
     }
+
 
     /** 2) DEV: OTP 검증 */
     fun verifyOtp(email: String, code: String) {
@@ -112,21 +124,30 @@ class AuthViewModel @Inject constructor(
             val e = email.trim().lowercase()
             val p = password
 
-            if (n.isBlank()) { _events.send(AuthEvent.Toast("이름을 입력해 주세요.")); return@launch }
-            if (!isGmail(e)) { _events.send(AuthEvent.Toast("지메일 주소만 가입 가능합니다.")); return@launch }
-            if (p.length < 8) { _events.send(AuthEvent.Toast("비밀번호는 8자 이상이어야 합니다.")); return@launch }
+            if (n.isBlank()) {
+                _events.send(AuthEvent.Toast("이름을 입력해 주세요.")); return@launch
+            }
+            if (p.length < 8) {
+                _events.send(AuthEvent.Toast("비밀번호는 8자 이상이어야 합니다.")); return@launch
+            }
+
+            // 🔴 릴리즈 빌드에서는 Gmail/Naver만 허용
+            if (!BuildConfig.DEBUG && !isAllowedEmail(e)) {
+                _events.send(AuthEvent.Toast("허용되지 않은 이메일 도메인입니다."))
+                return@launch
+            }
 
             _ui.update { it.copy(loading = true, error = null) }
             runCatching {
                 repo.register(e, p, n, nickname)
             }.onSuccess { res ->
-                if (res.success && res.user != null) {
+                if (res.success) {
                     _ui.update { it.copy(loading = false, registered = true, lastRegister = res) }
                     _events.send(AuthEvent.Registered)
                 } else {
                     _ui.update { it.copy(loading = false, error = res.message ?: "회원가입 실패") }
                 }
-            }.onFailure { t->
+            }.onFailure { t ->
                 _ui.update { s -> s.copy(loading = false, error = t.message ?: "네트워크 오류") }
             }
         }
