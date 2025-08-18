@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import java.time.LocalDate
+import retrofit2.HttpException
 
 
 @HiltViewModel
@@ -49,21 +50,17 @@ class StudyReadingViewModel @Inject constructor(
                 _studyId.value = b.studyId
                 _quote.value = b.content
 
-                // 문장 분리 (필사 UI용)
                 _sentences.value = b.content
                     .replace("\r\n", "\n")
                     .split(Regex("(?<=[.!?])\\s+|\n+"))
                     .map(String::trim)
                     .filter { it.isNotEmpty() }
 
-                // 단어 하이라이트 & 저장 단어 목록
                 _savedWords.value = b.vocabulary
                 _highlightWords.value = b.vocabulary.map { it.word }
 
-                // 퀴즈 목록
                 _quizList.value = b.quizzes
 
-                // 필사 내용(있다면) 복원
                 if (b.handwriting.isNotBlank()) {
                     val parts = b.handwriting.split(" ")
                     parts.forEachIndexed { index, text -> savedInputs[index] = text }
@@ -71,8 +68,22 @@ class StudyReadingViewModel @Inject constructor(
                 }
             }
             .onFailure { e ->
-                Log.e("API_STUDY_BY_DATE", "❌ 날짜별 학습 조회 실패: ${e.message}", e)
-                _quote.value = "❗ ${e.message ?: "해당 날짜 학습이 없습니다."}"
+                if (e is HttpException && e.code() == 404) {
+                    // ✅ 데이터 없음: 에러로 취급하지 않고 "빈 상태"로 세팅
+                    Log.d("API_STUDY_BY_DATE", "ℹ️ 해당 날짜 학습 데이터 없음(404). 빈 상태로 표시.")
+                    _studyId.value = null
+                    _quote.value = ""                 // ← UI에서 "학습한 글감이 없습니다."로 표시됨
+                    _sentences.value = emptyList()
+                    _savedWords.value = emptyList()
+                    _highlightWords.value = emptyList()
+                    _quizList.value = emptyList()
+                    savedInputs.clear()
+                    _userInput.value = ""
+                } else {
+                    // 그 외 에러만 에러로 표기
+                    Log.e("API_STUDY_BY_DATE", "❌ 날짜별 학습 조회 실패: ${e.message}", e)
+                    _quote.value = "❗ ${e.message ?: "오류가 발생했습니다."}"
+                }
             }
     }
 
