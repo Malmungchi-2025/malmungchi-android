@@ -34,58 +34,95 @@ class StudyReadingViewModel @Inject constructor(
     val highlightWords: StateFlow<List<String>> = _highlightWords
 
     /** ✅ 지정 날짜의 통합 학습(글감/필사/단어/퀴즈) 한 번에 바인딩 */
-    fun fetchByDate(date: LocalDate) = viewModelScope.launch {
-        // 초기화
+    /** 지난 날짜 통합 조회 (채점결과는 무시해서 세팅) */
+    fun fetchPastStudyByDate(date: LocalDate) = viewModelScope.launch {
         _studyId.value = null
         _quote.value = "로딩 중…"
         _savedWords.value = emptyList()
         _highlightWords.value = emptyList()
         _quizList.value = emptyList()
-        savedInputs.clear()
-        _userInput.value = ""
 
         repository.getStudyByDate(date)
             .onSuccess { b ->
-                // 기본 바인딩
                 _studyId.value = b.studyId
                 _quote.value = b.content
-
-                _sentences.value = b.content
-                    .replace("\r\n", "\n")
-                    .split(Regex("(?<=[.!?])\\s+|\n+"))
-                    .map(String::trim)
-                    .filter { it.isNotEmpty() }
 
                 _savedWords.value = b.vocabulary
                 _highlightWords.value = b.vocabulary.map { it.word }
 
-                _quizList.value = b.quizzes
-
-                if (b.handwriting.isNotBlank()) {
-                    val parts = b.handwriting.split(" ")
-                    parts.forEachIndexed { index, text -> savedInputs[index] = text }
-                    _userInput.value = savedInputs[0] ?: ""
+                // ✅ 채점 관련 필드(userChoice, isCorrect)는 버린다
+                _quizList.value = b.quizzes.map { q ->
+                    q.copy(
+                        userChoice = null,
+                        isCorrect = null
+                    )
                 }
             }
             .onFailure { e ->
+                // 404면 빈 상태
                 if (e is HttpException && e.code() == 404) {
-                    // ✅ 데이터 없음: 에러로 취급하지 않고 "빈 상태"로 세팅
-                    Log.d("API_STUDY_BY_DATE", "ℹ️ 해당 날짜 학습 데이터 없음(404). 빈 상태로 표시.")
                     _studyId.value = null
-                    _quote.value = ""                 // ← UI에서 "학습한 글감이 없습니다."로 표시됨
-                    _sentences.value = emptyList()
+                    _quote.value = ""
                     _savedWords.value = emptyList()
                     _highlightWords.value = emptyList()
                     _quizList.value = emptyList()
-                    savedInputs.clear()
-                    _userInput.value = ""
                 } else {
-                    // 그 외 에러만 에러로 표기
-                    Log.e("API_STUDY_BY_DATE", "❌ 날짜별 학습 조회 실패: ${e.message}", e)
                     _quote.value = "❗ ${e.message ?: "오류가 발생했습니다."}"
                 }
             }
     }
+//    fun fetchByDate(date: LocalDate) = viewModelScope.launch {
+//        // 초기화
+//        _studyId.value = null
+//        _quote.value = "로딩 중…"
+//        _savedWords.value = emptyList()
+//        _highlightWords.value = emptyList()
+//        _quizList.value = emptyList()
+//        savedInputs.clear()
+//        _userInput.value = ""
+//
+//        repository.getStudyByDate(date)
+//            .onSuccess { b ->
+//                // 기본 바인딩
+//                _studyId.value = b.studyId
+//                _quote.value = b.content
+//
+//                _sentences.value = b.content
+//                    .replace("\r\n", "\n")
+//                    .split(Regex("(?<=[.!?])\\s+|\n+"))
+//                    .map(String::trim)
+//                    .filter { it.isNotEmpty() }
+//
+//                _savedWords.value = b.vocabulary
+//                _highlightWords.value = b.vocabulary.map { it.word }
+//
+//                _quizList.value = b.quizzes
+//
+//                if (b.handwriting.isNotBlank()) {
+//                    val parts = b.handwriting.split(" ")
+//                    parts.forEachIndexed { index, text -> savedInputs[index] = text }
+//                    _userInput.value = savedInputs[0] ?: ""
+//                }
+//            }
+//            .onFailure { e ->
+//                if (e is HttpException && e.code() == 404) {
+//                    // ✅ 데이터 없음: 에러로 취급하지 않고 "빈 상태"로 세팅
+//                    Log.d("API_STUDY_BY_DATE", "ℹ️ 해당 날짜 학습 데이터 없음(404). 빈 상태로 표시.")
+//                    _studyId.value = null
+//                    _quote.value = ""                 // ← UI에서 "학습한 글감이 없습니다."로 표시됨
+//                    _sentences.value = emptyList()
+//                    _savedWords.value = emptyList()
+//                    _highlightWords.value = emptyList()
+//                    _quizList.value = emptyList()
+//                    savedInputs.clear()
+//                    _userInput.value = ""
+//                } else {
+//                    // 그 외 에러만 에러로 표기
+//                    Log.e("API_STUDY_BY_DATE", "❌ 날짜별 학습 조회 실패: ${e.message}", e)
+//                    _quote.value = "❗ ${e.message ?: "오류가 발생했습니다."}"
+//                }
+//            }
+//    }
 
     /** ✅ 오늘의 학습 글감 API 호출 (토큰 인자 제거) */
     fun fetchTodayQuote() {

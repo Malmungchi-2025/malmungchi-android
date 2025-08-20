@@ -227,7 +227,7 @@ fun MainApp() {
                     // 날짜 바뀔 때마다 프리뷰 불러오기 (404면 뷰모델에서 에러 문구 세팅됨)
                     onDateChange = { label ->
                         runCatching { LocalDate.parse(label) }
-                            .onSuccess { vm.fetchByDate(it) }
+                            .onSuccess { vm.fetchPastStudyByDate(it) }
                     },
                     bodyText = body,
                     onBackClick = { navController.popBackStack() },
@@ -258,7 +258,7 @@ fun MainApp() {
 
                 // 진입 시 해당 날짜 통합 조회
                 LaunchedEffect(dateParam) {
-                    localDate?.let { vm.fetchByDate(it) }
+                    localDate?.let { vm.fetchPastStudyByDate(it) }
                 }
 
                 PastStudyScreenRoute(

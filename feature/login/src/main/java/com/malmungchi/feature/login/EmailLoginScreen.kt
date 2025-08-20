@@ -356,7 +356,7 @@ fun EmailLoginScreen(
                 Spacer(Modifier.width(20.dp))
                 SocialIcon64(resId = R.drawable.ic_naver) { /* TODO */ }
                 Spacer(Modifier.width(20.dp))
-                SocialIcon64(resId = R.drawable.ic_google_png) { /* TODO */ }
+                SocialIcon64(resId = R.drawable.ic_google) { /* TODO */ }
             }
         }
     }
