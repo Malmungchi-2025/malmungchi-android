@@ -29,6 +29,7 @@ import com.malmungchi.core.model.QuizItem
 import com.malmungchi.feature.study.Pretendard
 import com.malmungchi.feature.study.R
 import com.malmungchi.feature.study.StudyReadingViewModel
+import com.malmungchi.core.model.WordItem
 
 // ---------- UI 모델 ----------
 data class PastQuizUI(
@@ -52,6 +53,13 @@ fun PastStudyScreenRoute(
 
     val quote: String? by viewModel.quote.collectAsState()
     val quizItems: List<QuizItem> by viewModel.quizList.collectAsState(initial = emptyList())
+    val studyId by viewModel.studyId.collectAsState(initial = null)
+    val words by viewModel.savedWords.collectAsState()
+
+    // ✅ studyId가 세팅되면 그날의 단어 목록 로드
+    LaunchedEffect(studyId) {
+        studyId?.let { viewModel.loadVocabularyList(it) }
+    }
 
     val uiQuizzes: List<PastQuizUI> = remember(quizItems) {
         quizItems.map { q ->
@@ -71,6 +79,7 @@ fun PastStudyScreenRoute(
         dateLabel = dateLabel,
         bodyText = quote.orEmpty(),
         quizzes = uiQuizzes,
+        words = words,                // ✅ 단어 전달
         onBackClick = onBackClick
     )
 }
@@ -81,6 +90,7 @@ fun PastStudyScreen(
     dateLabel: String,
     bodyText: String,
     quizzes: List<PastQuizUI>,
+    words: List<WordItem>,
     onBackClick: () -> Unit = {}
 ) {
     LazyColumn(
@@ -141,44 +151,93 @@ fun PastStudyScreen(
             SectionTitle("본문")
             Spacer(Modifier.height(8.dp))
 
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color(0xFFF7F7F7),
-                shadowElevation = 0.dp,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            SectionCard {
                 Text(
                     text = if (bodyText.isBlank()) "불러올 본문이 없습니다." else bodyText,
                     fontSize = 16.sp,
                     fontFamily = Pretendard,
                     fontWeight = FontWeight.Medium,
                     color = Color(0xFF333333),
-                    lineHeight = 25.6.sp,
-                    modifier = Modifier.padding(16.dp)
+                    lineHeight = 25.6.sp
                 )
             }
 
             Spacer(Modifier.height(16.dp))
 
-            SectionTitle("이해 퀴즈")
-            Spacer(Modifier.height(8.dp))
+//            Surface(
+//                shape = RoundedCornerShape(12.dp),
+//                color = Color(0xFFF7F7F7),
+//                shadowElevation = 0.dp,
+//                modifier = Modifier.fillMaxWidth()
+//            ) {
+//                Text(
+//                    text = if (bodyText.isBlank()) "불러올 본문이 없습니다." else bodyText,
+//                    fontSize = 16.sp,
+//                    fontFamily = Pretendard,
+//                    fontWeight = FontWeight.Medium,
+//                    color = Color(0xFF333333),
+//                    lineHeight = 25.6.sp,
+//                    modifier = Modifier.padding(16.dp)
+//                )
+//            }
+//
+//            Spacer(Modifier.height(16.dp))
+//
+//            //SectionTitle("이해 퀴즈")
+//            Spacer(Modifier.height(8.dp))
         }
 
         // ---------- Quiz List ----------
-        if (quizzes.isEmpty()) {
-            item {
-                Text(
-                    text = "이해 퀴즈가 없습니다.",
-                    fontSize = 16.sp,
-                    fontFamily = Pretendard,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF666666)
-                )
+        item {
+            Spacer(Modifier.height(16.dp))
+            SectionTitle("이해 퀴즈")
+            Spacer(Modifier.height(8.dp))
+
+            SectionCard {
+                if (quizzes.isEmpty()) {
+                    Text(
+                        text = "이해 퀴즈가 없습니다.",
+                        fontSize = 16.sp,
+                        fontFamily = Pretendard,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF666666)
+                    )
+                } else {
+                    Column {
+                        quizzes.forEachIndexed { index, item ->
+                            QuizResultCard(index = index, total = quizzes.size, data = item)
+                            if (index != quizzes.lastIndex) Spacer(Modifier.height(12.dp))
+                        }
+                    }
+                }
             }
-        } else {
-            itemsIndexed(quizzes) { index, item ->
-                QuizResultCard(index = index, total = quizzes.size, data = item)
-                Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
+        }
+
+
+        // ----- 수집한 단어 -----
+        item {
+            Spacer(Modifier.height(16.dp))
+            SectionTitle("수집한 단어")
+            Spacer(Modifier.height(8.dp))
+
+            SectionCard {
+                if (words.isEmpty()) {
+                    Text(
+                        text = "수집한 단어가 없습니다.",
+                        fontSize = 16.sp,
+                        fontFamily = Pretendard,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF666666)
+                    )
+                } else {
+                    Column {
+                        words.forEachIndexed { i, w ->
+                            WordCard(w)   // 각 카드 배경 F7F7F7
+                            if (i != words.lastIndex) Spacer(Modifier.height(8.dp))
+                        }
+                    }
+                }
             }
         }
     }
@@ -196,33 +255,31 @@ private fun SectionTitle(text: String) {
 }
 
 @Composable
+private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFFF7F7F7), // ✅ 섹션 카드 배경 F7F7F7
+        shadowElevation = 2.dp,     // ✅ 섹션 카드 그림자
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp), content = content)
+    }
+}
+
+@Composable
 private fun QuizResultCard(index: Int, total: Int, data: PastQuizUI) {
-    val isCorrect = data.userAnswerIndex != null && data.userAnswerIndex == data.correctIndex
-    val resultIcon = if (isCorrect) R.drawable.ic_correct else R.drawable.ic_wrong
-
-    Box(Modifier.fillMaxWidth()) {
-        Image(
-            painter = painterResource(id = resultIcon),
-            contentDescription = null,
-            modifier = Modifier
-                .size(72.dp)
-                .align(Alignment.TopStart)
-        )
-
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFFF7F7F7),   // 아이템 카드 배경
+        shadowElevation = 2.dp,      // 아이템 카드 그림자
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 8.dp, top = 12.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color.White)
                 .padding(16.dp)
         ) {
-            Text(
-                text = "${index + 1}/$total",
-                fontSize = 12.sp,
-                fontFamily = Pretendard,
-                color = Color.Gray
-            )
+            Text("${index + 1}/$total", fontSize = 12.sp, fontFamily = Pretendard, color = Color(0xFF666666))
             Spacer(Modifier.height(8.dp))
             Text(
                 text = data.question,
@@ -234,53 +291,77 @@ private fun QuizResultCard(index: Int, total: Int, data: PastQuizUI) {
             )
             Spacer(Modifier.height(12.dp))
 
-            data.choices.forEachIndexed { i, choice ->
-                val isSelected = data.userAnswerIndex == i
-                val isCorrectAnswer = data.correctIndex == i
-
-                val bg = when {
-                    isCorrectAnswer -> Color(0xFF195FCF)
-                    isSelected -> Color(0xFFE0E0E0)
-                    else -> Color(0xFFF7F7F7)
-                }
-                val fg = if (isCorrectAnswer) Color.White else Color.Black
-
+            data.choices.forEach { choice ->
                 Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     shape = RoundedCornerShape(12.dp),
-                    color = bg,
-                    shadowElevation = 2.dp
+                    color = Color(0xFFF7F7F7),
+                    shadowElevation = 0.dp
                 ) {
                     Text(
                         text = choice,
                         fontSize = 14.sp,
                         fontFamily = Pretendard,
-                        color = fg,
-                        modifier = Modifier.padding(12.dp),
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
+                        color = Color(0xFF111111),
+                        modifier = Modifier.padding(12.dp)
                     )
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
-            Text("정답", fontSize = 12.sp, fontFamily = Pretendard, color = Color.Gray)
+            // ✅ 해설은 항상 노출 (정답/OX 없이)
+            if (data.explanation.isNotBlank()) {
+                Spacer(Modifier.height(12.dp))
+                Text("해설", fontSize = 12.sp, fontFamily = Pretendard, color = Color(0xFF888888))
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = data.explanation,
+                    fontSize = 14.sp,
+                    fontFamily = Pretendard,
+                    color = Color(0xFF333333),
+                    lineHeight = 22.sp
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun WordCard(item: WordItem) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        shadowElevation = 0.dp, // 그림자 제거
+        color = Color(0xFFF7F7F7), // ← 요구 색
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+    ) {
+        Column(Modifier.padding(12.dp)) {
             Text(
-                text = data.choices[data.correctIndex],
-                fontSize = 14.sp,
+                item.word,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
                 fontFamily = Pretendard,
-                color = Color.DarkGray
+                color = Color(0xFF333333)
             )
-            Spacer(Modifier.height(8.dp))
-            Text("해설", fontSize = 12.sp, fontFamily = Pretendard, color = Color.Gray)
             Text(
-                text = data.explanation,
+                ": ${item.meaning}",
                 fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
                 fontFamily = Pretendard,
-                color = Color.DarkGray
+                color = Color(0xFF333333),
+                modifier = Modifier.padding(top = 4.dp)
             )
+            if (!item.example.isNullOrEmpty()) {
+                Text(
+                    "예문) ${item.example}",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = Pretendard,
+                    color = Color(0xFF616161),
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
         }
     }
 }
@@ -300,7 +381,9 @@ private fun PreviewPastStudyScreen_NoQuiz() {
     PastStudyScreen(
         dateLabel = "2025.04.01",
         bodyText = "예시 본문",
-        quizzes = emptyList()
+        quizzes = emptyList(),
+        words = emptyList(),
+
     )
 }
 @Preview(showBackground = true)
@@ -314,6 +397,7 @@ private fun PreviewPastStudyScreen_Centered() {
     PastStudyScreen(
         dateLabel = "2025.04.01",
         bodyText = "예시 본문",
-        quizzes = sample
+        quizzes = sample,
+        words = emptyList(),
     )
 }

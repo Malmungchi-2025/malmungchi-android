@@ -176,7 +176,7 @@ fun LoginScreen(
                 ) {
                     SocialIcon(R.drawable.ic_kakao) { onKakao() }
                     SocialIcon(R.drawable.ic_naver) { onNaver() }
-                    SocialIcon(R.drawable.ic_google_png) { onGoogle() }
+                    SocialIcon(R.drawable.ic_google) { onGoogle() }
                 }
 
 
@@ -201,7 +201,7 @@ fun LoginScreen(
                         style = TextStyle(
                             fontFamily = Pretendard,
                             fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Medium,
                             color = Color(0xFFFFFFFF)
                         ),
                         modifier = Modifier

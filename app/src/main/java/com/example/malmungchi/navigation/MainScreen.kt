@@ -3,6 +3,7 @@ package com.example.malmungchi.navigation
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,7 +14,15 @@ import com.malmungchi.feature.quiz.QuizScreen
 import com.malmungchi.feature.study.StudyScreen
 import com.malmungchi.feature.mypage.MyPageScreen
 import androidx.navigation.navigation
+import com.malmungchi.feature.study.StudyReadingViewModel
 import com.malmungchi.feature.study.first.StudyIntroScreen
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.collectAsState
+
+import com.malmungchi.feature.study.intro.StudyWeeklyScreen
+
 
 @Composable
 fun MainScreen(
@@ -29,15 +38,31 @@ fun MainScreen(
             startDestination = BottomNavItem.Study.route, // 로그인 후 기본 탭
             modifier = Modifier.padding(innerPadding)
         ) {
-            // 오늘의 학습 (탭 내부 네비게이션)
+            // ✅ 오늘의 학습 (탭 내부 네비게이션)
             navigation(
                 route = BottomNavItem.Study.route,
-                startDestination = "study/home"
+                startDestination = "study/weekly"   // <-- 변경: 주간 허브로 시작
             ) {
-                composable("study/home") {
-                    StudyIntroScreen(
-                        onStart = onStartStudyFlow,
-                        onNavigateNext = { /* 자동 진행 막기: 아무것도 안 함 */ }
+                composable("study/weekly") {
+                    // 탭 안에서도 프리뷰/날짜 조회가 필요하면 VM 사용
+                    val vm: StudyReadingViewModel = hiltViewModel()
+                    val today = LocalDate.now()
+                        .format(DateTimeFormatter.ISO_DATE)
+                    val body = vm.quote.collectAsState().value
+
+                    StudyWeeklyScreen(
+                        initialDateLabel = today,
+                        onDateChange = { label ->
+                            runCatching { LocalDate.parse(label) }
+                                .onSuccess { vm.fetchPastStudyByDate(it) }
+                        },
+                        bodyText = body,
+                        onBackClick = { /* 탭 루트라 보통 noop */ },
+                        onGoStudyClick = {
+                            // “학습하러 가기 >” → 루트 NavHost의 study_graph 진입
+                            onStartStudyFlow()
+                        },
+                        onOpenPastStudy = { /* 필요시 루트로 진입 후 해당 화면 열도록 확장 */ }
                     )
                 }
             }
