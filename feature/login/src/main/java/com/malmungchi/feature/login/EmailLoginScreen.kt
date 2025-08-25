@@ -28,6 +28,8 @@ import com.malmungchi.core.designsystem.Pretendard
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 
 private val BrandBlue = Color(0xFF195FCF)
@@ -42,13 +44,18 @@ private val ErrorRed = Color(0xFFFF2F2F)
 fun EmailLoginScreen(
     onBack: () -> Unit,
     onLoginSuccess: (userId: Int, token: String) -> Unit,
-    viewModel: AuthViewModel = hiltViewModel()
+    viewModel: AuthViewModel = hiltViewModel(),
+    // 👇 추가 (프리뷰 전용, 실제 런타임에선 null 유지)
+    loginOverride: ((String, String, (Boolean, Int?, String?, String?) -> Unit) -> Unit)? = null
 ) {
     var email by remember { mutableStateOf("") }
     var pw by remember { mutableStateOf("") }
     var saveId by remember { mutableStateOf(false) }
     var autoLogin by remember { mutableStateOf(false) }
     //var showPw by remember { mutableStateOf(false) }
+
+    // 👇 추가: 사용할 로그인 함수 결정
+    val doLogin = loginOverride ?: viewModel::login
 
     // ⬇️ 로그인 실패/검증 실패 시 보여줄 에러 상태
     var authError by remember { mutableStateOf<String?>(null) }
@@ -81,7 +88,13 @@ fun EmailLoginScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "뒤로", tint = Color.Black)
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "뒤로",
+                            tint = Color.Black   // 👈 필요하면 tint 지정
+                        )
+                        //Icon(Icons.Filled.ArrowBack, contentDescription = "뒤로")
+                        //Icon(Icons.Filled.ArrowBack, contentDescription = "뒤로", tint = Color.Black)
                     }
                 }
             )
@@ -277,7 +290,8 @@ fun EmailLoginScreen(
                 //onClick = { onLoginSuccess() }, // TODO 실제 로그인 로직
                 onClick = {
                     authError = null
-                    viewModel.login(email, pw) { ok, userId, token, msg ->
+                    //viewModel.login(email, pw) { ok, userId, token, msg ->
+                    doLogin(email, pw) { ok, userId, token, msg ->
                         if (ok && userId != null && token != null) {
                             // 네비게이션(or 콜백)으로 메인에 id/토큰 전달
                             onLoginSuccess(userId, token)
@@ -383,13 +397,22 @@ fun SocialIcon64(
     }
 }
 
+
+
+
+
 @Preview(showBackground = true, showSystemUi = true, name = "EmailLoginScreen")
 @Composable
 private fun EmailLoginScreenPreview() {
     MaterialTheme {
         EmailLoginScreen(
             onBack = {},
-            onLoginSuccess = { _, _ -> }   // ← 파라미터 2개 받는 람다로 수정
+            onLoginSuccess = { _, _ -> },
+            // 👇 프리뷰용 가짜 로그인
+            loginOverride = { email, _, cb ->
+                val ok = email.endsWith("@test.com")
+                cb(ok, if (ok) 1 else null, if (ok) "TOKEN123" else null, if (ok) null else "프리뷰 실패")
+            }
         )
     }
 }
