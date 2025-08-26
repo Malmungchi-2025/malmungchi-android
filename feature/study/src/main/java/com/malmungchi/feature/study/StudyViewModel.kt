@@ -14,6 +14,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import java.time.LocalDate
 import retrofit2.HttpException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
 
 @HiltViewModel
@@ -32,6 +35,32 @@ class StudyReadingViewModel @Inject constructor(
 
     private val _highlightWords = MutableStateFlow<List<String>>(emptyList())
     val highlightWords: StateFlow<List<String>> = _highlightWords
+
+    private val _studiedDates = MutableStateFlow<Set<String>>(emptySet())
+    val studiedDates: StateFlow<Set<String>> = _studiedDates
+
+    // 기존 함수 전체 교체
+    fun refreshStudiedDatesForWeek(center: LocalDate) = viewModelScope.launch {
+        // API 26 없이 '그 주의 월요일' 구하기 (월=1 … 일=7)
+        val dayValue = center.dayOfWeek.value           // 1..7
+        val daysBackToMonday = (dayValue - 1).toLong()  // 월요일까지 되돌아갈 일수
+        val monday = center.minusDays(daysBackToMonday)
+
+        val days: List<LocalDate> = (0..6).map { monday.plusDays(it.toLong()) }
+
+        // 병렬 조회 (suspend 안전 영역)
+        val results: List<Boolean> = coroutineScope {
+            days.map { d ->
+                async { repository.getStudyByDate(d).isSuccess }
+            }.awaitAll()
+        }
+
+        _studiedDates.value = days
+            .zip(results)               // Pair<LocalDate, Boolean>
+            .filter { pair -> pair.second }
+            .map { pair -> pair.first.toString() } // "yyyy-MM-dd"
+            .toSet()
+    }
 
     /** ✅ 지정 날짜의 통합 학습(글감/필사/단어/퀴즈) 한 번에 바인딩 */
     /** 지난 날짜 통합 조회 (채점결과는 무시해서 세팅) */

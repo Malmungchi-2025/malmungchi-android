@@ -219,15 +219,34 @@ fun MainApp() {
                 val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("study_graph") }
                 val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
 
-                val today = LocalDate.now().format(DateTimeFormatter.ISO_DATE) // "YYYY-MM-DD"
-                val body = vm.quote.collectAsState().value                      // 프리뷰용(있으면 표시)
 
+
+                val today = LocalDate.now().format(DateTimeFormatter.ISO_DATE) // "YYYY-MM-DD"
+                val body = vm.quote.collectAsState().value
+
+                // ✅ 학습한 날짜들(yyyy-MM-dd) 수집
+                val studiedDates = vm.studiedDates.collectAsState(initial = emptySet()).value
+
+                //val studiedDates by vm.studiedDates.collectAsState(initial = emptySet())
+
+                // 진입 직후 첫 주 데이터를 미리 당겨오기
+                LaunchedEffect(today) {
+                    vm.refreshStudiedDatesForWeek(LocalDate.parse(today))
+                }
+
+
+                // 프리뷰용(있으면 표시)
                 StudyWeeklyScreen(
                     initialDateLabel = today,
                     // 날짜 바뀔 때마다 프리뷰 불러오기 (404면 뷰모델에서 에러 문구 세팅됨)
                     onDateChange = { label ->
-                        runCatching { LocalDate.parse(label) }
-                            .onSuccess { vm.fetchPastStudyByDate(it) }
+                        runCatching { LocalDate.parse(label) }.onSuccess { picked ->
+                            // 1) 해당 날짜 본문 요청 (기존)
+                            vm.fetchPastStudyByDate(picked)
+
+                            // 2) ✅ 이 날짜가 포함된 '주'의 학습일 목록 새로고침 (신규)
+                            vm.refreshStudiedDatesForWeek(picked)
+                        }
                     },
                     bodyText = body,
                     onBackClick = { navController.popBackStack() },
@@ -244,7 +263,9 @@ fun MainApp() {
                             launchSingleTop = true
                             restoreState = true
                         }
-                    }
+                    },
+                    // ✅ 여기 한 줄 때문에 컴파일 에러가 사라지고, 파란 칩이 뜹니다.
+                    hasStudy = { day -> studiedDates.any { it.take(10) == day } }
                 )
             }
 
