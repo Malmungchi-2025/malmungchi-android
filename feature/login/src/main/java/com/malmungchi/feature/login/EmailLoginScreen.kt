@@ -1,6 +1,7 @@
 package com.malmungchi.feature.login
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -104,6 +105,7 @@ fun EmailLoginScreen(
             modifier = Modifier
                 .padding(inner)
                 .fillMaxSize()
+                .background(Color.White)
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.Top
         ) {

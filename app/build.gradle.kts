@@ -8,6 +8,8 @@ plugins {
     // Hilt
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+
+
 }
 
 android {
