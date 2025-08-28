@@ -178,7 +178,9 @@ fun StudyReadingScreen(
                                 showCollectBubble = true
                             },
                             modifier = contentModifier,
-                            textStyle = commonTextStyle
+                            textStyle = commonTextStyle,
+                            // ✅ 추가: 말풍선 기준이 될 바깥 Box 좌표
+                            containerCoords = boxCoords
                         )
                     }
                     2 -> {
@@ -270,7 +272,10 @@ fun ClickableHighlightedText(
     selectedWord: String? = null,
     onWordClick: (String, Offset) -> Unit,
     modifier: Modifier = Modifier,
-    textStyle: TextStyle = TextStyle.Default
+    textStyle: TextStyle = TextStyle.Default,
+    // ✅ 추가: 바깥 박스 좌표(말풍선이 얹힐 컨테이너)
+    containerCoords: LayoutCoordinates? = null
+
 ) {
     val density = LocalDensity.current
     val words = text.split(" ")
@@ -321,22 +326,51 @@ fun ClickableHighlightedText(
             }
         },
         onClick = { offset ->
-            annotated.getStringAnnotations("WORD", offset, offset).firstOrNull()?.let { annotation ->
-                val rect = wordPositions[annotation.item]
-                if (rect != null && textLayoutCoords != null) {
-                    val globalCenter = textLayoutCoords!!.localToRoot(
-                        Offset(rect.left + rect.width / 2, rect.top)
-                    )
-                    val yOffset = with(density) { 8.dp.toPx() }
-                    val finalPos = Offset(globalCenter.x, globalCenter.y - rect.height - yOffset)
-                    onWordClick(annotation.item, finalPos)
-                } else {
-                    onWordClick(annotation.item, Offset.Zero)
+            annotated.getStringAnnotations("WORD", offset, offset).firstOrNull()
+                ?.let { annotation ->
+                    val rect = wordPositions[annotation.item]
+                    if (rect != null && textLayoutCoords != null) {
+                        // 단어 중앙 상단 기준점(ClickableText 로컬)
+                        val anchorInText = Offset(rect.left + rect.width / 2, rect.top)
+
+                        // ✅ 바깥 Box 로컬 좌표로 변환
+                        val anchorInBox =
+                            if (containerCoords != null)
+                                containerCoords.localPositionOf(textLayoutCoords!!, anchorInText)
+                            else
+                                anchorInText
+
+                        // ✅ 말풍선(top-left) 위치 계산: 단어 위로 48dp + 간격 8dp
+                        val bubbleTopLeft = Offset(
+                            x = anchorInBox.x, // X는 상단에서 가운데 정렬은 Image.offset에서 -24dp 처리
+                            y = anchorInBox.y - with(density) { 48.dp.toPx() + 8.dp.toPx() }
+                        )
+
+                        onWordClick(annotation.item, bubbleTopLeft)
+                    } else {
+                        onWordClick(annotation.item, Offset.Zero)
+                    }
                 }
-            }
         }
     )
 }
+//        onClick = { offset ->
+//            annotated.getStringAnnotations("WORD", offset, offset).firstOrNull()?.let { annotation ->
+//                val rect = wordPositions[annotation.item]
+//                if (rect != null && textLayoutCoords != null) {
+//                    val globalCenter = textLayoutCoords!!.localToRoot(
+//                        Offset(rect.left + rect.width / 2, rect.top)
+//                    )
+//                    val yOffset = with(density) { 8.dp.toPx() }
+//                    val finalPos = Offset(globalCenter.x, globalCenter.y - rect.height - yOffset)
+//                    onWordClick(annotation.item, finalPos)
+//                } else {
+//                    onWordClick(annotation.item, Offset.Zero)
+//                }
+//            }
+//        }
+//    )
+//}
 
 /** 파란펜: 서버 단어 목록 Regex 하이라이트 */
 @Composable

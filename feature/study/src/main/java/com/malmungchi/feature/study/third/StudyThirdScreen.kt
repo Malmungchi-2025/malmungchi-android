@@ -32,7 +32,6 @@ data class StudyQuestion(
 )
 @Composable
 fun StudyThirdScreen(
-    //token: String,
     studyId: Int,
     text: String,
     viewModel: StudyReadingViewModel = hiltViewModel(),
@@ -42,41 +41,26 @@ fun StudyThirdScreen(
     // ✅ ViewModel에서 가져온 퀴즈 리스트
     val quizList by viewModel.quizList.collectAsState()
 
-    // ✅ 퀴즈 생성: 최초 진입 시 1회만
-    LaunchedEffect(Unit) {
-        viewModel.generateQuiz(text, studyId)  // ✅ 토큰 제거, 순서: text → studyId
-    }
+    // ✅ 최초 진입 시 1회 호출
+    LaunchedEffect(Unit) { viewModel.generateQuiz(text, studyId) }
 
-    // ✅ 퀴즈가 아직 안 불러와졌다면 로딩 UI
-    if (quizList.isEmpty()) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
-        return
-    }
+    // ✅ 로딩 플래그
+    val isLoading = quizList.isEmpty()
 
-    // ✅ 현재 문제 인덱스 & 유저 선택 관리
+    // ✅ 현재 문제 인덱스 & 선택값 (로딩 때도 state는 유지)
     var currentIndex by remember { mutableStateOf(0) }
     val selectedAnswers = remember { mutableStateMapOf<Int, Int>() }
 
-    val currentQuestion = quizList[currentIndex]
-    val selectedAnswer = selectedAnswers[currentIndex]
+    val currentQuestion = if (!isLoading) quizList[currentIndex] else null
+    val selectedAnswer = if (!isLoading) selectedAnswers[currentIndex] else null
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(
-                start = 16.dp,
-                end = 16.dp,
-                bottom = 16.dp,
-                top = 32.dp      // ✅ 위는 32, 나머지는 16
-            )
+            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 32.dp)
     ) {
-        // ✅ 상단바
+        // ✅ 상단바는 항상 보이게
         TopBar(title = "오늘의 학습", onBackClick = onBackClick)
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -85,7 +69,7 @@ fun StudyThirdScreen(
         StepProgressBarPreview(totalSteps = 3, currentStep = 3)
         Spacer(modifier = Modifier.height(24.dp))
 
-        // ✅ 전체 카드 박스
+        // ✅ 카드: 로딩 중이면 인디케이터만
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -94,51 +78,61 @@ fun StudyThirdScreen(
             color = Color.White,
             shadowElevation = 6.dp
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "${currentIndex + 1}/${quizList.size}",
-                    fontSize = 12.sp,
-                    color = Color.Gray,
-                    fontFamily = Pretendard
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 180.dp) // 로딩 시에도 레이아웃 안정
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color(0xFF195FCF))
+                }
+            } else {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "${currentIndex + 1}/${quizList.size}",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        fontFamily = Pretendard
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                Text(
-                    text = currentQuestion.question,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = Pretendard,
-                    lineHeight = 26.sp,
-                    color = Color.Black
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = currentQuestion!!.question,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = Pretendard,
+                        lineHeight = 26.sp,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                currentQuestion.options.forEachIndexed { index, choice ->
-                    val isSelected = selectedAnswer == index
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) Color(0xFF195FCF) else Color.White,
-                        shadowElevation = 2.dp,
-                        onClick = {
-                            selectedAnswers[currentIndex] = index
-                        }
-                    ) {
-                        Box(
+                    currentQuestion.options.forEachIndexed { index, choice ->
+                        val isSelected = selectedAnswer == index
+                        Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
-                            contentAlignment = Alignment.CenterStart
+                                .padding(vertical = 6.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isSelected) Color(0xFF195FCF) else Color.White,
+                            shadowElevation = 2.dp,
+                            onClick = { selectedAnswers[currentIndex] = index }
                         ) {
-                            Text(
-                                text = choice,
-                                fontSize = 16.sp,
-                                fontFamily = Pretendard,
-                                fontWeight = FontWeight.Medium,
-                                color = if (isSelected) Color.White else Color(0xFF333333)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Text(
+                                    text = choice,
+                                    fontSize = 16.sp,
+                                    fontFamily = Pretendard,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (isSelected) Color.White else Color(0xFF333333)
+                                )
+                            }
                         }
                     }
                 }
@@ -147,15 +141,14 @@ fun StudyThirdScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // ✅ 하단 버튼 (다음 문제 or 다음 단계)
+        // ✅ 하단 버튼: 로딩 중 비활성화
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             OutlinedButton(
-                onClick = {
-                    if (currentIndex > 0) currentIndex--
-                },
+                onClick = { if (!isLoading && currentIndex > 0) currentIndex-- },
+                enabled = !isLoading && currentIndex > 0,
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF195FCF)),
                 modifier = Modifier.height(42.dp).width(160.dp)
@@ -165,32 +158,32 @@ fun StudyThirdScreen(
 
             Button(
                 onClick = {
-                    val selectedIndex = selectedAnswers[currentIndex]
-                    val userChoice = selectedIndex?.let { currentQuestion.options[it] }
+                    if (isLoading) return@Button
 
-                    // ✅ 사용자가 선택한 보기와 정답을 서버에 저장
+                    val selectedIndex = selectedAnswers[currentIndex]
+                    val userChoice = selectedIndex?.let { currentQuestion!!.options[it] }
+
                     if (userChoice != null) {
                         viewModel.submitQuizAnswer(
                             studyId = studyId,
-                            index = currentQuestion.questionIndex,  // ✅ 서버 1-based 인덱스
+                            index = currentQuestion!!.questionIndex, // 1-based
                             userChoice = userChoice
                         )
                     }
 
-                    // ✅ 다음 문제 or 마지막 문제 → 다음 단계
                     if (currentIndex < quizList.lastIndex) {
                         currentIndex++
                     } else {
                         onNextClick()
                     }
                 },
-                enabled = selectedAnswer != null,
+                enabled = !isLoading && selectedAnswer != null,
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
                 modifier = Modifier.height(42.dp).width(160.dp)
             ) {
                 Text(
-                    text = if (currentIndex < quizList.lastIndex) "다음 문제" else "다음 단계",
+                    text = if (!isLoading && currentIndex < quizList.lastIndex) "다음 문제" else "다음 단계",
                     fontSize = 16.sp,
                     fontFamily = Pretendard,
                     color = Color.White
@@ -199,6 +192,179 @@ fun StudyThirdScreen(
         }
     }
 }
+//@Composable
+//fun StudyThirdScreen(
+//    //token: String,
+//    studyId: Int,
+//    text: String,
+//    viewModel: StudyReadingViewModel = hiltViewModel(),
+//    onBackClick: () -> Unit = {},
+//    onNextClick: () -> Unit = {}
+//) {
+//    // ✅ ViewModel에서 가져온 퀴즈 리스트
+//    val quizList by viewModel.quizList.collectAsState()
+//
+//    // ✅ 퀴즈 생성: 최초 진입 시 1회만
+//    LaunchedEffect(Unit) {
+//        viewModel.generateQuiz(text, studyId)  // ✅ 토큰 제거, 순서: text → studyId
+//    }
+//    // ✅ 로딩 여부
+//    val isLoading = quizList.isEmpty()
+//
+//
+//
+//    // ✅ 퀴즈가 아직 안 불러와졌다면 로딩 UI
+//    if (quizList.isEmpty()) {
+//        Box(
+//            modifier = Modifier.fillMaxSize(),
+//            contentAlignment = Alignment.Center
+//        ) {
+//            CircularProgressIndicator()
+//        }
+//        return
+//    }
+//
+//    // ✅ 현재 문제 인덱스 & 유저 선택 관리
+//    var currentIndex by remember { mutableStateOf(0) }
+//    val selectedAnswers = remember { mutableStateMapOf<Int, Int>() }
+//
+//    val currentQuestion = quizList[currentIndex]
+//    val selectedAnswer = selectedAnswers[currentIndex]
+//
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .background(Color.White)
+//            .padding(
+//                start = 16.dp,
+//                end = 16.dp,
+//                bottom = 16.dp,
+//                top = 32.dp      // ✅ 위는 32, 나머지는 16
+//            )
+//    ) {
+//        // ✅ 상단바
+//        TopBar(title = "오늘의 학습", onBackClick = onBackClick)
+//
+//        Spacer(modifier = Modifier.height(24.dp))
+//        Text("학습 진행률", fontSize = 16.sp, color = Color.Black, modifier = Modifier.padding(start = 8.dp))
+//        Spacer(modifier = Modifier.height(16.dp))
+//        StepProgressBarPreview(totalSteps = 3, currentStep = 3)
+//        Spacer(modifier = Modifier.height(24.dp))
+//
+//        // ✅ 전체 카드 박스
+//        Surface(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(vertical = 4.dp),
+//            shape = RoundedCornerShape(12.dp),
+//            color = Color.White,
+//            shadowElevation = 6.dp
+//        ) {
+//            Column(modifier = Modifier.padding(16.dp)) {
+//                Text(
+//                    text = "${currentIndex + 1}/${quizList.size}",
+//                    fontSize = 12.sp,
+//                    color = Color.Gray,
+//                    fontFamily = Pretendard
+//                )
+//                Spacer(modifier = Modifier.height(8.dp))
+//
+//                Text(
+//                    text = currentQuestion.question,
+//                    fontSize = 18.sp,
+//                    fontWeight = FontWeight.SemiBold,
+//                    fontFamily = Pretendard,
+//                    lineHeight = 26.sp,
+//                    color = Color.Black
+//                )
+//                Spacer(modifier = Modifier.height(16.dp))
+//
+//                currentQuestion.options.forEachIndexed { index, choice ->
+//                    val isSelected = selectedAnswer == index
+//                    Surface(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .padding(vertical = 6.dp),
+//                        shape = RoundedCornerShape(12.dp),
+//                        color = if (isSelected) Color(0xFF195FCF) else Color.White,
+//                        shadowElevation = 2.dp,
+//                        onClick = {
+//                            selectedAnswers[currentIndex] = index
+//                        }
+//                    ) {
+//                        Box(
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .padding(16.dp),
+//                            contentAlignment = Alignment.CenterStart
+//                        ) {
+//                            Text(
+//                                text = choice,
+//                                fontSize = 16.sp,
+//                                fontFamily = Pretendard,
+//                                fontWeight = FontWeight.Medium,
+//                                color = if (isSelected) Color.White else Color(0xFF333333)
+//                            )
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        Spacer(modifier = Modifier.height(32.dp))
+//
+//        // ✅ 하단 버튼 (다음 문제 or 다음 단계)
+//        Row(
+//            Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.SpaceBetween
+//        ) {
+//            OutlinedButton(
+//                onClick = {
+//                    if (currentIndex > 0) currentIndex--
+//                },
+//                shape = RoundedCornerShape(50),
+//                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF195FCF)),
+//                modifier = Modifier.height(42.dp).width(160.dp)
+//            ) {
+//                Text("이전 문제", fontSize = 16.sp, fontFamily = Pretendard)
+//            }
+//
+//            Button(
+//                onClick = {
+//                    val selectedIndex = selectedAnswers[currentIndex]
+//                    val userChoice = selectedIndex?.let { currentQuestion.options[it] }
+//
+//                    // ✅ 사용자가 선택한 보기와 정답을 서버에 저장
+//                    if (userChoice != null) {
+//                        viewModel.submitQuizAnswer(
+//                            studyId = studyId,
+//                            index = currentQuestion.questionIndex,  // ✅ 서버 1-based 인덱스
+//                            userChoice = userChoice
+//                        )
+//                    }
+//
+//                    // ✅ 다음 문제 or 마지막 문제 → 다음 단계
+//                    if (currentIndex < quizList.lastIndex) {
+//                        currentIndex++
+//                    } else {
+//                        onNextClick()
+//                    }
+//                },
+//                enabled = selectedAnswer != null,
+//                shape = RoundedCornerShape(50),
+//                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
+//                modifier = Modifier.height(42.dp).width(160.dp)
+//            ) {
+//                Text(
+//                    text = if (currentIndex < quizList.lastIndex) "다음 문제" else "다음 단계",
+//                    fontSize = 16.sp,
+//                    fontFamily = Pretendard,
+//                    color = Color.White
+//                )
+//            }
+//        }
+//    }
+//}
 
 @Preview(showBackground = true)
 @Composable
