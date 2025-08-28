@@ -62,6 +62,8 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
+
+
     // Core & Design 모듈
     implementation(project(":core"))
     implementation(project(":design"))
