@@ -76,6 +76,14 @@ interface TodayStudyApi {
     // 요청 바디들
     data class HandwritingRequest(val study_id: Int, val content: String)
 
+    @POST("/api/gpt/study/complete-reward")
+    suspend fun rewardTodayStudy(): BaseResponse<PointRewardResponse>
+
+    // 보상 결과 DTO
+    data class PointRewardResponse(
+        val todayReward: Int,     // 오늘 지급한 포인트 (15)
+        val totalPoint: Int       // 현재 전체 보유 포인트
+    )
 
 }
 

@@ -19,14 +19,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.malmungchi.feature.study.Pretendard
 import com.malmungchi.feature.study.R
+import com.malmungchi.feature.study.StudyReadingViewModel
 
 // ✅ 완료 화면 UI
 @Composable
 fun StudyCompleteScreen(
     onNextClick: () -> Unit = {},
     pretendard: FontFamily = FontFamily.Default, // 🎯 기본 폰트로 fallback 처리
-    showImage: Boolean = true // 🎯 Preview에서는 이미지 생략 가능
+    showImage: Boolean = true, // 🎯 Preview에서는 이미지 생략 가능
+    viewModel: StudyReadingViewModel
 ) {
+    // ✅ 화면 진입 시 1회 자동 지급
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        viewModel.rewardOnEnterIfNeeded { success, msg ->
+            // 필요하면 Toast/스낵바 등으로 사용자에게 알림
+            // 예: if (!success && msg.contains("이미")) { ... }
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -67,7 +76,7 @@ fun StudyCompleteScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "25XP 획득",
+                text = "15XP 획득",
                 fontSize = 22.sp,
                 fontFamily = Pretendard,
                 fontWeight = FontWeight.SemiBold,
@@ -78,7 +87,7 @@ fun StudyCompleteScreen(
 
         // 🎯 하단 버튼
         Button(
-            onClick = onNextClick,
+            onClick = { onNextClick() },
             shape = RoundedCornerShape(50),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
             modifier = Modifier
@@ -96,12 +105,12 @@ fun StudyCompleteScreen(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewStudyCompleteScreen() {
-    // ❗ Pretendard → 시스템 폰트 대체 / 이미지 X
-    StudyCompleteScreen(
-        pretendard = FontFamily.SansSerif,
-        showImage = false
-    )
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewStudyCompleteScreen() {
+//    // ❗ Pretendard → 시스템 폰트 대체 / 이미지 X
+//    StudyCompleteScreen(
+//        pretendard = FontFamily.SansSerif,
+//        showImage = false
+//    )
+//}

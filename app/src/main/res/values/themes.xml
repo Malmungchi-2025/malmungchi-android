@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Malmungchi" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Malmungchi" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- 창 전체 바탕색 -->
+        <item name="android:windowBackground">@android:color/white</item>
+
+        <!-- 상태바 / 내비게이션바 흰색 -->
+        <item name="android:statusBarColor">@android:color/white</item>
+        <item name="android:navigationBarColor">@android:color/white</item>
+
+
+    </style>
+
 </resources>
