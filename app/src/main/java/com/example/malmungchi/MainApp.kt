@@ -5,7 +5,9 @@ import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,11 +15,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
+import com.example.malmungchi.navigation.BottomNavBar
 import com.example.malmungchi.navigation.MainScreen
 import com.example.malmungchi.navigation.LogNavDestinations
 import com.example.malmungchi.navigation.TermsRoute
@@ -293,31 +297,62 @@ fun MainApp() {
                 LaunchedEffect(today) {
                     vm.refreshStudiedDatesForWeek(LocalDate.parse(today))
                 }
+                Scaffold(
+                    bottomBar = {
+                        BottomNavBar(navController = navController as NavHostController) }
+                ) { innerPadding ->
+                    Box(Modifier.padding(innerPadding)) {
+                        StudyWeeklyScreen(
+                            initialDateLabel = today,
+                            onDateChange = { label ->
+                                runCatching { LocalDate.parse(label) }.onSuccess { picked ->
+                                    vm.fetchPastStudyByDate(picked)
+                                    vm.refreshStudiedDatesForWeek(picked)
+                                }
+                            },
+                            bodyText = body,
+                            onBackClick = { navController.popBackStack() },
+                            onGoStudyClick = {
+                                navController.navigate("study_intro") {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            onOpenPastStudy = { label ->
+                                navController.navigate("past_study/$label") {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            hasStudy = { day -> studiedDates.contains(day) }
+                        )
+                    }
+                }
 
-                StudyWeeklyScreen(
-                    initialDateLabel = today,
-                    onDateChange = { label ->
-                        runCatching { LocalDate.parse(label) }.onSuccess { picked ->
-                            vm.fetchPastStudyByDate(picked)
-                            vm.refreshStudiedDatesForWeek(picked)
-                        }
-                    },
-                    bodyText = body,
-                    onBackClick = { navController.popBackStack() },
-                    onGoStudyClick = {
-                        navController.navigate("study_intro") {
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    onOpenPastStudy = { label ->
-                        navController.navigate("past_study/$label") {
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    hasStudy = { day -> studiedDates.contains(day) }
-                )
+//                StudyWeeklyScreen(
+//                    initialDateLabel = today,
+//                    onDateChange = { label ->
+//                        runCatching { LocalDate.parse(label) }.onSuccess { picked ->
+//                            vm.fetchPastStudyByDate(picked)
+//                            vm.refreshStudiedDatesForWeek(picked)
+//                        }
+//                    },
+//                    bodyText = body,
+//                    onBackClick = { navController.popBackStack() },
+//                    onGoStudyClick = {
+//                        navController.navigate("study_intro") {
+//                            launchSingleTop = true
+//                            restoreState = true
+//                        }
+//                    },
+//                    onOpenPastStudy = { label ->
+//                        navController.navigate("past_study/$label") {
+//                            launchSingleTop = true
+//                            restoreState = true
+//                        }
+//                    },
+//                    hasStudy = { day -> studiedDates.contains(day) }
+//                )
             }
 
             // 지난 학습 상세
@@ -546,16 +581,38 @@ fun MainApp() {
 
             // 완료 → 메인
             composable("study_third_complete") {
+                val viewModel: StudyReadingViewModel = hiltViewModel()  // ViewModel 가져오기
+
                 StudyCompleteScreen(
+                    viewModel = viewModel,   // ★ viewModel 전달
                     onNextClick = {
                         navController.navigate("main") {
                             launchSingleTop = true
-                            popUpTo("study_graph") { inclusive = true } // 학습 플로우 비움
+                            popUpTo("study_graph") { inclusive = true }
                         }
                     }
                 )
             }
         }
+
+        // 탭 라우트 → MainScreen으로 위임 (초간단 라우터)
+        composable("quiz") {
+            MainScreen(
+                initialTab = "quiz", // 👈 MainScreen이 이 값을 보고 탭 선택
+                onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } }
+            )
+        }
+        composable("ai") {
+            MainScreen(initialTab = "ai", onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } })
+        }
+        composable("friend") {
+            MainScreen(initialTab = "friend", onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } })
+        }
+        composable("mypage") {
+            MainScreen(initialTab = "mypage", onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } })
+        }
+
+
     }
 }
 

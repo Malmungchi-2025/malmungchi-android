@@ -147,6 +147,17 @@ class TodayStudyRepositoryImpl(
             Unit
         }
     }
+
+    /** ✅ 오늘의 학습 포인트 지급 */
+    override suspend fun rewardTodayStudy(): Result<Int> = withContext(Dispatchers.IO) {
+        Log.d("API_REWARD", "📡 [요청] POST /api/gpt/study/complete-reward")
+        runCatching {
+            val res = api.rewardTodayStudy()
+            check(res.success && res.result != null) { res.message ?: "포인트 지급 실패" }
+            res.result!!.todayReward // 오늘 지급 포인트(보통 15)
+            // 필요하다면 res.result!!.totalPoint로 전체 포인트도 반환 가능
+        }
+    }
 }
 //이전 작동 코드
 //class TodayStudyRepositoryImpl(

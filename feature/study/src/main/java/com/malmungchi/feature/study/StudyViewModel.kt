@@ -397,7 +397,41 @@ class StudyReadingViewModel @Inject constructor(
                     Log.d("QUIZ", "📡 GET /api/gpt/quiz/$studyId")}
         }
     }
+
+    private val _pointRewarded = MutableStateFlow(false)
+    val pointRewarded: StateFlow<Boolean> = _pointRewarded
+
+    // (선택) 메시지 필요하면
+    private val _rewardMessage = MutableStateFlow<String?>(null)
+    val rewardMessage: StateFlow<String?> = _rewardMessage
+
+    /** ✅ 완료 화면 진입 시 한 번만 포인트 지급 */
+    fun rewardOnEnterIfNeeded(
+        onResult: (success: Boolean, message: String) -> Unit = { _, _ -> }
+    ) {
+        // 이미 이 세션에서 지급 시도/성공했다면 재호출 안 함 (Recomposition 방지)
+        if (_pointRewarded.value) return
+
+        viewModelScope.launch {
+            repository.rewardTodayStudy()
+                .onSuccess {
+                    _pointRewarded.value = true
+                    _rewardMessage.value = "포인트 15점 지급 완료!"
+                    onResult(true, "포인트 15점 지급 완료!")
+                }
+                .onFailure { e ->
+                    // 서버에서 이미 지급된 날이면 여기로 옴: UI는 조용히 통과해도 됨
+                    _pointRewarded.value = true // 재시도 막기 위해 true로 고정
+                    val msg = e.message ?: "이미 지급되었거나 오류가 발생했어요."
+                    _rewardMessage.value = msg
+                    onResult(false, msg)
+                }
+        }
+    }
 }
+
+
+
 
 //@HiltViewModel
 //class StudyReadingViewModel @Inject constructor(

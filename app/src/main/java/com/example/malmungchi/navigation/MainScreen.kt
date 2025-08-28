@@ -28,7 +28,8 @@ import com.malmungchi.feature.study.intro.StudyWeeklyScreen
 
 @Composable
 fun MainScreen(
-    onStartStudyFlow: () -> Unit // 로그인 이후, "시작하기" 누르면 루트의 study_graph로 진입시키는 콜백
+    onStartStudyFlow: () -> Unit, // 로그인 이후, "시작하기" 누르면 루트의 study_graph로 진입시키는 콜백
+    initialTab: String? = null
 ) {
     val navController = rememberNavController()
 
