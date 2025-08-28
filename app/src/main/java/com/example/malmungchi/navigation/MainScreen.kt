@@ -3,6 +3,7 @@ package com.example.malmungchi.navigation
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
@@ -20,6 +21,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 
 import com.malmungchi.feature.study.intro.StudyWeeklyScreen
 
@@ -44,27 +46,59 @@ fun MainScreen(
                 startDestination = "study/weekly"   // <-- 변경: 주간 허브로 시작
             ) {
                 composable("study/weekly") {
-                    // 탭 안에서도 프리뷰/날짜 조회가 필요하면 VM 사용
                     val vm: StudyReadingViewModel = hiltViewModel()
-                    val today = LocalDate.now()
-                        .format(DateTimeFormatter.ISO_DATE)
-                    val body = vm.quote.collectAsState().value
+
+                    val today = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+                    val body by vm.quote.collectAsState()
+                    // ✅ 주간 학습일 세트 수집
+                    val studiedDates by vm.studiedDates.collectAsState(initial = emptySet())
+
+                    // ✅ 진입 시 오늘이 포함된 주 학습일 미리 로드
+                    LaunchedEffect(today) {
+                        vm.refreshStudiedDatesForWeek(LocalDate.parse(today))
+                    }
 
                     StudyWeeklyScreen(
                         initialDateLabel = today,
                         onDateChange = { label ->
-                            runCatching { LocalDate.parse(label) }
-                                .onSuccess { vm.fetchPastStudyByDate(it) }
+                            runCatching { LocalDate.parse(label) }.onSuccess { picked ->
+                                // 본문 로드
+                                vm.fetchPastStudyByDate(picked)
+                                // ✅ 주간 학습일도 갱신
+                                vm.refreshStudiedDatesForWeek(picked)
+                            }
                         },
                         bodyText = body,
-                        onBackClick = { /* 탭 루트라 보통 noop */ },
-                        onGoStudyClick = {
-                            // “학습하러 가기 >” → 루트 NavHost의 study_graph 진입
-                            onStartStudyFlow()
-                        },
-                        onOpenPastStudy = { /* 필요시 루트로 진입 후 해당 화면 열도록 확장 */ }
+                        onBackClick = { /* 탭 루트라 noop */ },
+                        onGoStudyClick = { onStartStudyFlow() },
+                        onOpenPastStudy = { /* 필요 시 라우팅 확장 */ },
+
+                        // ✅ 여기 추가! 정확히 일치 비교
+                        hasStudy = { day -> studiedDates.contains(day) }
                     )
                 }
+//                composable("study/weekly") {
+//                    // 탭 안에서도 프리뷰/날짜 조회가 필요하면 VM 사용
+//                    val vm: StudyReadingViewModel = hiltViewModel()
+//                    val today = LocalDate.now()
+//                        .format(DateTimeFormatter.ISO_DATE)
+//                    val body = vm.quote.collectAsState().value
+//
+//                    StudyWeeklyScreen(
+//                        initialDateLabel = today,
+//                        onDateChange = { label ->
+//                            runCatching { LocalDate.parse(label) }
+//                                .onSuccess { vm.fetchPastStudyByDate(it) }
+//                        },
+//                        bodyText = body,
+//                        onBackClick = { /* 탭 루트라 보통 noop */ },
+//                        onGoStudyClick = {
+//                            // “학습하러 가기 >” → 루트 NavHost의 study_graph 진입
+//                            onStartStudyFlow()
+//                        },
+//                        onOpenPastStudy = { /* 필요시 루트로 진입 후 해당 화면 열도록 확장 */ }
+//                    )
+//                }
             }
 
             // 퀴즈

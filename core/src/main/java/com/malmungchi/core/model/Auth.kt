@@ -14,7 +14,7 @@ data class UserDto(
     val name: String,
     val nickname: String?,
     val is_verified: Boolean,
-    val level: Int          // ✅ 서버가 내려주는 1~4
+    val level: Int ? = null         // ✅ 서버가 내려주는 1~4
 )
 
 data class RegisterRequest(

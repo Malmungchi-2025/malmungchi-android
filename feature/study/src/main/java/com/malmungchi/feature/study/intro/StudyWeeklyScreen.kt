@@ -97,8 +97,8 @@ fun StudyWeeklyScreen(
     onBackClick: () -> Unit = {},
     onGoStudyClick: () -> Unit = {},
     onOpenPastStudy: (String) -> Unit = {},
-//    hasStudy: (String) -> Boolean
-    hasStudy: (String) -> Boolean = { false } // ★ 학습 여부 판단 주입
+    hasStudy: (String) -> Boolean
+   // hasStudy: (String) -> Boolean = { false } // ★ 학습 여부 판단 주입
 ) {
     var selected by remember { mutableStateOf(initialDateLabel) }
     val latestOnDateChange by rememberUpdatedState(onDateChange)
