@@ -24,6 +24,8 @@ interface TodayStudyRepository {
     suspend fun generateQuiz(studyId: Int, text: String): Result<List<QuizItem>>
     suspend fun getQuizList(studyId: Int): Result<List<QuizItem>>
     suspend fun saveQuizAnswer(req: QuizAnswerRequest): Result<Unit>
+    /** ✅ 오늘의 학습 포인트 지급 (성공시 오늘 지급분 리턴) */
+    suspend fun rewardTodayStudy(): Result<Int>
 }
 
 //interface TodayStudyRepository {
