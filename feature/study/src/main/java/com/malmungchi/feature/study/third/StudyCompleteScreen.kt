@@ -100,7 +100,7 @@ fun StudyCompleteScreen(
                 .height(48.dp)
         ) {
             Text(
-                text = "다음 단계",
+                text = "학습 마치기",
                 fontSize = 16.sp,
                 fontFamily = Pretendard,
                 color = Color.White

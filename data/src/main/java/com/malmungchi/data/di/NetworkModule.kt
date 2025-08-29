@@ -2,9 +2,12 @@ package com.malmungchi.data.di
 
 
 import android.content.Context
+import com.malmungchi.core.repository.LevelTestRepository
 import com.malmungchi.core.repository.TodayStudyRepository
 import com.malmungchi.data.api.AuthService
+import com.malmungchi.data.api.LevelTestApi
 import com.malmungchi.data.api.TodayStudyApi
+import com.malmungchi.data.implementation.repository.LevelTestRepositoryImpl
 import com.malmungchi.data.implementation.repository.TodayStudyRepositoryImpl
 import com.malmungchi.data.net.RetrofitProvider
 import dagger.Module
@@ -41,5 +44,21 @@ object NetworkModule {
         api: TodayStudyApi
     ): TodayStudyRepository {
         return TodayStudyRepositoryImpl(api)
+    }
+
+    @Provides
+    @Singleton
+    fun provideLevelTestApi(
+        @ApplicationContext context: Context
+    ): LevelTestApi {
+        return RetrofitProvider.getLevelTestApi(context.applicationContext)
+    }
+
+    @Provides
+    @Singleton
+    fun provideLevelTestRepository(
+        api: LevelTestApi
+    ): LevelTestRepository {
+        return LevelTestRepositoryImpl(api)
     }
 }
