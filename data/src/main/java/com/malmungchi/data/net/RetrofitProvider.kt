@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder
 import com.malmungchi.data.api.TodayStudyApi
 import com.malmungchi.data.api.AuthService
 import com.malmungchi.data.BuildConfig              // ★ 라이브러리 모듈 BuildConfig 경로
+import com.malmungchi.data.api.LevelTestApi
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -26,6 +27,12 @@ object RetrofitProvider {
         onUnauthorized: () -> Unit = {}
     ): AuthService = getRetrofit(context, onUnauthorized).create(AuthService::class.java)
 
+    /** ✅ 레벨 테스트 API */
+    fun getLevelTestApi(
+        context: Context,
+        onUnauthorized: () -> Unit = {}
+    ): LevelTestApi = getRetrofit(context, onUnauthorized).create(LevelTestApi::class.java)
+
     // ---- internal ----
     private fun getRetrofit(context: Context, onUnauthorized: () -> Unit): Retrofit {
         val cached = retrofit
@@ -43,6 +50,12 @@ object RetrofitProvider {
         }
 
         val client = OkHttpClient.Builder()
+            .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS) // ★ 서버보다 길게
+            .callTimeout(40, java.util.concurrent.TimeUnit.SECONDS) // ★ 전체 요청 상한(선택)
+            .retryOnConnectionFailure(true)
+            .pingInterval(15, java.util.concurrent.TimeUnit.SECONDS) // (옵션) 장대기 연결 유지
             .addInterceptor(AuthInterceptor(SharedPrefsTokenProvider(context)))
             .addInterceptor(RetryAuthInterceptor(context))                 // ★ 리프레시 재시도 먼저
             .addInterceptor(UnauthorizedInterceptor(context, onUnauthorized)) // ★ 실패 시 세션 정리
@@ -57,4 +70,9 @@ object RetrofitProvider {
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
+
+    // RetrofitProvider.kt
+
+
+
 }

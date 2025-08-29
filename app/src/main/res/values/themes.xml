@@ -12,4 +12,15 @@
 
     </style>
 
+    <!-- ✅ 스플래시 테마 (Android 12+ & 백포트) -->
+    <style name="Theme.Malmungchi.Splash" parent="Theme.SplashScreen">
+        <!-- 표시할 로고 -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/img_malmungchi_logo</item>
+        <!-- 배경색 -->
+        <item name="windowSplashScreenBackground">@android:color/white</item>
+        <!-- 스플래시 종료 후 적용할 앱 테마 -->
+        <item name="postSplashScreenTheme">@style/Theme.Malmungchi</item>
+    </style>
+
+
 </resources>

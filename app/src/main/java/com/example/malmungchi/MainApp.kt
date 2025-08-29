@@ -25,6 +25,7 @@ import com.example.malmungchi.navigation.BottomNavBar
 import com.example.malmungchi.navigation.MainScreen
 import com.example.malmungchi.navigation.LogNavDestinations
 import com.example.malmungchi.navigation.TermsRoute
+import com.malmungchi.core.model.UserDto
 import com.malmungchi.feature.login.AppTermsScreen
 import com.malmungchi.feature.login.EmailLoginScreen
 import com.malmungchi.feature.login.LoginScreen
@@ -50,6 +51,10 @@ import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.malmungchi.data.net.RetrofitProvider
+import com.malmungchi.feature.login.LevelTestRoute
+import com.malmungchi.feature.login.LevelTestStartScreen
+import kotlinx.coroutines.launch
+
 
 /* ────────────────────────────────────────────────────────────────────────────────
    자동 로그인(SharedPreferences 헬퍼)
@@ -117,38 +122,63 @@ fun MainApp() {
     LogNavDestinations(navController)
 
     // 시작은 splash에서 자동 로그인 여부 판단
-    NavHost(navController, startDestination = "splash") {
+    //NavHost(navController, startDestination = "splash") {
+    // ✅ 온보딩을 가장 먼저 보여줌
+    NavHost(navController, startDestination = "onboarding") {
+
+        // ✅ 온보딩 화면 (항상 노출)
+        composable("onboarding") {
+            // feature 모듈의 OnboardingScreen 사용
+            com.malmungchi.feature.login.OnboardingScreen(
+                onFinish = {
+                    // 온보딩 종료 → 기존 splash 로직으로 위임
+                    navController.navigate("splash") {
+                        popUpTo("onboarding") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                autoAdvanceMillis = 1500L
+            )
+        }
+
         composable("splash") {
             LaunchedEffect(Unit) {
-                // ✅ 항상 applicationContext 사용
                 val appCtx = appContext.applicationContext
-
-                // ✅ Triple은 3개로 받기
                 val (uid, token, _) = readSession(appCtx)
 
-                val isValid = if (uid != null && !token.isNullOrBlank()) {
-                    val auth = RetrofitProvider.getAuthApi(
-                        context = appCtx,
-                        onUnauthorized = {
-                            clearSession(appCtx)
-                            navController.navigate("login") {
-                                popUpTo("splash") { inclusive = true }
-                                launchSingleTop = true
-                            }
+                val auth = RetrofitProvider.getAuthApi(
+                    context = appCtx,
+                    onUnauthorized = {
+                        clearSession(appCtx)
+                        navController.navigate("login") {
+                            popUpTo("splash") { inclusive = true }
+                            launchSingleTop = true
                         }
-                    )
-                    runCatching {
-                        withContext(Dispatchers.IO) { auth.me() }
-                    }.fold(
-                        onSuccess = { res -> res.success },
-                        onFailure = { false }
-                    )
-                } else false
+                    }
+                )
 
-                if (isValid) {
-                    navController.navigate("study_graph") {
-                        popUpTo("splash") { inclusive = true }
-                        launchSingleTop = true
+                val meResult: UserDto? = if (uid != null && !token.isNullOrBlank()) {
+                    runCatching { withContext(Dispatchers.IO) { auth.me() } }
+                        .fold(
+                            onSuccess = { res -> if (res.success) (res.user ?: res.result) else null },
+                            onFailure = { null }
+                        )
+                } else null
+
+                if (meResult != null) {
+                    val level = meResult.level ?: 0
+                    if (level <= 0) {
+                        // 레벨 0 → 레벨 테스트 인트로
+                        navController.navigate("level_test_start") {
+                            popUpTo("splash") { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    } else {
+                        // 레벨 1+ → 학습 그래프
+                        navController.navigate("study_graph") {
+                            popUpTo("splash") { inclusive = true }
+                            launchSingleTop = true
+                        }
                     }
                 } else {
                     clearSession(appCtx)
@@ -163,6 +193,51 @@ fun MainApp() {
                 CircularProgressIndicator()
             }
         }
+//        composable("splash") {
+//            LaunchedEffect(Unit) {
+//                // ✅ 항상 applicationContext 사용
+//                val appCtx = appContext.applicationContext
+//
+//                // ✅ Triple은 3개로 받기
+//                val (uid, token, _) = readSession(appCtx)
+//
+//                val isValid = if (uid != null && !token.isNullOrBlank()) {
+//                    val auth = RetrofitProvider.getAuthApi(
+//                        context = appCtx,
+//                        onUnauthorized = {
+//                            clearSession(appCtx)
+//                            navController.navigate("login") {
+//                                popUpTo("splash") { inclusive = true }
+//                                launchSingleTop = true
+//                            }
+//                        }
+//                    )
+//                    runCatching {
+//                        withContext(Dispatchers.IO) { auth.me() }
+//                    }.fold(
+//                        onSuccess = { res -> res.success },
+//                        onFailure = { false }
+//                    )
+//                } else false
+//
+//                if (isValid) {
+//                    navController.navigate("study_graph") {
+//                        popUpTo("splash") { inclusive = true }
+//                        launchSingleTop = true
+//                    }
+//                } else {
+//                    clearSession(appCtx)
+//                    navController.navigate("login") {
+//                        popUpTo("splash") { inclusive = true }
+//                        launchSingleTop = true
+//                    }
+//                }
+//            }
+//
+//            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+//                CircularProgressIndicator()
+//            }
+//        }
 
 
 //        composable("splash") {
@@ -249,18 +324,90 @@ fun MainApp() {
 
         // 이메일 로그인 (성공 시 세션 저장 + 그래프로 이동)
         composable("email_login") {
+            val scope = rememberCoroutineScope()
+
             EmailLoginScreen(
                 onBack = { navController.popBackStack() },
                 onLoginSuccess = { userId, token ->
-                    // 기존 세션 매니저 유지
                     com.malmungchi.data.session.SessionManager.set(userId, token)
-                    // 자동 로그인 저장
                     saveSession(appContext, userId, token)
 
-                    navController.navigate("study_graph") {
-                        // 로그인/약관 스택 제거 → 뒤로가기 시 로그인으로 회귀 방지
-                        popUpTo("login") { inclusive = true }
+                    val appCtx = appContext.applicationContext
+                    val auth = RetrofitProvider.getAuthApi(appCtx) {
+                        clearSession(appCtx)
+                        navController.navigate("login") {
+                            popUpTo("email_login") { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+
+                    scope.launch {
+                        val meResult: UserDto? = runCatching { withContext(Dispatchers.IO) { auth.me() } }
+                            .fold(
+                                onSuccess = { res -> if (res.success) (res.user ?: res.result) else null },
+                                onFailure = { null }
+                            )
+
+                        val level = meResult?.level ?: 0
+                        if (level <= 0) {
+                            // ✅ 레벨 0 → 레벨 테스트 인트로
+                            navController.navigate("level_test_start") {
+                                popUpTo("login") { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        } else {
+                            // ✅ 레벨 1+ → 학습 그래프
+                            navController.navigate("study_graph") {
+                                popUpTo("login") { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
+                    }
+                }
+            )
+        }
+//        composable("email_login") {
+//            EmailLoginScreen(
+//                onBack = { navController.popBackStack() },
+//                onLoginSuccess = { userId, token ->
+//                    // 기존 세션 매니저 유지
+//                    com.malmungchi.data.session.SessionManager.set(userId, token)
+//                    // 자동 로그인 저장
+//                    saveSession(appContext, userId, token)
+//
+//                    navController.navigate("study_graph") {
+//                        // 로그인/약관 스택 제거 → 뒤로가기 시 로그인으로 회귀 방지
+//                        popUpTo("login") { inclusive = true }
+//                        launchSingleTop = true
+//                    }
+//                }
+//            )
+//        }
+
+        // 레벨 테스트 인트로
+        composable("level_test_start") {
+            LevelTestStartScreen(
+                onBackClick = { navController.popBackStack() },
+                onStartClick = {
+                    // stage = 0 → 최초 진단
+                    navController.navigate("level_test/0") {
                         launchSingleTop = true
+                    }
+                }
+            )
+        }
+        // 레벨 테스트 본편(Route)
+        composable("level_test/{stage}") { backStackEntry ->
+            val stageInt = backStackEntry.arguments?.getString("stage")?.toIntOrNull() ?: 0
+            LevelTestRoute(
+                userName = "", // 필요 시 me()로 이름 받아 기억해뒀다가 넘겨도 OK
+                stageInt = stageInt,
+                onBack = { navController.popBackStack() },
+                onGoStudy = {
+                    // 제출 후 결과 CTA → 학습 그래프
+                    navController.navigate("study_graph") {
+                        launchSingleTop = true
+                        popUpTo("level_test_start") { inclusive = true }
                     }
                 }
             )
