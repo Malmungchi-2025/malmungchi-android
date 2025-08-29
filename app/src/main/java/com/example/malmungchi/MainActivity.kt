@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.malmungchi.navigation.MainScreen
 import com.example.malmungchi.ui.theme.MalmungchiTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -19,6 +20,8 @@ import dagger.hilt.android.HiltAndroidApp
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // ✅ SplashScreen API 설치 (백포트 포함)
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         setContent {
             MainApp()   // ✅ 여기서 MainApp() 실행

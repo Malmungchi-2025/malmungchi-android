@@ -129,7 +129,7 @@ fun LoginScreen(
                     modifier = Modifier.size(20.dp),
                     contentScale = ContentScale.Fit
                 )
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(12.dp))
                 Text(
                     "이메일로 시작하기",
                     style = TextStyle(
