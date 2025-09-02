@@ -322,70 +322,68 @@ fun HalfwayScreen(
     onContinue: () -> Unit
 ) {
     val side = 20.dp
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
-            .padding(horizontal = side)
+            .background(Color.White)            // ✅ 상단바에는 좌우 패딩을 주지 않기 위해 여기선 패딩 제거
     ) {
-        Spacer(Modifier.height(16.dp))
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_back),
-                    contentDescription = "back",
-                    tint = Color.Black
-                )
-            }
-        }
+        // ✅ 문제 화면과 동일한 TopBar 재사용 → 아이콘이 왼쪽에 맞게 배치됨
+        TopBar(onBack = onBack)
 
-        Spacer(Modifier.height(16.dp))
-
-        Text(
-            "절반 지났어요, 잘하고 있어요!",
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-            style = TextStyle(
-                fontFamily = Pretendard,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 22.sp,
-                color = BrandBlue
-            )
-        )
-
-        Spacer(Modifier.height(32.dp))
-
-        // 이미지(가이드 예시). 실제 리소스가 따로 있으면 교체
-        Image(
-            painter = painterResource(id = R.drawable.img_malmungchi_logo),
-            contentDescription = null,
+        // ✅ 나머지 콘텐츠만 좌우 20dp 패딩 적용
+        Column(
             modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .size(220.dp)
-                .clip(RoundedCornerShape(12.dp))
-        )
-
-        Spacer(Modifier.weight(1f))
-
-        Button(
-            onClick = onContinue,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .fillMaxWidth(0.5f)
-                .padding(bottom = 40.dp)
-                .height(52.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
-            shape = RoundedCornerShape(16.dp)
+                .fillMaxWidth()
+                .padding(horizontal = side)
         ) {
+            Spacer(Modifier.height(16.dp))
+
             Text(
-                "계속하기",
+                "절반 지났어요, 잘하고 있어요!",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
                 style = TextStyle(
                     fontFamily = Pretendard,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
-                    color = Color.White
+                    fontSize = 22.sp,
+                    color = BrandBlue
                 )
             )
+
+            Spacer(Modifier.height(32.dp))
+
+            Image(
+                painter = painterResource(id = R.drawable.img_malmungchi_logo),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .size(220.dp)
+                    .clip(RoundedCornerShape(12.dp))
+            )
+
+            Spacer(Modifier.weight(1f))
+
+            Button(
+                onClick = onContinue,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .fillMaxWidth(0.5f)
+                    .padding(bottom = 40.dp)
+                    .height(52.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(
+                    "계속하기",
+                    style = TextStyle(
+                        fontFamily = Pretendard,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        color = Color.White
+                    )
+                )
+            }
         }
     }
 }
