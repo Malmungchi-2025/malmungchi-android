@@ -3,6 +3,7 @@ package com.malmungchi.feature.mypage
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 
 import androidx.compose.foundation.layout.*
 //import androidx.compose.foundation.layout.FlowColumnScopeInstance.weight
@@ -59,7 +60,7 @@ fun MyPageScreen(
     levelLabel: String,              // 예: "심화"
     levelProgress: Float,            // 0f..1f
     onClickSettings: () -> Unit = {},
-    onClickViewAllWords: () -> Unit = {},
+    onClickViewAllWords: () -> Unit = {},   // ✅ 타입 지정 + 기본값은 비어있는 람다
     onClickViewAllBadges: () -> Unit = {}
 ) {
     Column(
@@ -91,7 +92,8 @@ fun MyPageScreen(
         Spacer(Modifier.height(SectionGap))
         SectionHeader(title = "단어 수집함", action = "모두보기", onAction = onClickViewAllWords)
         Spacer(Modifier.height(12.dp))
-        WordCollectionCard()       // 카드 + 아래 도트
+        //WordCollectionCard()       // 카드 + 아래 도트
+        WordCollectionCard(onClick = onClickViewAllWords)
 
         // ===== 배지 수집함 =====
         Spacer(Modifier.height(SectionGap))
@@ -319,7 +321,10 @@ private fun SectionHeader(
         Spacer(Modifier.weight(1f))
         Text(
             text = action,
-            modifier = Modifier,
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable(onClick = onAction)
+                .padding(horizontal = 4.dp, vertical = 2.dp),
             style = TextStyle(
                 fontFamily = Pretendard,
                 fontWeight = FontWeight.Medium,
@@ -333,12 +338,14 @@ private fun SectionHeader(
 // ====== 단어 수집함 : 흰 배경 + 회색 테두리, 예문 추가, 도트는 카드 밖 ======
 // ====== 단어 수집함 : 흰 배경 + 그림자 + 예문 간격 조정 ======
 @Composable
-private fun WordCollectionCard() {
+private fun WordCollectionCard(onClick: () -> Unit = {}) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White), // ✅ 흰 배경
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp), // ✅ 그림자 효과
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(
@@ -512,7 +519,7 @@ private fun BadgeCollectionCard() {
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun MyPageScreenPreview() {
-    // TODO: 앱 공용 테마가 있다면 그걸로 교체 (e.g., AppTheme { ... })
+    // 앱 공용 테마가 있으면 그걸로 교체 (e.g., AppTheme { ... })
     MaterialTheme {
         androidx.compose.material3.Surface {
             MyPageScreen(

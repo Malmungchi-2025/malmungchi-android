@@ -131,7 +131,14 @@ fun MainScreen(
                 route = BottomNavItem.MyPage.route,
                 startDestination = "mypage/home"
             ) {
-                composable("mypage/home") { MyPageScreen() }
+                composable("mypage/home") {
+                    MyPageScreen(
+                        userName = "...",
+                        levelLabel = "...",
+                        levelProgress = 0.6f,
+                        onClickViewAllWords = { navController.navigate("word_collection") }  // ✅ 여기서 호출
+                    )
+                }
             }
         }
     }

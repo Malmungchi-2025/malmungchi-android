@@ -26,6 +26,7 @@ import com.example.malmungchi.navigation.MainScreen
 import com.example.malmungchi.navigation.LogNavDestinations
 import com.example.malmungchi.navigation.TermsRoute
 import com.malmungchi.core.model.UserDto
+import com.malmungchi.core.model.WordItem
 import com.malmungchi.feature.login.AppTermsScreen
 import com.malmungchi.feature.login.EmailLoginScreen
 import com.malmungchi.feature.login.LoginScreen
@@ -53,6 +54,7 @@ import kotlinx.coroutines.withContext
 import com.malmungchi.data.net.RetrofitProvider
 import com.malmungchi.feature.login.LevelTestRoute
 import com.malmungchi.feature.login.LevelTestStartScreen
+import com.malmungchi.feature.mypage.WordCollectionScreen
 import kotlinx.coroutines.launch
 
 
@@ -757,6 +759,17 @@ fun MainApp() {
         }
         composable("mypage") {
             MainScreen(initialTab = "mypage", onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } })
+        }
+        // MainApp() 의 NavHost {...} 안
+        composable("word_collection") {
+            var favOnly by remember { mutableStateOf(false) }
+
+            WordCollectionScreen(
+                onBack = { navController.popBackStack() },
+                filterFavoriteOnly = favOnly,
+                onToggleFilterFavorite = { favOnly = it },
+                items = emptyList()   // 👈 아직 API 없으니 빈 리스트
+            )
         }
 
 
