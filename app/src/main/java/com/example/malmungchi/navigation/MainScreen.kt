@@ -29,7 +29,8 @@ import com.malmungchi.feature.study.intro.StudyWeeklyScreen
 @Composable
 fun MainScreen(
     onStartStudyFlow: () -> Unit, // 로그인 이후, "시작하기" 누르면 루트의 study_graph로 진입시키는 콜백
-    initialTab: String? = null
+    initialTab: String? = null,
+    onOpenSettings: () -> Unit = {},
 ) {
     val navController = rememberNavController()
 
@@ -136,6 +137,7 @@ fun MainScreen(
                         userName = "...",
                         levelLabel = "...",
                         levelProgress = 0.6f,
+                        onClickSettings = onOpenSettings,
                         onClickViewAllWords = { navController.navigate("word_collection") }  // ✅ 여기서 호출
                     )
                 }
@@ -143,66 +145,3 @@ fun MainScreen(
         }
     }
 }
-
-//@Composable
-//fun MainScreen(
-//    onStartStudyFlow: () -> Unit // ← 추가
-//) {
-//    val navController = rememberNavController()
-//
-//    Scaffold(
-//        bottomBar = { BottomNavBar(navController) }
-//    ) { innerPadding ->
-//        NavHost(
-//            navController = navController,
-//            startDestination = BottomNavItem.Study.route, // 로그인 후 기본 선택 탭
-//            modifier = Modifier.padding(innerPadding)
-//        ) {
-//            // 오늘의 학습 그래프(탭 내부)
-//            navigation(
-//                route = BottomNavItem.Study.route,
-//                startDestination = "study/home"
-//            ) {
-//                composable("study/home") {
-//                    // StudyScreen에서 “시작하기” 누르면 루트의 study_graph로 진입
-//                    StudyIntroScreen(
-//                        onStart = onStartStudyFlow   // ← 전달
-//                    )
-//                }
-//            }
-//
-//            navigation(route = BottomNavItem.Quiz.route,   startDestination = "quiz/home")   {
-//                composable("quiz/home")   { QuizScreen() }
-//            }
-//            navigation(route = BottomNavItem.Ai.route,     startDestination = "ai/home")     {
-//                composable("ai/home")     { AiScreen() }
-//            }
-//            navigation(route = BottomNavItem.Friend.route, startDestination = "friend/home") {
-//                composable("friend/home") { FriendScreen() }
-//            }
-//            navigation(route = BottomNavItem.MyPage.route, startDestination = "mypage/home") {
-//                composable("mypage/home") { MyPageScreen() }
-//            }
-//        }
-//    }
-//}
-//@Composable
-//fun MainScreen() {
-//    val navController = rememberNavController()
-//
-//    Scaffold(
-//        bottomBar = { BottomNavBar(navController) }
-//    ) { innerPadding ->
-//        NavHost(
-//            navController = navController,
-//            startDestination = BottomNavItem.Study.route, // ← 왼쪽 첫 탭을 시작으로
-//            modifier = Modifier.padding(innerPadding)
-//        ) {
-//            composable(BottomNavItem.Study.route)  { StudyScreen() }
-//            composable(BottomNavItem.Quiz.route)   { QuizScreen() }
-//            composable(BottomNavItem.Ai.route)     { AiScreen() }
-//            composable(BottomNavItem.Friend.route) { FriendScreen() }
-//            composable(BottomNavItem.MyPage.route) { MyPageScreen() }
-//        }
-//    }
-//}
