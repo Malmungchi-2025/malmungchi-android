@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
@@ -142,29 +144,26 @@ fun RemindSettingsScreen(
 
             Spacer(Modifier.weight(1f))
 
-            Box(
+            Button(
+                onClick = {
+                    val list = buildList {
+                        if (firstOn) add(RemindTime(firstAmpm, firstHour, firstMinute))
+                        if (secondOn) add(RemindTime(secondAmpm, secondHour, secondMinute))
+                    }
+                    onSave(list)
+                },
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(Blue_195FCF)
-                    .clickable {
-                        val list = buildList {
-                            if (firstOn) add(RemindTime(firstAmpm, firstHour, firstMinute))
-                            if (secondOn) add(RemindTime(secondAmpm, secondHour, secondMinute))
-                        }
-                        onSave(list)
-                    }
-                    .padding(vertical = 14.dp),
-                contentAlignment = Alignment.Center
+                    .padding(bottom = 32.dp)   // 👈 StudyComplete와 동일
+                    .height(48.dp)
             ) {
                 Text(
                     text = "저장하기",
-                    style = TextStyle(
-                        fontFamily = Pretendard,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp,
-                        color = Color.White
-                    )
+                    fontSize = 16.sp,
+                    fontFamily = Pretendard,
+                    color = Color.White
                 )
             }
             Spacer(Modifier.height(16.dp))
