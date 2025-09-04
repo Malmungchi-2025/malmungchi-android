@@ -11,3 +11,4 @@ plugins {
     // ✅ KSP 플러그인 추가
     alias(libs.plugins.ksp) apply false
 }
+

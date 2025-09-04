@@ -20,7 +20,13 @@ sealed class BottomNavItem(
     val selectedIcon: Int,
     val unselectedIcon: Int
 ) {
-    object Study  : BottomNavItem("study",  "오늘의 학습", R.drawable.ic_study,  R.drawable.ic_study_null)
+    //object Study  : BottomNavItem("study",  "오늘의 학습", R.drawable.ic_study,  R.drawable.ic_study_null)
+    object Study  : BottomNavItem(
+        "study_graph",            // ← "study" → "study_graph" 로 변경
+        "오늘의 학습",
+        R.drawable.ic_study,
+        R.drawable.ic_study_null
+    )
     object Quiz   : BottomNavItem("quiz",   "퀴즈",       R.drawable.ic_quiz,   R.drawable.ic_quiz_null)
     object Ai     : BottomNavItem("ai",     "AI 대화",    R.drawable.ic_ai,     R.drawable.ic_ai_null)
     object Friend : BottomNavItem("friend", "친구",       R.drawable.ic_friend, R.drawable.ic_freind_null) // ← 파일명 오타 주의
