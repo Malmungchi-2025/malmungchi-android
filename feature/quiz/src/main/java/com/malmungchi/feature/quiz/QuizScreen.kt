@@ -46,7 +46,7 @@ val Pretendard: FontFamily = FontFamily.Default
 // ===== 치수 상수 =====
 private val GAP = 12.dp
 private val CARD_HEIGHT_SMALL = 154.dp   // 심화 / 기초 / 활용 / 고급
-private val CARD_HEIGHT_BIG = 328.dp     // 취업 준비
+private val CARD_HEIGHT_BIG = 320.dp     // 취업 준비
 
 @Composable
 fun QuizScreen(
@@ -62,6 +62,7 @@ fun QuizScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color(0xFFFFFFFF))
             .padding(horizontal = 16.dp)
     ) {
         Spacer(Modifier.height(12.dp))
@@ -116,7 +117,7 @@ fun QuizScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(CARD_HEIGHT_SMALL)
-                            .offset(y = (-8).dp)
+                            //.offset(y = (-8).dp)
                     )
 
                     // 왼쪽이 더 짧다면 여기서만 보정
@@ -132,7 +133,7 @@ fun QuizScreen(
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
                             .align(Alignment.BottomStart)        // 왼쪽 컬럼 바닥 기준
-                            .offset(x = 28.dp, y = (-18).dp)     // ▶ 오른쪽(+), ▲ 위쪽(-) — 수치만 조절해서 자리 미세조정
+                            .offset(x = 16.dp, y = (-6).dp)     // ▶ 오른쪽(+), ▲ 위쪽(-) — 수치만 조절해서 자리 미세조정
                             .zIndex(1f)
                     )
                 }

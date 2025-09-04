@@ -1,12 +1,18 @@
 package com.malmungchi.core.model
 
-
 data class BaseResponse<T>(
     val success: Boolean,
     val message: String?,
-    val user: T? = null,         // 일부 API는 user 루트에 담아옴
-    val token: String? = null    // 로그인 응답에 포함
+    val user: T? = null,      // 어떤 API는 user 루트 사용
+    val result: T? = null,    // 어떤 API는 result 루트 사용
+    val token: String? = null // 로그인 응답 등
 )
+//data class BaseResponse<T>(
+//    val success: Boolean,
+//    val message: String?,
+//    val user: T? = null,         // 일부 API는 user 루트에 담아옴
+//    val token: String? = null    // 로그인 응답에 포함
+//)
 
 data class UserDto(
     val id: Int,
@@ -14,7 +20,7 @@ data class UserDto(
     val name: String,
     val nickname: String?,
     val is_verified: Boolean,
-    val level: Int          // ✅ 서버가 내려주는 1~4
+    val level: Int ? = null         // ✅ 서버가 내려주는 1~4
 )
 
 data class RegisterRequest(

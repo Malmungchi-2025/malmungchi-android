@@ -1,4 +1,5 @@
 package com.malmungchi.feature.login
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,14 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.malmungchi.core.designsystem.Pretendard
@@ -27,12 +26,11 @@ import com.malmungchi.feature.login.R
 private val BrandBlue = Color(0xFF195FCF)
 private val GAP = 16.dp
 
+private val TopLabelTopPadding = GAP
 private val TitlePushDown = 96.dp
 
 private val EmailButtonHeight = 52.dp
 private val EmailButtonCorner = 14.dp
-
-private val SocialIconGlyphSize = 64.dp
 
 private val Char1Size = 304.dp
 private val Char1OffsetX = (-40).dp
@@ -47,32 +45,23 @@ private val Char2RotationDeg = 0f
 private val Char1Alpha = 0.95f
 private val Char2Alpha = 1.0f
 
-private val SOCIAL_BUTTON_SIZE = 80.dp   // 버튼 정사각 크기(원하면 84.dp까지)
-private val SOCIAL_GAP = 10.dp           // 아이콘 간격
-private val SOCIAL_ICON_SCALE = 1.06f    // 아이콘 확대(살짝만 키움, 잘림 방지)
-
-
-
-//private val SOCIAL_BUTTON_SIZE = 84.dp   // 버튼 박스 정사각형
-//private val SOCIAL_ICON_SCALE = 0.7f    // 이미지가 박스 안에서 차지할 비율 (0.7 ~ 0.8 적당)
-
 @Composable
 fun LoginScreen(
-    onEmailLogin: () -> Unit,
+    onEmailLogin: () -> Unit,        // 이메일로 시작하기 → 로그인 이동
     onKakao: () -> Unit = {},
     onNaver: () -> Unit = {},
-    onGoogle: () -> Unit = {},
-    onSignUp: () -> Unit = {},
-    onResetPassword: () -> Unit = {},   // 비밀번호 재설정
+    onGoogle: () -> Unit = {},       // (사용 안함)
+    onSignUp: () -> Unit = {},       // 회원가입 텍스트 클릭
+    onResetPassword: () -> Unit = {} // 비밀번호 재설정 텍스트 클릭
 ) {
+    val ctx = LocalContext.current
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(BrandBlue)
             .systemBarsPadding()
-            .padding(horizontal = GAP)
     ) {
-        // 상단/우측 캐릭터
         Image(
             painter = painterResource(R.drawable.img_char1),
             contentDescription = null,
@@ -84,6 +73,7 @@ fun LoginScreen(
                 .alpha(Char1Alpha),
             contentScale = ContentScale.Fit
         )
+
         Image(
             painter = painterResource(R.drawable.img_char2),
             contentDescription = null,
@@ -97,9 +87,12 @@ fun LoginScreen(
         )
 
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = GAP),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(Modifier.height(TopLabelTopPadding))
             Spacer(Modifier.height(TitlePushDown + 154.dp))
 
             Text(
@@ -116,54 +109,48 @@ fun LoginScreen(
 
             Spacer(Modifier.weight(1f))
 
-            // 하단 블록
-            Column(
+            // ── 메인 CTA: 이메일로 시작하기 (위치는 현재가 딱 좋다고 해서 그대로) ──
+            Button(
+                onClick = onEmailLogin,
+                shape = RoundedCornerShape(EmailButtonCorner),
                 modifier = Modifier
-                    .navigationBarsPadding()
-                    .padding(top = 32.dp, bottom = 80.dp), // ▼ 전체 영역을 32dp 아래로
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .fillMaxWidth()
+                    .height(EmailButtonHeight)
+                    .offset(y = (-64).dp), // 버튼 자체는 기존처럼 64dp 위로
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = BrandBlue
+                ),
+                elevation = ButtonDefaults.buttonElevation(0.dp)
             ) {
-
-                Spacer(Modifier.height(72.dp))  // 👈 버튼을 32dp 밑으로 내림
-                // 이메일로 시작하기 → 로그인 진입
-                Button(
-                    onClick = onEmailLogin,
-                    shape = RoundedCornerShape(EmailButtonCorner),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(EmailButtonHeight),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = BrandBlue
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(0.dp)
-                ) {
-                    Text(
-                        "✉",
-                        style = TextStyle(
-                            fontFamily = Pretendard,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        ),
-                        modifier = Modifier.offset(y = (-2).dp)
+                Image(
+                    painter = painterResource(R.drawable.ic_email),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    contentScale = ContentScale.Fit
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    "이메일로 시작하기",
+                    style = TextStyle(
+                        fontFamily = Pretendard,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
-                    Spacer(Modifier.width(GAP))
-                    Text(
-                        "이메일로 시작하기",
-                        style = TextStyle(
-                            fontFamily = Pretendard,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    )
-                }
+                )
+            }
 
-                // 링크: 비밀번호 재설정 | 회원가입 (Pretendard 16, Medium)
-                Spacer(Modifier.height(16.dp))
+            // 버튼과 아래 블록 사이 기본 간격
+            Spacer(Modifier.height(10.dp))
+
+            // ✅ 아래 3개 블록(재설정|회원가입, Divider+텍스트, 소셜)을 한 덩어리로 32dp 위로
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.offset(y = (-56).dp)
+            ) {
+                // ── 비밀번호 재설정 | 회원가입 ──
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = "비밀번호 재설정",
@@ -171,19 +158,17 @@ fun LoginScreen(
                             fontFamily = Pretendard,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color.White
+                            color = Color(0xFFFFFFFF)
                         ),
-                        modifier = Modifier
-                            .padding(6.dp)
-                            .clickable { onResetPassword() }
+                        modifier = Modifier.clickable { onResetPassword() }
                     )
                     Text(
-                        text = " | ",
+                        text = "  |  ",
                         style = TextStyle(
                             fontFamily = Pretendard,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color.White.copy(alpha = 0.7f)
+                            color = Color(0x80FFFFFF)
                         )
                     )
                     Text(
@@ -192,67 +177,57 @@ fun LoginScreen(
                             fontFamily = Pretendard,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color.White
+                            color = Color(0xFFFFFFFF)
                         ),
-                        modifier = Modifier
-                            .padding(6.dp)
-                            .clickable { onSignUp() }
+                        modifier = Modifier.clickable { onSignUp() }
                     )
                 }
+                Spacer(Modifier.height(32.dp))
 
-                // 구분선 있는 "3초만에 시작하기"
-                Spacer(Modifier.height(GAP))
+                //Spacer(Modifier.height(GAP))
+
+                // ── “3초만에 시작하기” 좌우 선 ──
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(1.dp)
-                            .alpha(0.4f)
-                            .background(Color.White)
+                    Divider(
+                        color = Color.White.copy(alpha = 0.3f),
+                        modifier = Modifier.weight(1f)
                     )
-                    Spacer(Modifier.width(36.dp))
                     Text(
-                        text = "3초만에 시작하기",
+                        text = "  3초만에 시작하기  ",
                         color = Color.White.copy(alpha = 0.95f),
                         style = TextStyle(
                             fontFamily = Pretendard,
-                            fontSize = 16.sp,               // 16, 미디엄
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                         )
                     )
-                    Spacer(Modifier.width(12.dp))
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(1.dp)
-                            .alpha(0.4f)
-                            .background(Color.White)
+                    Divider(
+                        color = Color.White.copy(alpha = 0.3f),
+                        modifier = Modifier.weight(1f)
                     )
                 }
-                Spacer(Modifier.height(12.dp))
 
-                // ===== 소셜 아이콘 묶음 =====
+                Spacer(Modifier.height(GAP))
+
+                // ── 소셜: 구글 제거, 카카오/네이버만 중앙 ──
                 Row(
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .align(Alignment.CenterHorizontally),
-                    horizontalArrangement = Arrangement.spacedBy(SOCIAL_GAP),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(GAP, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     SocialIcon(R.drawable.ic_kakao) { onKakao() }
                     SocialIcon(R.drawable.ic_naver) { onNaver() }
                 }
-
-                //Spacer(Modifier.height(24.dp))
             }
+
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
 
-// ===== 아이콘 컴포저블 =====
 @Composable
 private fun SocialIcon(
     iconRes: Int,
@@ -260,24 +235,19 @@ private fun SocialIcon(
 ) {
     Box(
         modifier = Modifier
-            .size(SOCIAL_BUTTON_SIZE)      // 정사각 버튼 히트영역
+            .size(64.dp)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Image(
             painter = painterResource(iconRes),
             contentDescription = null,
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    scaleX = SOCIAL_ICON_SCALE   // 살짝 확대
-                    scaleY = SOCIAL_ICON_SCALE
-                    // clip = false (기본값)  ✅ 바깥으로 나가도 자르지 않음 → 안 잘림
-                },
-            contentScale = ContentScale.Fit      // 비율 유지하며 박스 안에 맞춤(잘리지 않음)
+            modifier = Modifier.size(64.dp),
+            contentScale = ContentScale.FillBounds
         )
     }
 }
+
 @Preview(showBackground = true, showSystemUi = true, name = "LoginScreenPreview")
 @Composable
 fun LoginScreenPreview() {
@@ -292,7 +262,34 @@ fun LoginScreenPreview() {
         )
     }
 }
-
+//
+//import android.widget.Toast
+//import androidx.compose.foundation.Image
+//import androidx.compose.foundation.background
+//import androidx.compose.foundation.clickable
+//import androidx.compose.foundation.layout.*
+//import androidx.compose.foundation.shape.CircleShape
+//import androidx.compose.foundation.shape.RoundedCornerShape
+//import androidx.compose.material3.*
+//import androidx.compose.runtime.Composable
+//import androidx.compose.ui.Alignment
+//import androidx.compose.ui.Modifier
+//import androidx.compose.ui.draw.alpha
+//import androidx.compose.ui.draw.clip
+//import androidx.compose.ui.draw.rotate
+//import androidx.compose.ui.graphics.Color
+//import androidx.compose.ui.layout.ContentScale
+//import androidx.compose.ui.platform.LocalContext
+//import androidx.compose.ui.res.painterResource
+//import androidx.compose.ui.text.TextStyle
+//import androidx.compose.ui.text.font.FontWeight
+//import androidx.compose.ui.tooling.preview.Preview
+//import androidx.compose.ui.unit.Dp
+//import androidx.compose.ui.unit.dp
+//import androidx.compose.ui.unit.sp
+//import com.malmungchi.core.designsystem.Pretendard
+//import com.malmungchi.feature.login.R
+//
 //private val BrandBlue = Color(0xFF195FCF)
 //private val GAP = 16.dp
 //
@@ -414,7 +411,7 @@ fun LoginScreenPreview() {
 //                    )
 //                    Spacer(Modifier.width(GAP))
 //                    Text(
-//                        "이메일로 시작하기",
+//                        "이메일로 회원가입 하기",
 //                        style = TextStyle(
 //                            fontFamily = Pretendard,
 //                            fontSize = 18.sp,
@@ -442,7 +439,7 @@ fun LoginScreenPreview() {
 //                ) {
 //                    SocialIcon(R.drawable.ic_kakao) { onKakao() }
 //                    SocialIcon(R.drawable.ic_naver) { onNaver() }
-//                    //SocialIcon(R.drawable.ic_google) { onGoogle() }
+//                    SocialIcon(R.drawable.ic_google) { onGoogle() }
 //                }
 //
 //

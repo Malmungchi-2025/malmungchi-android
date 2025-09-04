@@ -20,7 +20,7 @@ interface AuthService {
 
     // ✅ 변경:
     @GET("/api/auth/me")
-    suspend fun me(): BaseResponse<UserDto>
+    suspend fun me(): com.malmungchi.core.model.BaseResponse<UserDto>
 
     // ==== DEV OTP (서버에 방금 추가한 엔드포인트) ====
     @POST("/api/auth/dev/request-otp")
