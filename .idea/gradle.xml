@@ -23,6 +23,7 @@
             <option value="$PROJECT_DIR$/feature/study" />
           </set>
         </option>
+        <option name="resolveExternalAnnotations" value="false" />
       </GradleProjectSettings>
     </option>
   </component>

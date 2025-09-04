@@ -8,6 +8,8 @@ plugins {
     // Hilt
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+
+
 }
 
 android {
@@ -91,6 +93,8 @@ dependencies {
     implementation(project(":data"))
     //implementation(project(":feature"))
 
+
+    implementation("androidx.core:core-splashscreen:1.0.1")
     //다른 모듈 참조
     implementation(project(":feature:ai"))
     implementation(project(":feature:friend"))
