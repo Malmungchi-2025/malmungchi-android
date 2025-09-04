@@ -187,7 +187,10 @@ private fun ProfileBlock(
         ) {
             // ===== 상단 고정: 이름+연필 =====
             Row(
-                modifier = Modifier.padding(top = TOP_PADDING), // ↔ 상단 여백 조절 지점
+                modifier = Modifier
+                    .padding(top = 0.dp)
+                    .offset(y = TOP_PADDING),
+                    //.padding(top = TOP_PADDING), // ↔ 상단 여백 조절 지점
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
