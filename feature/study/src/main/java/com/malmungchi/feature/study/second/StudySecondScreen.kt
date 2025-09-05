@@ -6,16 +6,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
@@ -26,20 +29,23 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.zIndex
 import com.malmungchi.feature.study.Pretendard
 import com.malmungchi.feature.study.R
 import com.malmungchi.feature.study.StudyReadingViewModel
-import androidx.compose.ui.zIndex
-import kotlinx.coroutines.delay
+import java.text.Normalizer // ✅ NFC 정규화용
 
 /* ---------- 색상/상수 ---------- */
 private val Blue_195FCF = Color(0xFF195FCF)
@@ -50,7 +56,11 @@ private val Gray_989898 = Color(0xFF989898)
 private val Gray_616161 = Color(0xFF616161)
 private val Red_FF0D0D = Color(0xFFFF0D0D)
 
-/* ✅ 온보딩 예시 문구: 큰따옴표 포함 */
+/* ✅ 동일 들여쓰기 (문장/입력칩 x좌표 일치) */
+private val SentenceIndent = 8.dp
+private val ChipInnerStartPadding = 12.dp
+
+/* ✅ 온보딩 예시 문구 */
 private const val GuideSentence =
     "“빛을 보기 위해 눈이 있고, 소리를 듣기 위해 귀"
 
@@ -63,6 +73,8 @@ private fun painterResourceSafe(id: Int?): Painter? {
     if (id == null) return null
     return runCatching { painterResource(id) }.getOrNull()
 }
+
+
 
 /* ---------- 상단바 ---------- */
 @Composable
@@ -79,17 +91,9 @@ fun TopBar(title: String, onBackClick: () -> Unit) {
         ) {
             val backPainter = painterResourceSafe(R.drawable.btn_img_back)
             if (backPainter != null) {
-                Icon(
-                    painter = backPainter,
-                    contentDescription = "뒤로가기",
-                    tint = Color.Unspecified
-                )
+                Icon(painter = backPainter, contentDescription = "뒤로가기", tint = Color.Unspecified)
             } else {
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(Color(0x33000000), RoundedCornerShape(4.dp))
-                )
+                Box(Modifier.fillMaxSize().background(Color(0x33000000), RoundedCornerShape(4.dp)))
             }
         }
 
@@ -109,6 +113,7 @@ fun TopBar(title: String, onBackClick: () -> Unit) {
     }
 }
 
+/* ---------- Step1 문장 하이라이트(위/해) ---------- */
 @Composable
 private fun OriginalWithHeHighlight(
     text: String,
@@ -121,15 +126,8 @@ private fun OriginalWithHeHighlight(
         while (i < text.length) {
             if (i <= text.lastIndex - 1 && text[i] == '위' && text[i + 1] == '해') {
                 wiheCount++
-                // "위"는 기본색
                 append(AnnotatedString("위", SpanStyle(color = baseColor)))
-                // 첫 번째 "위해"의 "해"만 노란색, 그 이후는 흰색
-                append(
-                    AnnotatedString(
-                        "해",
-                        SpanStyle(color = if (wiheCount == 1) heColor else baseColor)
-                    )
-                )
+                append(AnnotatedString("해", SpanStyle(color = if (wiheCount == 1) heColor else baseColor)))
                 i += 2
             } else {
                 append(AnnotatedString(text[i].toString(), SpanStyle(color = baseColor)))
@@ -170,7 +168,7 @@ fun StepProgressBarPreview(totalSteps: Int = 3, currentStep: Int = 2) {
 
 /* ---------- 문장 카운터 ---------- */
 @Composable
-private fun SentenceCounter(current: Int, total: Int,  modifier: Modifier = Modifier) {
+private fun SentenceCounter(current: Int, total: Int, modifier: Modifier = Modifier) {
     Text(
         text = "$current/$total",
         fontFamily = Pretendard,
@@ -209,22 +207,30 @@ private fun OriginalWithTypos(
     )
 }
 
+/* ---------- ✅ 한글 조합 안전 비교 유틸 ---------- */
+private fun nfc(s: String): String = Normalizer.normalize(s, Normalizer.Form.NFC)
+private fun isSafePrefix(new: String, original: String): Boolean {
+    val t = nfc(new)
+    val o = nfc(original)
+    if (o.startsWith(t)) return true
+    val last = t.lastOrNull() ?: return true
+    val isJamo = (last in '\u3131'..'\u318E') || (last in '\u1100'..'\u11FF') ||
+            (last in '\uA960'..'\uA97F') || (last in '\uD7B0'..'\uD7FF')
+    return if (isJamo) o.startsWith(t.dropLast(1)) else false
+}
+
 /* ---------- 오버레이(필름 + 말풍선) ---------- */
 @Composable
 private fun HandwritingGuideOverlay(
     step: GuideOverlayStep,
     onTapAnywhere: () -> Unit,
     modifier: Modifier = Modifier,
-
-    // 말풍선 위치/크기
     bubble1OffsetX: Dp = 0.dp,
     bubble1OffsetY: Dp = 0.dp,
     bubble2OffsetX: Dp = 0.dp,
     bubble2OffsetY: Dp = 0.dp,
     bubble1Width: Dp? = null,
     bubble2Width: Dp? = null,
-
-    // 화살표 위치/크기
     arrowOffsetX: Dp = (-24).dp,
     arrowOffsetY: Dp = (-40).dp,
     arrowSize: Dp = 48.dp
@@ -237,36 +243,25 @@ private fun HandwritingGuideOverlay(
         modifier = modifier
             .fillMaxSize()
             .background(Film_50)
-            // 프리뷰에선 탭 제스처만 막고(이미지 렌더는 허용)
-            .then(
-                if (isPreview) Modifier
-                else Modifier.pointerInput(step) { detectTapGestures { onTapAnywhere() } }
-            )
+            .then(if (isPreview) Modifier else Modifier.pointerInput(step) { detectTapGestures { onTapAnywhere() } })
             .zIndex(10f)
     ) {
-        val showArrow = when (step) {
-            GuideOverlayStep.Step1 -> true
-            GuideOverlayStep.Step2 -> false
-            GuideOverlayStep.None  -> false
-        }
+        val showArrow = step == GuideOverlayStep.Step1
         val bubbleRes = when (step) {
             GuideOverlayStep.Step1 -> R.drawable.img_word1
             GuideOverlayStep.Step2 -> R.drawable.img_word2
-            GuideOverlayStep.None  -> null
+            GuideOverlayStep.None -> null
         }
 
         Box(
             Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = 20.dp, bottom = 96.dp) // 좌측 20 라인 유지
+                .padding(start = 20.dp, bottom = 96.dp)
         ) {
             if (bubbleRes != null) {
                 val base = Modifier
                     .wrapContentSize()
-                    .let {
-                        if (step == GuideOverlayStep.Step1) it.offset(bubble1OffsetX, bubble1OffsetY)
-                        else it.offset(bubble2OffsetX, bubble2OffsetY)
-                    }
+                    .let { if (step == GuideOverlayStep.Step1) it.offset(bubble1OffsetX, bubble1OffsetY) else it.offset(bubble2OffsetX, bubble2OffsetY) }
                     .let {
                         when {
                             step == GuideOverlayStep.Step1 && bubble1Width != null -> it.width(bubble1Width)
@@ -277,55 +272,27 @@ private fun HandwritingGuideOverlay(
 
                 val bubblePainter = painterResourceSafe(bubbleRes)
                 if (bubblePainter != null) {
-                    Image(
-                        painter = bubblePainter,
-                        contentDescription = null,
-                        modifier = base
-                    )
+                    Image(painter = bubblePainter, contentDescription = null, modifier = base)
                 } else {
-                    // 플레이스홀더 (리소스 이슈 시)
-                    Box(
-                        base
-                            .height(80.dp)
-                            .width(240.dp)
-                            .background(Color(0x33FFFFFF), RoundedCornerShape(12.dp))
-                    )
+                    Box(base.height(80.dp).width(240.dp).background(Color(0x33FFFFFF), RoundedCornerShape(12.dp)))
                 }
             }
 
             if (showArrow) {
-                val arrowMod = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(arrowOffsetX, arrowOffsetY)
-                    .size(arrowSize)
-
                 val arrowPainter = painterResourceSafe(R.drawable.img_arrow)
+                val arrowMod = Modifier.align(Alignment.TopEnd).offset(40.dp, (-100).dp).size(48.dp)
                 if (arrowPainter != null) {
-                    Icon(
-                        painter = arrowPainter,
-                        contentDescription = null,
-                        tint = Color.Unspecified,
-                        modifier = arrowMod
-                    )
+                    Icon(painter = arrowPainter, contentDescription = null, tint = Color.Unspecified, modifier = arrowMod)
                 } else {
                     Box(arrowMod.background(Color(0x55FFFFFF), RoundedCornerShape(8.dp)))
                 }
             }
         }
 
-        val malchiMod = Modifier
-            .align(Alignment.BottomEnd)
-            .padding(end = 20.dp, bottom = 40.dp)
-            .size(84.dp)
-
         val malchiPainter = painterResourceSafe(R.drawable.img_malchi)
+        val malchiMod = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 40.dp).size(84.dp)
         if (malchiPainter != null) {
-            Icon(
-                painter = malchiPainter,
-                contentDescription = null,
-                tint = Color.Unspecified,
-                modifier = malchiMod
-            )
+            Icon(painter = malchiPainter, contentDescription = null, tint = Color.Unspecified, modifier = malchiMod)
         } else {
             Box(malchiMod.background(Color(0x55FFFFFF), RoundedCornerShape(12.dp)))
         }
@@ -335,13 +302,19 @@ private fun HandwritingGuideOverlay(
 /* ---------- 풀폭 입력칩 ---------- */
 @Composable
 private fun FullWidthInputChip(
-    value: String,
-    onValueChange: (String) -> Unit,
+    value: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit,
     placeholder: String? = null,
     textColor: Color,
     background: Color,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+    contentPadding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+    modifier: Modifier = Modifier,
+    elevation: Dp = 0.dp,
+    maxHeight: Dp = 140.dp,
+    onImeDone: (() -> Unit)? = null
 ) {
+    val scroll = rememberScrollState()
+
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
@@ -352,18 +325,23 @@ private fun FullWidthInputChip(
             color = textColor,
             lineHeight = 26.sp
         ),
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
+        singleLine = false,
+        maxLines = Int.MAX_VALUE,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { onImeDone?.invoke() }),
+        modifier = modifier.fillMaxWidth(),
         decorationBox = { inner ->
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(min = 42.dp, max = maxHeight)
+                    .shadow(elevation, RoundedCornerShape(50))
                     .clip(RoundedCornerShape(50))
                     .background(background)
                     .padding(paddingValues = contentPadding)
-                    //.padding(horizontal = 12.dp, vertical = 6.dp)
+                    .verticalScroll(scroll)
             ) {
-                if (value.isEmpty() && !placeholder.isNullOrBlank()) {
+                if (value.text.isEmpty() && !placeholder.isNullOrBlank()) {
                     Text(
                         placeholder,
                         fontFamily = Pretendard,
@@ -389,7 +367,7 @@ private fun BottomNavigationButtons(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         OutlinedButton(
             onClick = onBackClick,
@@ -397,7 +375,7 @@ private fun BottomNavigationButtons(
             colors = ButtonDefaults.outlinedButtonColors(contentColor = Blue_195FCF),
             modifier = Modifier
                 .height(42.dp)
-                .width(160.dp)
+                .weight(1f)
         ) { Text("이전 단계", fontSize = 16.sp, fontFamily = Pretendard) }
 
         Button(
@@ -406,7 +384,7 @@ private fun BottomNavigationButtons(
             shape = RoundedCornerShape(50),
             modifier = Modifier
                 .height(42.dp)
-                .width(160.dp)
+                .weight(1f)
         ) { Text("다음 단계", fontSize = 16.sp, fontFamily = Pretendard, color = Color.White) }
     }
 }
@@ -419,104 +397,214 @@ fun StudySecondScreen(
     onNextClick: () -> Unit = {}
 ) {
     val sentences by viewModel.sentences.collectAsState()
-    val currentIndex by viewModel.currentIndex.collectAsState()
+    val currentIndexFromVm by viewModel.currentIndex.collectAsState()
+    val typedFromVm by viewModel.userInput.collectAsState()
 
     var overlayStep by rememberSaveable { mutableStateOf(GuideOverlayStep.Step1) }
-    var errorIndex by remember { mutableStateOf<Int?>(null) }
 
-    var contentTop by remember { mutableStateOf(Offset.Zero) }
-    var anchorPos by remember { mutableStateOf(Offset.Zero) }
+    // ✅ 화면 내부에서 사용할 인덱스(UI 인덱스) — VM 값과 초기 동기화
+    var uiIndex by rememberSaveable { mutableStateOf(0) }
+    LaunchedEffect(currentIndexFromVm) { uiIndex = currentIndexFromVm }
 
-    LaunchedEffect(errorIndex) { if (errorIndex != null) { delay(650); errorIndex = null } }
+    // ✅ Step2 고정 위치 기준(루트 y)
+    var anchorYInRoot by remember { mutableStateOf(0f) }
 
     val listState = rememberLazyListState()
-    LaunchedEffect(currentIndex) { listState.animateScrollToItem(currentIndex, -20) }
+    LaunchedEffect(uiIndex) { listState.animateScrollToItem(uiIndex, -20) }
 
     LaunchedEffect(Unit) {
         viewModel.initHandwritingStudy()
         viewModel.fetchHandwriting()
     }
 
-    val sentenceFromVm = sentences.getOrNull(currentIndex).orEmpty()
-    // ✅ 온보딩 단계에선 가이드 문장을 강제 노출
-    val displaySentence =
-        if (overlayStep == GuideOverlayStep.None) sentenceFromVm else GuideSentence
+    val sentenceFromUi = sentences.getOrNull(uiIndex).orEmpty()
+    val displaySentence = if (overlayStep == GuideOverlayStep.None) sentenceFromUi else GuideSentence
 
-    Box(Modifier.fillMaxSize().background(Color.White)) {
+    var typedValue by remember { mutableStateOf(TextFieldValue("")) }
+    LaunchedEffect(typedFromVm, sentenceFromUi) {
+        if (typedFromVm != typedValue.text) {
+            typedValue = typedValue.copy(text = typedFromVm, selection = TextRange(typedFromVm.length))
+        }
+    }
+
+    var errorIndexUi by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(overlayStep) { errorIndexUi = null }
+
+    val original = sentenceFromUi
+
+    // ✅ 문장 완료 시 동작: 마지막이면 다음 단계, 아니면 다음 문장으로
+    val advanceOrFinish: () -> Unit = {
+        if (uiIndex < sentences.lastIndex) {
+            uiIndex += 1
+            // VM/로컬 입력 초기화
+            viewModel.onUserInputChange("")
+            typedValue = TextFieldValue("")
+        } else {
+            onNextClick()
+        }
+    }
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
 
         /* ----------------- ① 기본 컨텐츠 레이어 (z=0) ----------------- */
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(start = 20.dp, end = 20.dp, top = 32.dp, bottom = 48.dp)
-                .onGloballyPositioned { contentTop = it.positionInRoot() }
+                .padding(start = 20.dp, end = 20.dp, top = 48.dp, bottom = 48.dp)
                 .zIndex(0f)
         ) {
             TopBar(title = "오늘의 학습", onBackClick = onBackClick)
 
             Spacer(Modifier.height(24.dp))
-            Text(
-                "학습 진행률",
-                fontSize = 16.sp,
-                color = Color.Black
-            )
+            Text("학습 진행률", fontSize = 16.sp, color = Color.Black)
             Spacer(Modifier.height(16.dp))
             StepProgressBarPreview(totalSteps = 3, currentStep = 2)
 
             if (overlayStep == GuideOverlayStep.None) {
                 Spacer(Modifier.height(40.dp))
                 SentenceCounter(
-                    current = (currentIndex + 1).coerceAtMost(sentences.size.coerceAtLeast(1)),
+                    current = (uiIndex + 1).coerceAtMost(sentences.size.coerceAtLeast(1)),
                     total = sentences.size.coerceAtLeast(1)
                 )
                 Spacer(Modifier.height(32.dp))
             } else {
-                // 온보딩 중일 땐 카운터 숨기기
                 Spacer(Modifier.height(40.dp))
             }
 
+            // ✅ Step2 기준 앵커(y)
             Box(
                 Modifier
                     .height(1.dp)
-                    .onGloballyPositioned { anchorPos = it.positionInRoot() }
+                    .onGloballyPositioned { coords -> anchorYInRoot = coords.positionInRoot().y }
             )
 
             when (overlayStep) {
                 GuideOverlayStep.Step1 -> {
-                    OriginalWithTypos(
-                        displaySentence,
-                        typed = "",
-                        errorIndex = null,
-                        color = Color.Black
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    FullWidthInputChip(
-                        value = "",
-                        onValueChange = {},
-                        placeholder = null,
-                        textColor = Gray_616161,
-                        background = Field_EFF4FB,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
-                    )
-
+                    Column(Modifier.padding(start = SentenceIndent)) {
+                        Box(Modifier.padding(start = ChipInnerStartPadding)) {
+                            OriginalWithTypos(
+                                displaySentence,
+                                typed = "",
+                                errorIndex = null,
+                                color = Color.Black
+                            )
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        FullWidthInputChip(
+                            value = TextFieldValue(""),
+                            onValueChange = {},
+                            placeholder = null,
+                            textColor = Gray_616161,
+                            background = Field_EFF4FB,
+                            contentPadding = PaddingValues(
+                                start = ChipInnerStartPadding,
+                                end = 12.dp,
+                                top = 10.dp,
+                                bottom = 10.dp
+                            )
+                            //contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
+                        )
+                    }
                 }
+
                 GuideOverlayStep.Step2 -> { /* 필름 위 전용 레이어에서 그림 */ }
+
                 GuideOverlayStep.None -> {
-                    // 온보딩 종료 후 일반 화면에선 VM 문장을 그대로
-                    OriginalWithTypos(
-                        sentenceFromVm,
-                        typed = viewModel.getInputFor(currentIndex),
-                        errorIndex = null,
-                        color = Color.Black
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    FullWidthInputChip(
-                        value = viewModel.getInputFor(currentIndex),
-                        onValueChange = {},
-                        placeholder = null,
-                        textColor = Gray_616161,
-                        background = Field_EFF4FB
-                    )
+                    Column(Modifier.padding(start = SentenceIndent)) {
+                        Box(Modifier.padding(start = ChipInnerStartPadding)) {
+                            OriginalWithTypos(
+                                original = original,
+                                typed = typedValue.text,
+                                errorIndex = errorIndexUi,
+                                color = Color.Black
+                            )
+                        }
+                        Spacer(Modifier.height(12.dp))
+
+                        FullWidthInputChip(
+                            value = typedValue,
+                            onValueChange = { newV ->
+                                if (newV.composition != null) {
+                                    errorIndexUi = null
+                                    typedValue = newV
+                                    return@FullWidthInputChip
+                                }
+
+                                val newText = newV.text
+                                val oldText = typedValue.text
+
+                                if (newText.length <= oldText.length) {
+                                    errorIndexUi = null
+                                    typedValue = newV
+                                    viewModel.onUserInputChange(newText)
+                                    return@FullWidthInputChip
+                                }
+
+                                if (isSafePrefix(newText, original)) {
+                                    errorIndexUi = null
+                                    typedValue = newV
+                                    viewModel.onUserInputChange(nfc(newText))
+
+                                    // ✅ 정답 완성 시: 다음 문장 or 마지막이면 다음 단계
+                                    if (nfc(newText) == nfc(original)) {
+                                        advanceOrFinish()
+                                    }
+                                    return@FullWidthInputChip
+                                }
+
+                                // 오탈자 표시만
+                                errorIndexUi = nfc(oldText).length
+                            },
+                            placeholder = null,
+                            textColor = Gray_616161,
+                            background = Field_EFF4FB,
+                            elevation = 3.dp,
+                            maxHeight = 160.dp,
+                            onImeDone = {
+                                if (nfc(typedValue.text) == nfc(original)) {
+                                    advanceOrFinish()
+                                }
+                            },
+                            // ⬇️ 칩의 내부 좌측 패딩을 명시적으로 12dp로
+                            contentPadding = PaddingValues(
+                                start = ChipInnerStartPadding,
+                                end = 12.dp,
+                                top = 10.dp,
+                                bottom = 10.dp
+                            ),
+
+                        )
+                    }
+
+                    Spacer(Modifier.height(48.dp))
+
+                    val hasNext = uiIndex < sentences.size - 1
+                    if (hasNext) {
+                        Text(
+                            text = "다음 문장",
+                            fontFamily = Pretendard,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp,
+                            color = Gray_616161,
+                            modifier = Modifier.padding(start = SentenceIndent)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = sentences[uiIndex + 1],
+                            fontFamily = Pretendard,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 16.sp,
+                            color = Gray_989898,
+                            lineHeight = 26.sp,
+                            modifier = Modifier.padding(start = SentenceIndent)
+                        )
+                    }
+
+                    Spacer(Modifier.height(24.dp))
                 }
             }
         }
@@ -532,16 +620,13 @@ fun StudySecondScreen(
                 }
             },
             modifier = Modifier.matchParentSize(),
-
-            // ✅ 말풍선을 오른쪽 +40dp, 위로 -30dp 이동
-            bubble1OffsetX = 40.dp,
+            bubble1OffsetX = 40.dp + 30.dp,
             bubble1OffsetY = (-30).dp,
-            bubble2OffsetX = 40.dp,
+            bubble2OffsetX = 40.dp + 30.dp,
             bubble2OffsetY = (-30).dp,
-
             bubble1Width   = null,
             bubble2Width   = null,
-            arrowOffsetX   = (40).dp,
+            arrowOffsetX   = 40.dp,
             arrowOffsetY   = (-100).dp,
             arrowSize      = 48.dp
         )
@@ -549,31 +634,46 @@ fun StudySecondScreen(
         /* ----------------- ③ Step2 전용: ‘필름 위’ 고정 위치 레이어 (z=20) ----------------- */
         if (overlayStep == GuideOverlayStep.Step2) {
             val density = LocalDensity.current
-            val dy = with(density) { (anchorPos.y - contentTop.y).toDp() }
+            val anchorYDp = with(density) { anchorYInRoot.toDp() }
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    // ✅ 왼쪽 여백을 기존 20dp에서 4dp 더 줌 → 24.dp
                     .padding(start = 24.dp, end = 20.dp, top = 32.dp, bottom = 48.dp)
-                    .absoluteOffset(x = 0.dp, y = dy + 148.dp)
+                    .absoluteOffset(x = 0.dp, y = anchorYDp - 20.dp)
                     .zIndex(20f)
             ) {
-                // ✅ 전체 흰색 + ‘해’만 노란색
-                OriginalWithHeHighlight(text = displaySentence)
-
-                Spacer(Modifier.height(12.dp))
-
-                // ✅ "위해" → "위헤", 여백 살짝 확대(vertical=10.dp)
-                FullWidthInputChip(
-                    value = "“빛을 보기 위헤",
-                    onValueChange = {},
-                    placeholder = null,
-                    textColor = Color.Black,
-                    background = Color.White,
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
-                )
+                Column(Modifier.padding(start = SentenceIndent)) {
+                    OriginalWithHeHighlight(text = displaySentence)
+                    Spacer(Modifier.height(12.dp))
+                    FullWidthInputChip(
+                        value = TextFieldValue("“빛을 보기 위헤"),
+                        onValueChange = {},
+                        placeholder = null,
+                        textColor = Color.Black,
+                        background = Color.White,
+                        contentPadding = PaddingValues(
+                            start = ChipInnerStartPadding,
+                            end = 12.dp,
+                            top = 10.dp,
+                            bottom = 10.dp
+                        ),
+                        //contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                        elevation = 2.dp
+                    )
+                }
             }
+        }
+
+        // ✅ ④ 하단 고정 버튼 (온보딩 종료 후에만 노출)
+        if (overlayStep == GuideOverlayStep.None) {
+            BottomNavigationButtons(
+                onBackClick = onBackClick,
+                onNextClick = onNextClick,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 48.dp)
+            )
         }
     }
 }
@@ -590,69 +690,66 @@ fun Preview_StudySecond_Step2() { PreviewSecond(step = GuideOverlayStep.Step2) }
 @Composable
 private fun PreviewSecond(step: GuideOverlayStep) {
     val demoSentences = listOf(
-        // ✅ 큰따옴표 포함 예시
         "“빛을 보기 위해 눈이 있고, 소리를 듣기 위해 귀",
         "“우리는 생각하기 위해 머리가 있다.”"
     )
-    var currentIndex by remember { mutableStateOf(0) }
+    var uiIndex by rememberSaveable { mutableStateOf(0) }
     var overlay by remember { mutableStateOf(step) }
-    var errorIndex by remember { mutableStateOf<Int?>(null) }
 
-    var contentTop by remember { mutableStateOf(Offset.Zero) }
-    var anchorPos by remember { mutableStateOf(Offset.Zero) }
+    var anchorYInRoot by remember { mutableStateOf(0f) }
 
-    LaunchedEffect(errorIndex) { if (errorIndex != null) { delay(650); errorIndex = null } }
+    val sentence = if (overlay == GuideOverlayStep.None) demoSentences[uiIndex] else GuideSentence
+    var typedValue by remember { mutableStateOf(TextFieldValue("")) }
 
-    val sentence = if (overlay == GuideOverlayStep.None) demoSentences[currentIndex] else GuideSentence
-
-    Box(Modifier.fillMaxSize().background(Color.White)) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(start = 20.dp, end = 20.dp, top = 32.dp, bottom = 48.dp)
-                .onGloballyPositioned { contentTop = it.positionInRoot() }
+                .zIndex(5f)
+                .padding(start = 20.dp, end = 20.dp, top = 48.dp, bottom = 48.dp)
         ) {
             TopBar(title = "오늘의 학습", onBackClick = {})
             Spacer(Modifier.height(24.dp))
-            Text(
-                "학습 진행률",
-                fontSize = 16.sp,
-                color = Color.Black
-            )
+            Text("학습 진행률", fontSize = 16.sp, color = Color.Black)
             Spacer(Modifier.height(16.dp))
             StepProgressBarPreview(totalSteps = 3, currentStep = 2)
             if (overlay == GuideOverlayStep.None) {
                 Spacer(Modifier.height(40.dp))
-                SentenceCounter(
-                    current = currentIndex + 1,
-                    total = demoSentences.size
-                )
+                SentenceCounter(current = uiIndex + 1, total = demoSentences.size)
                 Spacer(Modifier.height(32.dp))
             } else {
-                // 온보딩(1/2단계)에서는 카운터 표시 X (레이아웃 간격만 유지)
                 Spacer(Modifier.height(40.dp))
             }
-//            Spacer(Modifier.height(20.dp))
-//            SentenceCounter(current = currentIndex + 1, total = demoSentences.size, modifier = if (overlay == GuideOverlayStep.Step2) Modifier.alpha(0f) else Modifier)
-//            Spacer(Modifier.height(16.dp))
 
             Box(
                 Modifier
                     .height(1.dp)
-                    .onGloballyPositioned { anchorPos = it.positionInRoot() }
+                    .onGloballyPositioned { coords -> anchorYInRoot = coords.positionInRoot().y }
             )
 
             if (overlay == GuideOverlayStep.Step1) {
-                OriginalWithTypos(sentence, typed = "", errorIndex = null, color = Color.Black)
-                Spacer(Modifier.height(12.dp))
-                FullWidthInputChip(
-                    value = "",
-                    onValueChange = {},
-                    placeholder = null,
-                    textColor = Gray_616161,
-                    background = Field_EFF4FB,
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
-                )
+                Column(Modifier.padding(start = SentenceIndent)) {
+                    Box(Modifier.padding(start = ChipInnerStartPadding)) {
+                        OriginalWithTypos(sentence, typed = "", errorIndex = null, color = Color.Black)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    FullWidthInputChip(
+                        value = TextFieldValue(""),
+                        onValueChange = {},
+                        textColor = Color(0xFF616131),
+                        background = Field_EFF4FB,
+                        contentPadding = PaddingValues(
+                            start = ChipInnerStartPadding,
+                            end = 12.dp,
+                            top = 10.dp,
+                            bottom = 10.dp
+                        )
+                    )
+                }
             }
         }
 
@@ -666,46 +763,134 @@ private fun PreviewSecond(step: GuideOverlayStep) {
                 }
             },
             modifier = Modifier.matchParentSize(),
-
-            // ✅ 말풍선을 오른쪽 +40dp, 위로 -30dp 이동
-            bubble1OffsetX = 40.dp,
+            bubble1OffsetX = 40.dp + 30.dp,
             bubble1OffsetY = (-30).dp,
-            bubble2OffsetX = 40.dp,
+            bubble2OffsetX = 40.dp +  30.dp,
             bubble2OffsetY = (-30).dp,
-
             bubble1Width   = null,
             bubble2Width   = null,
-            arrowOffsetX   = (40).dp,
+            arrowOffsetX   = 40.dp,
             arrowOffsetY   = (-100).dp,
             arrowSize      = 48.dp
         )
 
         if (overlay == GuideOverlayStep.Step2) {
-            val dy = with(LocalDensity.current) { (anchorPos.y - contentTop.y).toDp() }
+            val density = LocalDensity.current
+            val anchorYDp = with(density) { anchorYInRoot.toDp() }
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    // ✅ 프리뷰에서도 동일하게 왼쪽 24.dp
                     .padding(start = 24.dp, end = 20.dp, top = 32.dp, bottom = 48.dp)
-                    .absoluteOffset(x = 0.dp, y = dy + 148.dp)
+                    .absoluteOffset(x = 0.dp, y = anchorYDp + 48.dp)
                     .zIndex(20f)
             ) {
-                // ✅ 프리뷰도 동일한 하이라이트
-                OriginalWithHeHighlight(text = sentence)
-
-                Spacer(Modifier.height(12.dp))
-
-                // ✅ 프리뷰도 "위헤" 및 여백 확대
-                FullWidthInputChip(
-                    value = "“빛을 보기 위헤",
-                    onValueChange = {},
-                    placeholder = null,
-                    textColor = Color.Black,
-                    background = Color.White,
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
-                )
+                Column(Modifier.padding(start = SentenceIndent)) {
+                    Box(Modifier.padding(start = ChipInnerStartPadding)) {
+                        OriginalWithHeHighlight(text = sentence)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    FullWidthInputChip(
+                        value = TextFieldValue("“빛을 보기 위헤"),
+                        onValueChange = {},
+                        textColor = Color.Black,
+                        background = Color.White,
+                        contentPadding = PaddingValues(
+                            start = ChipInnerStartPadding,
+                            end = 12.dp,
+                            top = 10.dp,
+                            bottom = 10.dp
+                        )
+                    )
+                }
             }
         }
+    }
+}
+
+/* ---------- 실제 필사 화면 전용 프리뷰 (온보딩 아님) ---------- */
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 360)
+@Composable
+fun Preview_Handwriting_AfterOnboarding() {
+    val sentences = listOf(
+        "“빛을 보기 위해 눈이 있고, 소리를 듣기 위해 귀",
+        "“우리는 생각하기 위해 머리가 있다.”"
+    )
+    var uiIndex by rememberSaveable { mutableStateOf(0) }
+    val original = sentences[uiIndex]
+    var typedValue by remember { mutableStateOf(TextFieldValue("“빛을 보기 위")) }
+    var errorIndexUi by remember { mutableStateOf<Int?>(null) }
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(start = 20.dp, end = 20.dp, top = 48.dp, bottom = 48.dp)
+    ) {
+        TopBar(title = "오늘의 학습", onBackClick = {})
+        Spacer(Modifier.height(24.dp))
+        Text("학습 진행률", fontSize = 16.sp, color = Color.Black)
+        Spacer(Modifier.height(16.dp))
+        StepProgressBarPreview(totalSteps = 3, currentStep = 2)
+
+        Spacer(Modifier.height(40.dp))
+        SentenceCounter(current = uiIndex + 1, total = sentences.size)
+        Spacer(Modifier.height(32.dp))
+
+        Column(Modifier.padding(start = SentenceIndent)) {
+            OriginalWithTypos(original = original, typed = typedValue.text, errorIndex = errorIndexUi, color = Color.Black)
+            Spacer(Modifier.height(12.dp))
+            FullWidthInputChip(
+                value = typedValue,
+                onValueChange = { newV ->
+                    if (newV.composition != null) {
+                        errorIndexUi = null
+                        typedValue = newV.copy()
+                        return@FullWidthInputChip
+                    }
+                    val newText = newV.text
+                    val oldText = typedValue.text
+                    if (newText.length <= oldText.length) {
+                        errorIndexUi = null
+                        typedValue = newV
+                        return@FullWidthInputChip
+                    }
+                    if (isSafePrefix(newText, original)) {
+                        errorIndexUi = null
+                        typedValue = newV
+                        return@FullWidthInputChip
+                    }
+                    errorIndexUi = nfc(oldText).length
+                },
+                textColor = Gray_616161,
+                background = Field_EFF4FB
+            )
+        }
+
+        Spacer(Modifier.height(48.dp))
+
+        val hasNext = uiIndex < sentences.size - 1
+        if (hasNext) {
+            Text(
+                text = "다음 문장",
+                fontFamily = Pretendard,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = Gray_616161,
+                modifier = Modifier.padding(start = SentenceIndent)
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = sentences[uiIndex + 1],
+                fontFamily = Pretendard,
+                fontWeight = FontWeight.Medium,
+                fontSize = 16.sp,
+                color = Gray_989898,
+                lineHeight = 26.sp,
+                modifier = Modifier.padding(start = SentenceIndent)
+            )
+        }
+
+        Spacer(Modifier.height(24.dp))
     }
 }
