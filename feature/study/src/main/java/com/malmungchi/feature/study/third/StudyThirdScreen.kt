@@ -1,6 +1,7 @@
 package com.malmungchi.feature.study.third
 
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -54,11 +55,20 @@ fun StudyThirdScreen(
     val currentQuestion = if (!isLoading) quizList[currentIndex] else null
     val selectedAnswer = if (!isLoading) selectedAnswers[currentIndex] else null
 
+    // ✅ 시스템 백버튼도 동일하게 동작
+    BackHandler { onBackClick() }
+
+    // ✅ 세컨드처럼 Box로 감싸고, 버튼은 하단 고정
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 32.dp)
+            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 48.dp)
     ) {
         // ✅ 상단바는 항상 보이게
         TopBar(title = "오늘의 학습", onBackClick = onBackClick)
@@ -137,21 +147,27 @@ fun StudyThirdScreen(
                     }
                 }
             }
-        }
+        }}
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // ✅ 하단 버튼: 로딩 중 비활성화
+        // ── ✅ 하단 고정 버튼: 세컨드와 동일한 위치/UI ──
         Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 48.dp)          // 세컨드와 동일
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),     // 세컨드와 동일
+            horizontalArrangement = Arrangement.spacedBy(12.dp) // 세컨드와 동일
         ) {
             OutlinedButton(
                 onClick = { if (!isLoading && currentIndex > 0) currentIndex-- },
-                enabled = !isLoading && currentIndex > 0,
+                enabled = !isLoading && currentIndex > 0,      // 동작만 조건, UI는 동일
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF195FCF)),
-                modifier = Modifier.height(42.dp).width(160.dp)
+                modifier = Modifier
+                    .height(42.dp)   // 세컨드와 동일
+                    .weight(1f)      // 세컨드와 동일
             ) {
                 Text("이전 문제", fontSize = 16.sp, fontFamily = Pretendard)
             }
@@ -159,31 +175,30 @@ fun StudyThirdScreen(
             Button(
                 onClick = {
                     if (isLoading) return@Button
-
                     val selectedIndex = selectedAnswers[currentIndex]
                     val userChoice = selectedIndex?.let { currentQuestion!!.options[it] }
-
                     if (userChoice != null) {
                         viewModel.submitQuizAnswer(
                             studyId = studyId,
-                            index = currentQuestion!!.questionIndex, // 1-based
+                            index = currentQuestion!!.questionIndex,
                             userChoice = userChoice
                         )
                     }
-
                     if (currentIndex < quizList.lastIndex) {
                         currentIndex++
                     } else {
                         onNextClick()
                     }
                 },
-                enabled = !isLoading && selectedAnswer != null,
-                shape = RoundedCornerShape(50),
+                enabled = !isLoading && selectedAnswer != null, // 동작만 조건, UI는 동일
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
-                modifier = Modifier.height(42.dp).width(160.dp)
+                shape = RoundedCornerShape(50),
+                modifier = Modifier
+                    .height(42.dp)   // 세컨드와 동일
+                    .weight(1f)      // 세컨드와 동일
             ) {
                 Text(
-                    text = if (!isLoading && currentIndex < quizList.lastIndex) "다음 문제" else "다음 단계",
+                    text = if (!isLoading && currentIndex < (quizList.size - 1)) "다음 문제" else "다음 단계",
                     fontSize = 16.sp,
                     fontFamily = Pretendard,
                     color = Color.White
@@ -191,7 +206,7 @@ fun StudyThirdScreen(
             }
         }
     }
-}
+    }
 //@Composable
 //fun StudyThirdScreen(
 //    //token: String,

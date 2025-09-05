@@ -1,8 +1,10 @@
 package com.malmungchi.feature.study.first
 
-
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,7 +27,6 @@ import com.malmungchi.feature.study.StudyReadingViewModel
 
 @Composable
 fun StudyAppendixListScreen(
-    //token: String,
     studyId: Int,
     viewModel: StudyReadingViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
@@ -33,7 +34,6 @@ fun StudyAppendixListScreen(
 ) {
     val words by viewModel.savedWords.collectAsState()
 
-    // API 연동
     LaunchedEffect(Unit) {
         viewModel.loadVocabularyList(studyId)
     }
@@ -45,128 +45,196 @@ fun StudyAppendixListScreen(
     )
 }
 
-/**
- * ✅ UI 렌더링 로직 분리 (Preview와 공용)
- */
 @Composable
 fun StudyAppendixListContent(
     words: List<WordItem>,
     onBackClick: () -> Unit,
     onNavigateNext: () -> Unit
 ) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(
-                start = 16.dp,
-                end = 16.dp,
-                bottom = 16.dp,
-                top = 32.dp      // ✅ 위는 32, 나머지는 16
-            )
+            .padding(start = 20.dp, end = 20.dp)
     ) {
-        // 🔹 상단 UI (오늘의 학습)
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    painter = painterResource(id = R.drawable.btn_img_back),
-                    contentDescription = "뒤로가기",
-                    tint = Color.Unspecified
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 48.dp, bottom = 120.dp) // ✅ 하단 버튼과 겹치지 않게 여백
+        ) {
+            // ✅ 헤더 (아이콘 + 가운데 타이틀)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable(onClick = onBackClick),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.btn_img_back),
+                        contentDescription = "뒤로가기",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                Spacer(Modifier.width(8.dp))
+
+                Text(
+                    text = "오늘의 학습",
+                    fontSize = 20.sp,
+                    fontFamily = Pretendard,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f), // ✅ Row 안에서 weight
+                    color = Color.Black
                 )
+
+                // 왼쪽 24dp 아이콘과 균형 맞추기
+                Spacer(Modifier.width(24.dp))
             }
+
+            Spacer(Modifier.height(24.dp))
+
             Text(
-                text = "오늘의 학습",
-                fontSize = 20.sp,
-                fontFamily = Pretendard,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.weight(1f),
-                color = Color.Black
+                "학습 진행률",
+                fontSize = 16.sp,
+                color = Color.Black,
+                fontWeight = FontWeight.Normal
             )
-            Spacer(Modifier.width(48.dp))
-        }
+            Spacer(Modifier.height(16.dp))
 
-        Spacer(Modifier.height(24.dp))
+            StepProgressBarAppendix()
 
-        Text("학습 진행률", fontSize = 16.sp, color = Color.Black, fontWeight = FontWeight.Normal, modifier = Modifier.padding(start = 8.dp))
-        Spacer(Modifier.height(16.dp))
-        StepProgressBarAppendix()
-        Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
 
-        // 🔹 단어 카드 리스트
-        Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF9F9F9), modifier = Modifier.weight(1f)) {
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                items(words) { WordCard(it) }
+            // 🔹 단어 카드 리스트(남은 높이 채우기)
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFF9F9F9),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f) // ✅ Column 안에서 남은 공간
+            ) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    items(words) { WordCard(it) }
+                }
             }
         }
 
-        Spacer(Modifier.height(32.dp))
-
-        // 🔹 하단 버튼
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        // 🔹 하단 버튼 (Box 스코프 안, align 사용 가능)
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter) // ✅ BoxScope.align 정상사용
+                .padding(bottom = 48.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             OutlinedButton(
                 onClick = onBackClick,
                 shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF195FCF)),
-                modifier = Modifier.height(42.dp).width(160.dp)
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = Color(0xFF195FCF)
+                ),
+                modifier = Modifier
+                    .height(42.dp)
+                    .weight(1f)
             ) {
-                Text("이전 단계", fontSize = 16.sp, fontFamily = Pretendard)
+                Text(
+                    "이전 단계",
+                    fontSize = 16.sp,
+                    fontFamily = Pretendard
+                )
             }
 
             Button(
                 onClick = onNavigateNext,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF195FCF)
+                ),
                 shape = RoundedCornerShape(50),
-                modifier = Modifier.height(42.dp).width(160.dp)
+                modifier = Modifier
+                    .height(42.dp)
+                    .weight(1f)
             ) {
-                Text("다음 단계", fontSize = 16.sp, fontFamily = Pretendard, color = Color.White)
+                Text(
+                    "다음 단계",
+                    fontSize = 16.sp,
+                    fontFamily = Pretendard,
+                    color = Color.White
+                )
             }
         }
     }
 }
 
-/**
- * ✅ ProgressBar (첫 번째만 파란색)
- */
 @Composable
 fun StepProgressBarAppendix(totalSteps: Int = 3) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         repeat(totalSteps) { index ->
             Box(
-                modifier = Modifier.weight(1f).height(14.dp).background(
-                    color = if (index == 0) Color(0xFF195FCF) else Color(0xFFF2F2F2),
-                    shape = RoundedCornerShape(50)
-                )
+                modifier = Modifier
+                    .weight(1f)
+                    .height(14.dp)
+                    .background(
+                        color = if (index == 0) Color(0xFF195FCF) else Color(0xFFF2F2F2),
+                        shape = RoundedCornerShape(50)
+                    )
             )
         }
     }
 }
 
-/**
- * ✅ 단어 카드
- */
 @Composable
 fun WordCard(item: WordItem) {
     Surface(
         shape = RoundedCornerShape(12.dp),
         shadowElevation = 4.dp,
         color = Color.White,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
     ) {
         Column(Modifier.padding(12.dp)) {
-            Text(item.word, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, fontFamily = Pretendard, color = Color(0xFF333333))
-            Text(": ${item.meaning}", fontSize = 14.sp, fontWeight = FontWeight.Medium, fontFamily = Pretendard, color = Color(0xFF333333), modifier = Modifier.padding(top = 4.dp))
+            Text(
+                item.word,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = Pretendard,
+                color = Color(0xFF333333)
+            )
+            Text(
+                ": ${item.meaning}",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                fontFamily = Pretendard,
+                color = Color(0xFF333333),
+                modifier = Modifier.padding(top = 4.dp)
+            )
             if (!item.example.isNullOrEmpty()) {
-                Text("예문) ${item.example}", fontSize = 12.sp, fontWeight = FontWeight.Medium, fontFamily = Pretendard, color = Color(0xFF616161), modifier = Modifier.padding(top = 4.dp))
+                Text(
+                    "예문) ${item.example}",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = Pretendard,
+                    color = Color(0xFF616161),
+                    modifier = Modifier.padding(top = 4.dp)
+                )
             }
         }
     }
 }
 
-/**
- * ✅ Preview (실제 UI와 동일)
- */
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 360, heightDp = 800)
 @Composable
 fun PreviewStudyAppendixListScreen() {
     val dummyWords = listOf(
@@ -175,168 +243,3 @@ fun PreviewStudyAppendixListScreen() {
     )
     StudyAppendixListContent(words = dummyWords, onBackClick = {}, onNavigateNext = {})
 }
-
-//@Composable
-//fun StudyAppendixListScreenPreview(
-//    words: List<WordItem>,
-//    onBackClick: () -> Unit = {},
-//    onNavigateNext: () -> Unit = {}
-//) {
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .background(Color.White)
-//            .padding(16.dp)
-//    ) {
-//        /** 🔹 오늘의 학습 (가운데 정렬) */
-//        Row(
-//            modifier = Modifier.fillMaxWidth(),
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            IconButton(onClick = onBackClick) {
-//                Icon(
-//                    painter = painterResource(id = R.drawable.btn_img_back),
-//                    contentDescription = "뒤로가기",
-//                    tint = Color.Unspecified
-//                )
-//            }
-//            Text(
-//                text = "오늘의 학습",
-//                fontSize = 20.sp,
-//                fontFamily = Pretendard,
-//                fontWeight = FontWeight.SemiBold,
-//                textAlign = TextAlign.Center,
-//                modifier = Modifier.weight(1f),
-//                color = Color.Black
-//            )
-//            Spacer(Modifier.width(48.dp))
-//        }
-//
-//        Spacer(Modifier.height(24.dp))
-//
-//        /** 🔹 학습 진행률 (살짝 오른쪽) */
-//        Text(
-//            "학습 진행률",
-//            fontSize = 16.sp,
-//            color = Color.Black,
-//            fontWeight = FontWeight.Normal,
-//            modifier = Modifier.padding(start = 8.dp)
-//        )
-//
-//        Spacer(Modifier.height(16.dp))
-//        StepProgressBarAppendix() // ✅ 수정된 ProgressBar 사용
-//        Spacer(Modifier.height(24.dp))
-//
-//        /** 🔹 단어 카드 리스트 */
-//        Surface(
-//            shape = RoundedCornerShape(12.dp),
-//            color = Color(0xFFF9F9F9),
-//            modifier = Modifier.weight(1f)
-//        ) {
-//            LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-//                items(words) { WordCard(it) }
-//            }
-//        }
-//
-//        Spacer(Modifier.height(16.dp))
-//
-//        /** 🔹 하단 버튼 */
-//        Row(
-//            Modifier.fillMaxWidth(),
-//            horizontalArrangement = Arrangement.SpaceBetween
-//        ) {
-//            OutlinedButton(
-//                onClick = onBackClick,
-//                shape = RoundedCornerShape(50),
-//                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF195FCF)),
-//                modifier = Modifier.height(42.dp).width(160.dp)
-//            ) {
-//                Text("이전 단계", fontSize = 16.sp, fontFamily = Pretendard)
-//            }
-//
-//            Button(
-//                onClick = onNavigateNext,
-//                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
-//                shape = RoundedCornerShape(50),
-//                modifier = Modifier.height(42.dp).width(160.dp)
-//            ) {
-//                Text("다음 단계", fontSize = 16.sp, fontFamily = Pretendard, color = Color.White)
-//            }
-//        }
-//    }
-//}
-//
-///** ✅ ProgressBar (첫 번째만 파란색) */
-//@Composable
-//fun StepProgressBarAppendix(totalSteps: Int = 3) {
-//    Row(
-//        Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-//        horizontalArrangement = Arrangement.spacedBy(8.dp)
-//    ) {
-//        repeat(totalSteps) { index ->
-//            Box(
-//                modifier = Modifier.weight(1f).height(14.dp).background(
-//                    color = if (index == 0) Color(0xFF195FCF) else Color(0xFFF2F2F2),
-//                    shape = RoundedCornerShape(50)
-//                )
-//            )
-//        }
-//    }
-//}
-//
-///** ✅ 단어 카드 UI (그림자 + 분리감 추가) */
-//@Composable
-//fun WordCard(item: WordItem) {
-//    Surface(
-//        shape = RoundedCornerShape(12.dp),
-//        shadowElevation = 4.dp, // ✅ 그림자 효과
-//        color = Color.White,
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(vertical = 6.dp)
-//    ) {
-//        Column(Modifier.padding(12.dp)) {
-//            // 🔹 단어 (Pretendard SemiBold, 18sp)
-//            Text(
-//                text = item.word,
-//                fontSize = 18.sp,
-//                fontWeight = FontWeight.SemiBold,
-//                fontFamily = Pretendard,
-//                color = Color(0xFF333333)
-//            )
-//
-//            // 🔹 뜻 (Pretendard Medium, 14sp)
-//            Text(
-//                text = ": ${item.meaning}",
-//                fontSize = 14.sp,
-//                fontWeight = FontWeight.Medium,
-//                fontFamily = Pretendard,
-//                color = Color(0xFF333333),
-//                modifier = Modifier.padding(top = 4.dp)
-//            )
-//
-//            // 🔹 예문 (Pretendard Medium, 12sp, color=616161)
-//            if (!item.example.isNullOrEmpty()) {
-//                Text(
-//                    text = "예문) ${item.example}",
-//                    fontSize = 12.sp,
-//                    fontWeight = FontWeight.Medium,
-//                    fontFamily = Pretendard,
-//                    color = Color(0xFF616161),
-//                    modifier = Modifier.padding(top = 4.dp)
-//                )
-//            }
-//        }
-//    }
-//}
-//
-//
-//@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
-//@Composable
-//fun PreviewStudyAppendixListScreen() {
-//    val dummyWords = listOf(
-//        WordItem("지정하다", "가리키어 확실하게 정하다.", "모임 장소를 지정하다."),
-//        WordItem("부여하다", "어떤 자격을 주다.", "추석 전날을 공휴일로 지정하다.")
-//    )
-//    StudyAppendixListScreenPreview(words = dummyWords)
-//}
