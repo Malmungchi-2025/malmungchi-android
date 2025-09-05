@@ -108,7 +108,7 @@ fun StudyAppendixListContent(
 
             StepProgressBarAppendix()
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
 
             // 🔹 단어 카드 리스트(남은 높이 채우기)
             Surface(
@@ -202,9 +202,12 @@ fun WordCard(item: WordItem) {
         color = Color.White,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp)
+            .padding(vertical = 8.dp)
     ) {
-        Column(Modifier.padding(12.dp)) {
+        Column(
+            modifier = Modifier
+            .padding(horizontal = 16.dp, vertical = 16.dp)
+        ) {
             Text(
                 item.word,
                 fontSize = 18.sp,
@@ -218,7 +221,7 @@ fun WordCard(item: WordItem) {
                 fontWeight = FontWeight.Medium,
                 fontFamily = Pretendard,
                 color = Color(0xFF333333),
-                modifier = Modifier.padding(top = 4.dp)
+                modifier = Modifier.padding(top = 8.dp)
             )
             if (!item.example.isNullOrEmpty()) {
                 Text(
@@ -227,7 +230,7 @@ fun WordCard(item: WordItem) {
                     fontWeight = FontWeight.Medium,
                     fontFamily = Pretendard,
                     color = Color(0xFF616161),
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }
