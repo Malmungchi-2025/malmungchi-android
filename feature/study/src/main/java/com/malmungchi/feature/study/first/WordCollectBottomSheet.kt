@@ -49,35 +49,47 @@ fun WordCollectBottomSheet(
             Column(
                 modifier = Modifier
                     .background(Color.White)
-                    .padding(24.dp)
+                    .padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 24.dp)
             ) {
-                Text("단어 수집", fontSize = 14.sp, fontWeight = FontWeight.Medium, fontFamily = Pretendard, color = Color(0xFF195FCF))
+                Text("단어 수집", fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                    fontFamily = Pretendard, color = Color(0xFF195FCF))
+
                 Spacer(Modifier.height(16.dp))
 
-                Text(word, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, fontFamily = Pretendard, color = Color(0xFF333333))
+                Text(word, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
+                    fontFamily = Pretendard, color = Color(0xFF333333))
+
                 Spacer(Modifier.height(8.dp))
+                Text(": $definition", fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                    fontFamily = Pretendard, color = Color(0xFF333333))
 
-                Text(": $definition", fontSize = 14.sp, fontWeight = FontWeight.Medium, fontFamily = Pretendard, color = Color(0xFF333333))
                 Spacer(Modifier.height(8.dp))
+                Text(example, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                    fontFamily = Pretendard, color = Color(0xFF666666))
 
-                Text(example, fontSize = 12.sp, fontWeight = FontWeight.Medium, fontFamily = Pretendard, color = Color(0xFF666666))
-                Spacer(Modifier.height(24.dp))
+                // ✅ 버튼 위 흰색 여백
+                Spacer(Modifier.height(48.dp))
 
-                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Button(
-                        onClick = { onDismiss() },
+                        onClick = onDismiss,
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                         modifier = Modifier.weight(1f).height(36.dp)
                     ) {
-                        Text("취소", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, fontFamily = Pretendard, color = Color(0xFF195FCF))
+                        Text("취소", fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+                            fontFamily = Pretendard, color = Color(0xFF195FCF))
                     }
                     Spacer(Modifier.width(8.dp))
                     Button(
-                        onClick = { onSaveClick() },
+                        onClick = onSaveClick,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
                         modifier = Modifier.weight(1f).height(36.dp)
                     ) {
-                        Text("저장", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, fontFamily = Pretendard, color = Color.White)
+                        Text("저장", fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+                            fontFamily = Pretendard, color = Color.White)
                     }
                 }
             }
@@ -189,115 +201,3 @@ fun PreviewWordCollectBottomSheetContent() {
         example = "보고서를 작성하여 제출하세요."
     )
 }
-
-//@Composable
-//fun WordCollectBottomSheet(
-//    word: String,
-//    definition: String,
-//    example: String,
-//    onDismiss: () -> Unit,
-//    onSaveClick: () -> Unit
-//) {
-//    Dialog(onDismissRequest = { onDismiss() }) {
-//        Surface(
-//            shape = RoundedCornerShape(12.dp),
-//            color = Color.White,
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(16.dp)
-//        ) {
-//            Column(
-//                modifier = Modifier
-//                    .background(Color.White)
-//                    .padding(24.dp)
-//            ) {
-//                // ✅ 상단 제목
-//                Text(
-//                    text = "단어 수집",
-//                    fontSize = 14.sp,
-//                    fontWeight = FontWeight.Medium,
-//                    fontFamily = Pretendard,
-//                    color = Color(0xFF195FCF)
-//                )
-//
-//                Spacer(Modifier.height(16.dp))
-//
-//                // ✅ 원형 단어
-//                Text(
-//                    text = word,
-//                    fontSize = 18.sp,
-//                    fontWeight = FontWeight.SemiBold,
-//                    fontFamily = Pretendard,
-//                    color = Color(0xFF333333)
-//                )
-//
-//                Spacer(Modifier.height(8.dp))
-//
-//                // ✅ 뜻
-//                Text(
-//                    text = ": $definition",
-//                    fontSize = 14.sp,
-//                    fontWeight = FontWeight.Medium,
-//                    fontFamily = Pretendard,
-//                    color = Color(0xFF333333)
-//                )
-//
-//                Spacer(Modifier.height(8.dp))
-//
-//                // ✅ 예문
-//                Text(
-//                    text = example,
-//                    fontSize = 12.sp,
-//                    fontWeight = FontWeight.Medium,
-//                    fontFamily = Pretendard,
-//                    color = Color(0xFF666666)
-//                )
-//
-//                Spacer(Modifier.height(24.dp))
-//
-//                // ✅ 버튼 영역
-//                Row(
-//                    horizontalArrangement = Arrangement.SpaceBetween,
-//                    modifier = Modifier.fillMaxWidth()
-//                ) {
-//                    // 취소 버튼
-//                    Button(
-//                        onClick = { onDismiss() },
-//                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-//                        modifier = Modifier
-//                            .height(36.dp)
-//                            .weight(1f)
-//                    ) {
-//                        Text(
-//                            text = "취소",
-//                            fontSize = 16.sp,
-//                            fontWeight = FontWeight.SemiBold,
-//                            fontFamily = Pretendard,
-//                            color = Color(0xFF195FCF)
-//                        )
-//                    }
-//
-//                    Spacer(Modifier.width(8.dp))
-//
-//                    // 저장 버튼
-//                    Button(
-//                        onClick = { onSaveClick() },
-//                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
-//                        modifier = Modifier
-//                            .height(36.dp)
-//                            .weight(1f)
-//                    ) {
-//                        Text(
-//                            text = "저장",
-//                            fontSize = 16.sp,
-//                            fontWeight = FontWeight.SemiBold,
-//                            fontFamily = Pretendard,
-//                            color = Color.White
-//                        )
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
-
