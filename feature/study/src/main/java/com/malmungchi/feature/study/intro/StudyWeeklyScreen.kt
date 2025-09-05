@@ -60,14 +60,14 @@ private fun AppLogo(
 ) {
     val isPreview = LocalInspectionMode.current
     val painter = if (!isPreview)
-        runCatching { painterResource(R.drawable.ic_mal) }.getOrNull()
+        runCatching { painterResource(R.drawable.img_malmungchi_word) }.getOrNull()
     else null
 
     if (painter != null) {
         Image(
             painter = painter,
             contentDescription = "말뭉치 로고",
-            modifier = modifier.height(defaultHeight)
+            modifier = modifier.height(defaultHeight) // 필요 시 외부 Modifier로 덮어쓰기 가능
         )
     } else {
         Text(
@@ -119,11 +119,11 @@ fun StudyWeeklyScreen(
         Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 32.dp)
+            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 16.dp)
     ) {
         // 상단 로고(센터)
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            AppLogo(modifier = Modifier.height(36.dp))
+            AppLogo(modifier = Modifier.height(18.dp))
         }
 
         Spacer(Modifier.height(24.dp))

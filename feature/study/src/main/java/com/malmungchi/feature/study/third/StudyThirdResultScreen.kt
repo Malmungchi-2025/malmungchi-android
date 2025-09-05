@@ -1,6 +1,7 @@
 package com.malmungchi.feature.study.third
 
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -60,6 +61,8 @@ fun StudyThirdResultScreenWrapper(
     //android.util.Log.d("QUIZ_RESULT", "🟢 ResultScreen 들어옴 token=${token.take(8)}..., studyId=$studyId")
     android.util.Log.d("QUIZ_RESULT", "🟢 ResultScreen 들어옴 studyId=$studyId")
     val scope = rememberCoroutineScope()
+
+    BackHandler { onBackClick() }
 
     // 서버에서 불러온 퀴즈 리스트 (QuizItem)
     val quizList by viewModel.quizList.collectAsState()
@@ -169,7 +172,7 @@ fun StudyThirdResultScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(16.dp)
+            .padding(horizontal = 20.dp, vertical = 48.dp)
     ) {
         TopBar(title = "오늘의 학습", onBackClick = onBackClick)
 
@@ -298,7 +301,7 @@ fun StudyThirdResultScreen(
             Modifier
                 .fillMaxWidth()
                 .offset(y = (-20).dp)           // 20dp 위로 올림
-                .padding(end = 24.dp),          // 🔹 오른쪽에서 24dp 여백
+                .padding(end = 20.dp),          // 🔹 오른쪽에서 24dp 여백
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Spacer(modifier = Modifier.width(150.dp)) // 왼쪽 빈칸 확보용
@@ -309,7 +312,7 @@ fun StudyThirdResultScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
                 modifier = Modifier
                     .height(42.dp)
-                    .width(160.dp)
+                    .width(60.dp)
             ) {
                 Text(
                     text = "다음 단계",

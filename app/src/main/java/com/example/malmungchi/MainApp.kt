@@ -123,6 +123,22 @@ fun MainApp() {
     val navController = rememberNavController()
     val appContext = LocalContext.current
 
+    // ✅ 전역 백핸들러: 스택 있으면 뒤로, 없으면 main으로(종료 방지)
+    BackHandler {
+        val current = navController.currentBackStackEntry?.destination?.route
+        val hasPrev = navController.previousBackStackEntry != null
+
+        when {
+            hasPrev -> navController.navigateUp()
+            current != "main" -> {
+                navController.navigate("main") { launchSingleTop = true }
+            }
+            else -> {
+                // main에서 더 이상 갈 데 없으면 '아무것도 하지 않음' → 종료 방지
+            }
+        }
+    }
+
     LogNavDestinations(navController)
 
     // 시작은 splash에서 자동 로그인 여부 판단
@@ -419,6 +435,9 @@ fun MainApp() {
 
         // 메인(하단바)
         composable("main") {
+            // ✅ main에서 시스템 백은 무시 → 앱 종료 방지
+            BackHandler(enabled = true) { /* no-op */ }
+
             MainScreen(
                 onStartStudyFlow = {
                     navController.navigate("study_graph") { launchSingleTop = true }
@@ -643,7 +662,13 @@ fun MainApp() {
 
                 StudySecondScreen(
                     viewModel = viewModel,
-                    onBackClick = { navController.popBackStack() },
+                    onBackClick = {
+                        navController.navigate("appendix_list") {      // ✅ 정확한 라우트명
+                            popUpTo("study_second") { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    //onBackClick = { navController.popBackStack() },
                     onNextClick = {
                         navController.navigate("study_third_intro") {
                             launchSingleTop = true
@@ -692,7 +717,7 @@ fun MainApp() {
                         studyId = id,
                         text = text,
                         viewModel = vm,
-                        onBackClick = { navController.popBackStack() },
+                        onBackClick = { navController.popBackStack("study_second", inclusive = false) },
                         onNextClick = {
                             navController.navigate("study_third_result/$id") {
                                 launchSingleTop = true
@@ -720,7 +745,7 @@ fun MainApp() {
                     StudyThirdResultScreenWrapper(
                         studyId = id,
                         viewModel = vm,
-                        onBackClick = { navController.popBackStack() },
+                        onBackClick = { navController.popBackStack("study_third", inclusive = false) },
                         onFinishClick = {
                             navController.navigate("study_third_complete") {
                                 launchSingleTop = true
