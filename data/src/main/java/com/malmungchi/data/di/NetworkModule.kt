@@ -9,6 +9,8 @@ import com.malmungchi.data.api.LevelTestApi
 import com.malmungchi.data.api.TodayStudyApi
 import com.malmungchi.data.implementation.repository.LevelTestRepositoryImpl
 import com.malmungchi.data.implementation.repository.TodayStudyRepositoryImpl
+import com.malmungchi.core.repository.AuthRepository
+import com.malmungchi.data.implementation.repository.AuthRepositoryImpl
 import com.malmungchi.data.net.RetrofitProvider
 import dagger.Module
 import dagger.Provides
@@ -61,4 +63,9 @@ object NetworkModule {
     ): LevelTestRepository {
         return LevelTestRepositoryImpl(api)
     }
+    @Provides
+    @Singleton
+    fun provideAuthRepository(
+        api: AuthService
+    ): AuthRepository = AuthRepositoryImpl(api)
 }
