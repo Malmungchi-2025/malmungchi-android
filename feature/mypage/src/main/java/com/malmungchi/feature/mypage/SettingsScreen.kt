@@ -52,7 +52,7 @@ fun SettingsScreen(
             .fillMaxSize()
             .padding(horizontal = ScreenPadding)
     ) {
-        Spacer(Modifier.height(12.dp))   // ← 마이페이지와 동일한 시작 위치
+        Spacer(Modifier.height(48.dp))   // ← 마이페이지와 동일한 시작 위치
         SettingsTopBar(
             title = "설정",
             onBack = onClickBack
