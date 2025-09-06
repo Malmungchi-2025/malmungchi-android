@@ -18,7 +18,7 @@ interface AuthService {
     @POST("/api/auth/login")
     suspend fun login(@Body body: LoginRequest): LoginResponse
 
-    // ✅ 변경:
+    // ✅ 내 정보
     @GET("/api/auth/me")
     suspend fun me(): com.malmungchi.core.model.BaseResponse<UserDto>
 
@@ -28,4 +28,40 @@ interface AuthService {
 
     @POST("/api/auth/dev/verify-otp")
     suspend fun verifyOtp(@Body body: Map<String, String>): BaseResponse<Unit>
+
+
+    // ✅ 최신 저장 단어 5개 (includeId=1, includeLiked=1 권장)
+    @GET("/api/auth/me/vocabulary/recent")
+    suspend fun getMyRecentVocabulary(
+        @Query("limit") limit: Int = 5,
+        @Query("includeId") includeId: Int = 1,
+        @Query("includeLiked") includeLiked: Int = 1
+    ): VocabListResponse
+
+    // ✅ 전체 단어 목록 (커서 기반: id 또는 created_at)
+    @GET("/api/auth/me/vocabulary")
+    suspend fun getMyVocabulary(
+        @Query("limit") limit: Int = 20,
+        @Query("lastId") lastId: Int? = null,
+        @Query("lastCreatedAt") lastCreatedAt: String? = null,
+        @Query("includeId") includeId: Int = 1,
+        @Query("includeLiked") includeLiked: Int = 1
+    ): VocabListResponse
+
+    // ✅ 좋아요 토글
+    @PATCH("/api/auth/me/vocabulary/{vocabId}/like")
+    suspend fun toggleMyVocabularyLike(
+        @Path("vocabId") vocabId: Int,
+        @Body body: Map<String, Boolean> // { "liked": true/false }
+    ): ToggleLikeResponse
+
+    // ✅ 좋아요 목록 (커서 기반)
+    @GET("/api/auth/me/vocabulary/liked")
+    suspend fun getMyLikedVocabulary(
+        @Query("limit") limit: Int = 20,
+        @Query("lastId") lastId: Int? = null,
+        @Query("lastCreatedAt") lastCreatedAt: String? = null,
+        @Query("includeId") includeId: Int = 1,
+        @Query("includeLiked") includeLiked: Int = 1
+    ): VocabListResponse
 }

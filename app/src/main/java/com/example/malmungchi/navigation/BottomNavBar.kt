@@ -36,6 +36,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.malmungchi.feature.study.Pretendard // ← 기존 모듈의 Pretendard 재사용
+import androidx.navigation.NavDestination
+import androidx.navigation.NavGraph
+
 
 private val BrandBlue = Color(0xFF195FCF)
 private val GrayNull  = Color(0xFFC9CAD4)
@@ -54,6 +57,16 @@ private val GrayNull  = Color(0xFFC9CAD4)
 //탭 누를 때 없는 라우트로 이동해서 죽는 문제 방지
 private fun NavController.hasRoute(route: String): Boolean =
     runCatching { graph.findNode(route) != null }.getOrDefault(false)
+
+// 루트 그래프의 "실제" 시작 목적지 id 찾기
+private fun NavGraph.findStartDestinationId(): Int {
+    var dest: NavDestination = this
+    while (dest is NavGraph) {
+        dest = dest.findNode(dest.startDestinationId)
+            ?: error("Start destination not found in $dest")
+    }
+    return dest.id
+}
 
 @Composable
 fun BottomNavBar(
@@ -115,8 +128,14 @@ fun BottomNavBar(
                             if (!selected) {
                                 val host = navController as NavHostController
                                 if (host.hasRoute(item.route)) {          // ✅ 라우트 존재할 때만 이동
+//                                    navController.navigate(item.route) {
+//                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+//                                        launchSingleTop = true
+//                                        restoreState = true
+//                                    }
                                     navController.navigate(item.route) {
-                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                        val startId = navController.graph.findStartDestinationId() // ★ 핵심
+                                        popUpTo(startId) { saveState = true }
                                         launchSingleTop = true
                                         restoreState = true
                                     }
