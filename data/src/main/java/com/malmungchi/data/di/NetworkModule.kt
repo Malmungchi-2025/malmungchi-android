@@ -63,9 +63,9 @@ object NetworkModule {
     ): LevelTestRepository {
         return LevelTestRepositoryImpl(api)
     }
-    @Provides
-    @Singleton
-    fun provideAuthRepository(
-        api: AuthService
-    ): AuthRepository = AuthRepositoryImpl(api)
+//    @Provides
+//    @Singleton
+//    fun provideAuthRepository(
+//        api: AuthService
+//    ): AuthRepository = AuthRepositoryImpl(api)
 }

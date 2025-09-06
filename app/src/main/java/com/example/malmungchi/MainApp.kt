@@ -56,6 +56,7 @@ import com.malmungchi.feature.login.LevelTestRoute
 import com.malmungchi.feature.login.LevelTestStartScreen
 import com.malmungchi.feature.mypage.RemindSettingsScreen
 import com.malmungchi.feature.mypage.SettingsScreen
+import com.malmungchi.feature.mypage.WordCollectionRoute
 import com.malmungchi.feature.mypage.WordCollectionScreen
 import kotlinx.coroutines.launch
 
@@ -439,11 +440,9 @@ fun MainApp() {
             BackHandler(enabled = true) { /* no-op */ }
 
             MainScreen(
-                onStartStudyFlow = {
-                    navController.navigate("study_graph") { launchSingleTop = true }
-                },
-                onOpenSettings   = { navController.navigate("settings") }
-
+                onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } },
+                onOpenSettings   = { navController.navigate("settings") },
+                onOpenWordCollection = { navController.navigate("word_collection") } // ★ 추가
             )
         }
 
@@ -788,9 +787,18 @@ fun MainApp() {
         composable("friend") {
             MainScreen(initialTab = "friend", onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } },onOpenSettings   = { navController.navigate("settings") })
         }
+//        composable("mypage") {
+//            MainScreen(initialTab = "mypage", onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } },onOpenSettings   = { navController.navigate("settings") })
+//        }
+
         composable("mypage") {
-            MainScreen(initialTab = "mypage", onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } },onOpenSettings   = { navController.navigate("settings") })
+            com.malmungchi.feature.mypage.MyPageRoute(
+                onClickSettings = { navController.navigate("settings") },
+                onClickViewAllWords = { navController.navigate("word_collection") },
+                onClickViewAllBadges = { /* TODO: 배지 전체보기 라우트 생기면 연결 */ }
+            )
         }
+
         composable("settings") {
             SettingsScreen(
                 onClickBack = { navController.popBackStack() },
@@ -810,15 +818,31 @@ fun MainApp() {
         }
         // MainApp() 의 NavHost {...} 안
         composable("word_collection") {
-            var favOnly by remember { mutableStateOf(false) }
-
-            WordCollectionScreen(
-                onBack = { navController.popBackStack() },
-                filterFavoriteOnly = favOnly,
-                onToggleFilterFavorite = { favOnly = it },
-                items = emptyList()   // 👈 아직 API 없으니 빈 리스트
+            WordCollectionRoute(
+                onBack = {
+                    navController.navigate("mypage") {
+                        popUpTo("word_collection") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
+//        composable("word_collection") {
+//            var favOnly by remember { mutableStateOf(false) }
+//
+//            WordCollectionScreen(
+//                onBack = {
+//                    // 마이페이지 화면으로 복귀
+//                    navController.navigate("mypage") {
+//                        popUpTo("word_collection") { inclusive = true } // 현재 화면 제거
+//                        launchSingleTop = true
+//                    }
+//                },
+//                filterFavoriteOnly = favOnly,
+//                onToggleFilterFavorite = { favOnly = it },
+//                items = emptyList()
+//            )
+//        }
 
 
     }
