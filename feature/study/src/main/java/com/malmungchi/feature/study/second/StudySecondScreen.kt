@@ -1,5 +1,6 @@
 package com.malmungchi.feature.study.second
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -400,7 +401,11 @@ fun StudySecondScreen(
     val currentIndexFromVm by viewModel.currentIndex.collectAsState()
     val typedFromVm by viewModel.userInput.collectAsState()
 
+
     var overlayStep by rememberSaveable { mutableStateOf(GuideOverlayStep.Step1) }
+
+    // ✅ ① 스킵 다이얼로그 상태 선언 (기존엔 없어서 Unresolved)
+    var showSkipDialog by rememberSaveable { mutableStateOf(false) }
 
     // ✅ 화면 내부에서 사용할 인덱스(UI 인덱스) — VM 값과 초기 동기화
     var uiIndex by rememberSaveable { mutableStateOf(0) }
@@ -418,12 +423,14 @@ fun StudySecondScreen(
     }
 
     val sentenceFromUi = sentences.getOrNull(uiIndex).orEmpty()
-    val displaySentence = if (overlayStep == GuideOverlayStep.None) sentenceFromUi else GuideSentence
+    val displaySentence =
+        if (overlayStep == GuideOverlayStep.None) sentenceFromUi else GuideSentence
 
     var typedValue by remember { mutableStateOf(TextFieldValue("")) }
     LaunchedEffect(typedFromVm, sentenceFromUi) {
         if (typedFromVm != typedValue.text) {
-            typedValue = typedValue.copy(text = typedFromVm, selection = TextRange(typedFromVm.length))
+            typedValue =
+                typedValue.copy(text = typedFromVm, selection = TextRange(typedFromVm.length))
         }
     }
 
@@ -431,6 +438,17 @@ fun StudySecondScreen(
     LaunchedEffect(overlayStep) { errorIndexUi = null }
 
     val original = sentenceFromUi
+
+    // ✅ ② 완료/스킵 가능 여부 계산 (기존엔 없어서 Unresolved)
+    val isLast = sentences.isNotEmpty() && uiIndex == sentences.lastIndex
+    val isCurrentDone = nfc(typedValue.text) == nfc(original)
+    val isFinished = overlayStep == GuideOverlayStep.None && isLast && isCurrentDone
+    val canSkip = overlayStep == GuideOverlayStep.None && !isFinished
+
+    // ✅ ③ BackHandler는 canSkip/showSkipDialog 계산 뒤에!
+    BackHandler(enabled = canSkip) {
+        showSkipDialog = true
+    }
 
     // ✅ 문장 완료 시 동작: 마지막이면 다음 단계, 아니면 다음 문장으로
     val advanceOrFinish: () -> Unit = {
@@ -511,7 +529,8 @@ fun StudySecondScreen(
                     }
                 }
 
-                GuideOverlayStep.Step2 -> { /* 필름 위 전용 레이어에서 그림 */ }
+                GuideOverlayStep.Step2 -> { /* 필름 위 전용 레이어에서 그림 */
+                }
 
                 GuideOverlayStep.None -> {
                     Column(Modifier.padding(start = SentenceIndent)) {
@@ -577,7 +596,7 @@ fun StudySecondScreen(
                                 bottom = 10.dp
                             ),
 
-                        )
+                            )
                     }
 
                     Spacer(Modifier.height(48.dp))
@@ -624,11 +643,11 @@ fun StudySecondScreen(
             bubble1OffsetY = (-30).dp,
             bubble2OffsetX = 40.dp + 30.dp,
             bubble2OffsetY = (-30).dp,
-            bubble1Width   = null,
-            bubble2Width   = null,
-            arrowOffsetX   = 40.dp,
-            arrowOffsetY   = (-100).dp,
-            arrowSize      = 48.dp
+            bubble1Width = null,
+            bubble2Width = null,
+            arrowOffsetX = 40.dp,
+            arrowOffsetY = (-100).dp,
+            arrowSize = 48.dp
         )
 
         /* ----------------- ③ Step2 전용: ‘필름 위’ 고정 위치 레이어 (z=20) ----------------- */
@@ -665,14 +684,33 @@ fun StudySecondScreen(
             }
         }
 
-        // ✅ ④ 하단 고정 버튼 (온보딩 종료 후에만 노출)
+        // ✅ 하단 버튼 연결부만 교체
         if (overlayStep == GuideOverlayStep.None) {
             BottomNavigationButtons(
-                onBackClick = onBackClick,
-                onNextClick = onNextClick,
+                onBackClick = {
+                    if (canSkip) showSkipDialog = true else onBackClick()
+                },
+                onNextClick = {
+                    if (canSkip) showSkipDialog = true else onNextClick()
+                },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 48.dp)
+            )
+        }
+
+        // ✅ 스킵 다이얼로그 실제 표시
+        if (showSkipDialog) {
+            SkipHandwritingAlert.Show(
+                onConfirm = {
+                    showSkipDialog = false
+                    onNextClick() // "네" → 다음 페이지로 이동
+                },
+                onDismiss = {
+                    showSkipDialog = false
+                    // "아니요" → 그대로 현재 화면 유지 (필사 계속)
+                    // 필요하면 여기서 키보드/포커스 복구도 가능
+                }
             )
         }
     }

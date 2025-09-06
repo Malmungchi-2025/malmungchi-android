@@ -724,7 +724,7 @@ fun MainApp() {
                             navController.navigate("study_third_result/$id") {
                                 launchSingleTop = true
                                 restoreState = true
-                                popUpTo("study_graph") { inclusive = false }
+                                //popUpTo("study_graph") { inclusive = false }
                             }
                         }
                     )

@@ -77,3 +77,27 @@ data class ToggleLikeResponse(
 
 
 data class ResendRequest(val email: String)
+
+// 별명 테스트 저장 요청
+data class NicknameUsersOnlyReq(
+    val nicknameTitle: String?, // 프론트 계산 별명(없으면 null)
+    val vocabCorrect: Int,      // 0..9
+    val readingCorrect: Int     // 0..9
+)
+
+// 서버 응답(result 안에 users 스냅샷이 내려옴)
+data class SaveNicknameResult(
+    val id: Int,
+    val email: String,
+    val name: String?,
+    val nickname: String?,          // 기존 유저 닉네임(프로필용)
+    val is_verified: Boolean?,
+    val level: Int?,
+    val point: Int?,
+    val vocab_tier: String?,        // "상"|"중"|"하"|null
+    val reading_tier: String?,
+    val vocab_correct: Int?,
+    val reading_correct: Int?,
+    val nickname_title: String?,    // 👈 우리가 저장한 타이틀형 별명
+    val nickname_updated_at: String?
+)
