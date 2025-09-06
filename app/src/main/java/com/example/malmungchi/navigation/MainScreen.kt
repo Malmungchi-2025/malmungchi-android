@@ -22,6 +22,7 @@ import java.time.format.DateTimeFormatter
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.malmungchi.feature.mypage.MyPageViewModel
 
 import com.malmungchi.feature.study.intro.StudyWeeklyScreen
 
@@ -31,6 +32,7 @@ fun MainScreen(
     onStartStudyFlow: () -> Unit, // 로그인 이후, "시작하기" 누르면 루트의 study_graph로 진입시키는 콜백
     initialTab: String? = null,
     onOpenSettings: () -> Unit = {},
+    onOpenWordCollection: () -> Unit = {}
 ) {
     val navController = rememberNavController()
 
@@ -133,12 +135,25 @@ fun MainScreen(
                 startDestination = "mypage/home"
             ) {
                 composable("mypage/home") {
+                    // 1) VM 주입
+                    val vm: MyPageViewModel = hiltViewModel()
+                    // 2) 상태 수집
+                    val ui by vm.ui.collectAsState()
+
+                    // 3) 로그로 진입 확인 (원하던 로그)
+                    android.util.Log.d("NAV", "dest = mypage (compose entered)")
+                    android.util.Log.d(
+                        "MyPageVM",
+                        "render with user=${ui.user?.name} nick=${ui.user?.nickname} level=${ui.user?.level}"
+                    )
+
+                    // 4) 실제 바인딩
                     MyPageScreen(
-                        userName = "...",
-                        levelLabel = "...",
-                        levelProgress = 0.6f,
+                        userName = ui.userName,
+                        levelLabel = ui.levelLabel,
+                        levelProgress = ui.levelProgress,
                         onClickSettings = onOpenSettings,
-                        onClickViewAllWords = { navController.navigate("word_collection") }  // ✅ 여기서 호출
+                        onClickViewAllWords = { onOpenWordCollection() } // ✅ 루트 NavHost로 위임
                     )
                 }
             }

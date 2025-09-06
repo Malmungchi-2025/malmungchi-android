@@ -44,5 +44,36 @@ data class LoginResponse(
     val message: String? = null
 )
 
+data class VocabularyDto(
+    val id: Int? = null,            // includeId=1일 때만 옴
+    val word: String,
+    val meaning: String,
+    val example: String?,
+    val isLiked: Boolean? = null    // includeLiked=1일 때만 옴
+)
+
+data class NextCursor(
+    val lastId: Int? = null,
+    val lastCreatedAt: String? = null
+)
+
+data class VocabListResponse(
+    val success: Boolean,
+    val message: String?,
+    val result: List<VocabularyDto>?,
+    val nextCursor: NextCursor? = null
+)
+
+data class ToggleLikeResult(
+    val id: Int,
+    val isLiked: Boolean
+)
+
+data class ToggleLikeResponse(
+    val success: Boolean,
+    val message: String?,
+    val result: ToggleLikeResult?
+)
+
 
 data class ResendRequest(val email: String)

@@ -55,6 +55,52 @@ class AuthRepositoryImpl @Inject constructor(
             user
         } else null
     }
+
+    // ===== 마이페이지 =====
+
+    override suspend fun getMyRecentVocabulary(limit: Int): Pair<List<VocabularyDto>, NextCursor?> {
+        val r = api.getMyRecentVocabulary(limit = limit, includeId = 1, includeLiked = 1)
+        if (!r.success) return emptyList<VocabularyDto>() to null
+        return (r.result ?: emptyList()) to r.nextCursor
+    }
+
+    override suspend fun getMyVocabulary(
+        limit: Int,
+        lastId: Int?,
+        lastCreatedAt: String?
+    ): Pair<List<VocabularyDto>, NextCursor?> {
+        val r = api.getMyVocabulary(
+            limit = limit,
+            lastId = lastId,
+            lastCreatedAt = lastCreatedAt,
+            includeId = 1,
+            includeLiked = 1
+        )
+        if (!r.success) return emptyList<VocabularyDto>() to null
+        return (r.result ?: emptyList()) to r.nextCursor
+    }
+
+    override suspend fun toggleMyVocabularyLike(vocabId: Int, liked: Boolean): ToggleLikeResult {
+        val r = api.toggleMyVocabularyLike(vocabId, mapOf("liked" to liked))
+        val res = r.result ?: error(r.message ?: "토글 실패")
+        return res
+    }
+
+    override suspend fun getMyLikedVocabulary(
+        limit: Int,
+        lastId: Int?,
+        lastCreatedAt: String?
+    ): Pair<List<VocabularyDto>, NextCursor?> {
+        val r = api.getMyLikedVocabulary(
+            limit = limit,
+            lastId = lastId,
+            lastCreatedAt = lastCreatedAt,
+            includeId = 1,
+            includeLiked = 1
+        )
+        if (!r.success) return emptyList<VocabularyDto>() to null
+        return (r.result ?: emptyList()) to r.nextCursor
+    }
 }
 //class AuthRepositoryImpl @Inject constructor(   // 👈 @Inject 추가
 //    private val api: AuthService
