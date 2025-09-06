@@ -58,6 +58,9 @@ import com.malmungchi.feature.mypage.RemindSettingsScreen
 import com.malmungchi.feature.mypage.SettingsScreen
 import com.malmungchi.feature.mypage.WordCollectionRoute
 import com.malmungchi.feature.mypage.WordCollectionScreen
+import com.malmungchi.feature.mypage.nickname.NicknameTestFlowScreen
+import com.malmungchi.feature.mypage.nickname.NicknameTestIntroScreen
+import com.malmungchi.feature.mypage.nickname.NicknameTestLoadingScreen
 import kotlinx.coroutines.launch
 
 
@@ -795,7 +798,61 @@ fun MainApp() {
             com.malmungchi.feature.mypage.MyPageRoute(
                 onClickSettings = { navController.navigate("settings") },
                 onClickViewAllWords = { navController.navigate("word_collection") },
-                onClickViewAllBadges = { /* TODO: 배지 전체보기 라우트 생기면 연결 */ }
+                onClickViewAllBadges = { /* TODO */ },
+                onClickViewNicknameTest = {                 // 🔹 말풍선 탭 → 인트로
+                    navController.navigate("nickname_test_intro") { launchSingleTop = true }
+                }
+            )
+        }
+
+        composable("nickname_test_intro") {
+            NicknameTestIntroScreen(
+                onBackClick = {
+                    navController.navigate("mypage") {
+                        popUpTo("nickname_test_intro") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onStartClick = {
+                    navController.navigate("nickname_test_loading") { launchSingleTop = true }
+                }
+            )
+        }
+
+        composable("nickname_test_loading") {
+            NicknameTestLoadingScreen(
+                onBackClick = {
+                    navController.navigate("mypage") {
+                        popUpTo("nickname_test_loading") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                // 필요 시 로딩 완료/탭 시 다음으로
+                onNavigateNext = {
+                    navController.navigate("nickname_test_flow") {
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+// 핵심: Flow 내에서 1~9 → 10~11 → 12~18 → Finished(=결과) 까지 한 화면에서 오케스트레이션
+        composable("nickname_test_flow") {
+            NicknameTestFlowScreen(
+                // 결과 화면에서 “나가기” → 마이페이지
+                onExitToMyPage = {
+                    navController.navigate("mypage") {
+                        popUpTo("nickname_test_intro") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                // 결과 화면에서 “다시하기” → 로딩부터 재시작
+                onRetryFromStart = {
+                    navController.navigate("nickname_test_loading") {
+                        popUpTo("nickname_test_flow") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
@@ -822,6 +879,38 @@ fun MainApp() {
                 onBack = {
                     navController.navigate("mypage") {
                         popUpTo("word_collection") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+        composable("nickname_test_intro") {
+            NicknameTestIntroScreen(
+                onBackClick = {
+                    // 인트로에서 back → 마이페이지로
+                    navController.navigate("mypage") {
+                        popUpTo("nickname_test_intro") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onStartClick = {
+                    // 시작하기 → 로딩
+                    navController.navigate("nickname_test_loading") { launchSingleTop = true }
+                }
+            )
+        }
+
+        composable("nickname_test_loading") {
+            NicknameTestLoadingScreen(
+                onBackClick = {
+                    navController.navigate("mypage") {
+                        popUpTo("nickname_test_loading") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateNext = {                       // ✅ 필수 파라미터 전달
+                    navController.navigate("nickname_test_flow") {
                         launchSingleTop = true
                     }
                 }

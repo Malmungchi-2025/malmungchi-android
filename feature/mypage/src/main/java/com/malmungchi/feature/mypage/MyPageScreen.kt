@@ -25,6 +25,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.malmungchi.core.designsystem.Pretendard
 import com.malmungchi.core.model.VocabularyDto
 import com.malmungchi.feature.mypage.R as MyPageR
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import kotlinx.coroutines.launch
 
 // ===== Color & Dimens =====
 private val Blue_195FCF = Color(0xFF195FCF)
@@ -40,7 +45,8 @@ fun MyPageRoute(
     viewModel: MyPageViewModel = hiltViewModel(),
     onClickSettings: () -> Unit = {},
     onClickViewAllWords: () -> Unit = {},
-    onClickViewAllBadges: () -> Unit = {}
+    onClickViewAllBadges: () -> Unit = {},
+    onClickViewNicknameTest: () -> Unit = {}
 ) {
     val ui by viewModel.ui.collectAsState()
 
@@ -66,6 +72,7 @@ fun MyPageRoute(
                 onClickSettings = onClickSettings,
                 onClickViewAllWords = onClickViewAllWords,
                 onClickViewAllBadges = onClickViewAllBadges,
+                onClickNicknameTest = { onClickViewNicknameTest() },
                 recentItems = ui.recentVocab,
                 currentRecentIndex = recentIndex,
                 onChangeRecentIndex = { next ->
@@ -88,6 +95,7 @@ fun MyPageScreen(
     onClickSettings: () -> Unit = {},
     onClickViewAllWords: () -> Unit = {},
     onClickViewAllBadges: () -> Unit = {},
+    onClickNicknameTest: () -> Unit = {},
     // 최근 단어 데이터/인덱스
     recentItems: List<VocabularyDto> = emptyList(),
     currentRecentIndex: Int = 0,
@@ -107,8 +115,9 @@ fun MyPageScreen(
         Spacer(Modifier.height(20.dp))
         ProfileBlock(
             userName = userName,
-            questionLabel = "지치의 어휘/문해력은?",
-            profileIconRes = MyPageR.drawable.ic_mypage_icon
+            questionLabel = "치치의 어휘/문해력은?",
+            profileIconRes = MyPageR.drawable.ic_mypage_icon,
+            onClickQuestion = { onClickNicknameTest() }
         )
 
         Spacer(Modifier.height(16.dp))
@@ -190,7 +199,8 @@ private val BUBBLE_TEXT_WEIGHT = FontWeight.Medium
 private fun ProfileBlock(
     userName: String,
     questionLabel: String,
-    profileIconRes: Int
+    profileIconRes: Int,
+    onClickQuestion: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -242,6 +252,7 @@ private fun ProfileBlock(
                 modifier = Modifier
                     .padding(bottom = BOTTOM_PADDING)
                     .background(Bg_EFF4FB, shape = BUBBLE_CORNER)
+                    .clickable { onClickQuestion() }
                     .padding(horizontal = BUBBLE_H_PADDING, vertical = BUBBLE_V_PADDING)
             ) {
                 Text(
@@ -360,12 +371,32 @@ private fun SectionHeader(
 @Composable
 private fun WordCollectionCard(
     items: List<VocabularyDto> = emptyList(),
-    index: Int = 0,
+    index: Int = 0,                       // 부모에서 내려주는 현재 인덱스
     onClick: () -> Unit = {},
-    onSelectIndex: (Int) -> Unit = {}
+    onSelectIndex: (Int) -> Unit = {}     // 부모로 페이지 변경 전달
 ) {
-    val item = items.getOrNull(index)
+    val pageCount = items.size.coerceAtLeast(1)   // 빈 리스트 대비
+    val pagerState = rememberPagerState(
+        initialPage = index.coerceIn(0, pageCount - 1),
+        pageCount = { pageCount }
+    )
+    val scope = rememberCoroutineScope()
 
+    // ✅ 부모에서 index가 바뀌면 Pager를 그 위치로 스크롤 (동기화)
+    LaunchedEffect(index, pageCount) {
+        val target = index.coerceIn(0, pageCount - 1)
+        if (pagerState.currentPage != target) {
+            pagerState.scrollToPage(target)  // 순간이동; 애니메이션 원하면 animateScrollToPage
+        }
+    }
+
+    // ✅ Pager 쪽에서 스와이프(스크롤)로 페이지가 바뀌면 부모에 알려주기
+    LaunchedEffect(pagerState.currentPage, pageCount) {
+        val cp = pagerState.currentPage.coerceIn(0, pageCount - 1)
+        if (cp != index) onSelectIndex(cp)
+    }
+
+    // ===== 카드 영역: 페이지별로 다른 단어 보여주기 =====
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -373,59 +404,138 @@ private fun WordCollectionCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
+            .heightIn(min = 120.dp) // 높이 살짝 보장(선택)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                text = item?.word ?: "최근 단어가 없어요",
-                style = TextStyle(
-                    fontFamily = Pretendard,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            )
-
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = item?.meaning ?: "단어를 저장하면 여기에서 바로 볼 수 있어요.",
-                style = TextStyle(
-                    fontFamily = Pretendard,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp,
-                    lineHeight = 22.sp,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            )
-
-            Spacer(Modifier.height(12.dp))
-            val ex = item?.example
-            if (!ex.isNullOrBlank()) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth()
+        ) { page ->
+            val item = items.getOrNull(page)
+            Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    text = "예문) $ex",
+                    text = item?.word ?: "최근 단어가 없어요",
+                    style = TextStyle(
+                        fontFamily = Pretendard,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = item?.meaning ?: "단어를 저장하면 여기에서 바로 볼 수 있어요.",
                     style = TextStyle(
                         fontFamily = Pretendard,
                         fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp,
-                        lineHeight = 18.sp,
-                        color = Gray_616161
+                        fontSize = 14.sp,
+                        lineHeight = 22.sp,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 )
+                val ex = item?.example
+                if (!ex.isNullOrBlank()) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = "예문) $ex",
+                        style = TextStyle(
+                            fontFamily = Pretendard,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 12.sp,
+                            lineHeight = 18.sp,
+                            color = Gray_616161
+                        )
+                    )
+                }
             }
         }
     }
 
-    // 카드 아래 도트 인디케이터
+    // ===== 도트 인디케이터: 탭해서 해당 페이지로 이동 =====
     if (items.isNotEmpty()) {
         Spacer(Modifier.height(12.dp))
         DotsIndicator(
-            count = items.size,       // 최근 단어 개수
-            selectedIndex = index,    // 현재 보고 있는 인덱스
+            count = pageCount,
+            selectedIndex = pagerState.currentPage.coerceIn(0, pageCount - 1),
             selectedColor = Blue_195FCF,
             unselectedColor = Color(0xFFE0E0E0),
-            onSelect = onSelectIndex
+            onSelect = { tapped ->
+                scope.launch {
+                    pagerState.animateScrollToPage(tapped)
+                    // animateScrollToPage가 끝나면 LaunchedEffect가 onSelectIndex(tapped) 호출해 부모와 동기화합니다.
+                }
+            }
         )
     }
 }
+//@Composable
+//private fun WordCollectionCard(
+//    items: List<VocabularyDto> = emptyList(),
+//    index: Int = 0,
+//    onClick: () -> Unit = {},
+//    onSelectIndex: (Int) -> Unit = {}
+//) {
+//    val item = items.getOrNull(index)
+//
+//    Card(
+//        colors = CardDefaults.cardColors(containerColor = Color.White),
+//        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+//        shape = RoundedCornerShape(CardCorner),
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .clickable { onClick() }
+//    ) {
+//        Column(modifier = Modifier.padding(20.dp)) {
+//            Text(
+//                text = item?.word ?: "최근 단어가 없어요",
+//                style = TextStyle(
+//                    fontFamily = Pretendard,
+//                    fontWeight = FontWeight.SemiBold,
+//                    fontSize = 16.sp,
+//                    color = MaterialTheme.colorScheme.onBackground
+//                )
+//            )
+//
+//            Spacer(Modifier.height(8.dp))
+//            Text(
+//                text = item?.meaning ?: "단어를 저장하면 여기에서 바로 볼 수 있어요.",
+//                style = TextStyle(
+//                    fontFamily = Pretendard,
+//                    fontWeight = FontWeight.Medium,
+//                    fontSize = 14.sp,
+//                    lineHeight = 22.sp,
+//                    color = MaterialTheme.colorScheme.onBackground
+//                )
+//            )
+//
+//            Spacer(Modifier.height(12.dp))
+//            val ex = item?.example
+//            if (!ex.isNullOrBlank()) {
+//                Text(
+//                    text = "예문) $ex",
+//                    style = TextStyle(
+//                        fontFamily = Pretendard,
+//                        fontWeight = FontWeight.Medium,
+//                        fontSize = 12.sp,
+//                        lineHeight = 18.sp,
+//                        color = Gray_616161
+//                    )
+//                )
+//            }
+//        }
+//    }
+//
+//    // 카드 아래 도트 인디케이터
+//    if (items.isNotEmpty()) {
+//        Spacer(Modifier.height(12.dp))
+//        DotsIndicator(
+//            count = items.size,       // 최근 단어 개수
+//            selectedIndex = index,    // 현재 보고 있는 인덱스
+//            selectedColor = Blue_195FCF,
+//            unselectedColor = Color(0xFFE0E0E0),
+//            onSelect = onSelectIndex
+//        )
+//    }
+//}
 
 @Composable
 private fun DotsIndicator(
