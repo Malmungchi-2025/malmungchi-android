@@ -43,67 +43,72 @@ fun NicknameTestIntroScreen(
     onBackClick: () -> Unit = {},
     onStartClick: () -> Unit = {}
 ) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(horizontal = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 16.dp)
     ) {
-        Spacer(Modifier.height(8.dp))
-
-        // 상단 바 (뒤로가기)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    painter = painterResource(id = MyPageR.drawable.ic_back),
-                    contentDescription = "뒤로가기",
-                    tint = Color.Unspecified
-                )
+            Spacer(Modifier.height(8.dp))
+
+            // 상단 바 (뒤로가기)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        painter = painterResource(id = MyPageR.drawable.ic_back),
+                        contentDescription = "뒤로가기",
+                        tint = Color.Unspecified
+                    )
+                }
             }
+
+            Spacer(Modifier.weight(1f))
+
+            Text(
+                text = "별명테스트를 시작할까요?",
+                fontFamily = Pretendard,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = BrandBlue,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Text(
+                text = "별명테스트를 통해 ${userName}님만의\n별명을 부여받고 귀여운 캐릭터 카드를 얻으세요!",
+                fontFamily = Pretendard,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Black,
+                textAlign = TextAlign.Center,
+                lineHeight = 24.sp,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+
+            Spacer(Modifier.weight(1f))
         }
 
-        Spacer(Modifier.weight(1f))
-
-        Text(
-            text = "별명테스트를 시작할까요?",
-            fontFamily = Pretendard,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = BrandBlue,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 8.dp)
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        Text(
-            text = "별명테스트를 통해 ${userName}님만의\n별명을 부여받고 귀여운 캐릭터 카드를 얻으세요!",
-            fontFamily = Pretendard,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color.Black,
-            textAlign = TextAlign.Center,
-            lineHeight = 24.sp, // 150%
-            modifier = Modifier.padding(horizontal = 8.dp)
-        )
-
-        Spacer(Modifier.weight(1f))
-
+        // 👇 바닥에서 48dp 위에 고정
         Button(
             onClick = onStartClick,
             colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
             shape = MaterialTheme.shapes.extraLarge,
             modifier = Modifier
-                .padding(bottom = 32.dp)
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 48.dp)
                 .height(48.dp)
                 .width(200.dp)
-                .align(Alignment.CenterHorizontally)
         ) {
             Text(
                 text = "시작하기",
@@ -115,7 +120,6 @@ fun NicknameTestIntroScreen(
         }
     }
 }
-
 /**
  * # 별명 테스트 - 로딩
  *
@@ -139,7 +143,8 @@ fun NicknameTestLoadingScreen(
             .fillMaxSize()
             .background(Color.White)
             .padding(horizontal = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Spacer(Modifier.height(8.dp))
 

@@ -64,4 +64,9 @@ interface AuthService {
         @Query("includeId") includeId: Int = 1,
         @Query("includeLiked") includeLiked: Int = 1
     ): VocabListResponse
+
+    @POST("/api/auth/me/nickname-test/result")
+    suspend fun saveNicknameUsersOnly(
+        @Body body: NicknameUsersOnlyReq
+    ): BaseResponse<SaveNicknameResult>
 }

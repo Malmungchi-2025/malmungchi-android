@@ -312,7 +312,7 @@ fun StudyThirdResultScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
                 modifier = Modifier
                     .height(42.dp)
-                    .width(60.dp)
+                    .width(160.dp)
             ) {
                 Text(
                     text = "다음 단계",
