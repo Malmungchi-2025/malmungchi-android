@@ -101,6 +101,22 @@ class AuthRepositoryImpl @Inject constructor(
         if (!r.success) return emptyList<VocabularyDto>() to null
         return (r.result ?: emptyList()) to r.nextCursor
     }
+
+    override suspend fun saveNicknameResult(
+        nicknameTitle: String?,
+        vocabCorrect: Int,
+        readingCorrect: Int
+    ): SaveNicknameResult {
+        val resp = api.saveNicknameUsersOnly(
+            NicknameUsersOnlyReq(
+                nicknameTitle = nicknameTitle,
+                vocabCorrect = vocabCorrect,
+                readingCorrect = readingCorrect
+            )
+        )
+        if (!resp.success) error(resp.message ?: "별명 저장 실패")
+        return resp.result ?: error("빈 응답")
+    }
 }
 //class AuthRepositoryImpl @Inject constructor(   // 👈 @Inject 추가
 //    private val api: AuthService

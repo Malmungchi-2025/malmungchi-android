@@ -112,7 +112,7 @@ fun MyPageScreen(
             onClickSettings = onClickSettings
         )
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(32.dp))
         ProfileBlock(
             userName = userName,
             questionLabel = "치치의 어휘/문해력은?",
@@ -120,7 +120,7 @@ fun MyPageScreen(
             onClickQuestion = { onClickNicknameTest() }
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(20.dp))
         LevelBlock(
             userName = userName,
             levelLabel = levelLabel,
@@ -280,6 +280,8 @@ private fun LevelBlock(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Spacer(Modifier.height(16.dp))
+
         Text(
             text = "${userName}님의 수준은 ‘${levelLabel}’", // ← 이름/단계 문구
             style = TextStyle(

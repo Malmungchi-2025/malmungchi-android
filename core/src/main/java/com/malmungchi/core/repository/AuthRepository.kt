@@ -24,4 +24,11 @@ interface AuthRepository {
         lastId: Int? = null,
         lastCreatedAt: String? = null
     ): Pair<List<VocabularyDto>, NextCursor?>
+
+    // 별명 테스트 결과 저장
+    suspend fun saveNicknameResult(
+        nicknameTitle: String?,
+        vocabCorrect: Int,
+        readingCorrect: Int
+    ): SaveNicknameResult
 }

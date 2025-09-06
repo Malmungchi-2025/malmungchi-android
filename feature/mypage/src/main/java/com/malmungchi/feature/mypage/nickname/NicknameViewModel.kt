@@ -108,6 +108,7 @@ data class NicknameUiState(
 
 @HiltViewModel
 class NicknameViewModel @Inject constructor(
+    private val authRepository: com.malmungchi.core.repository.AuthRepository   // 👈 주입
     // 실제에선 DI로 주입: private val api: NicknameApi
 ) : ViewModel() {
 
@@ -350,17 +351,25 @@ class NicknameViewModel @Inject constructor(
             finishedNickname = nickname
         )
 
-        // 서버로 전송
+        // ✅ 서버 저장
         viewModelScope.launch {
-            api.postNicknameResult(
-                nickname = nickname,
-                vocabTier = vocabTier,
-                readingTier = readingTier,
-                vocabCorrect = _state.value.vocabCorrect,
-                readingCorrect = totalReadingCorrect
-            )
+            runCatching {
+                authRepository.saveNicknameResult(
+                    nicknameTitle = nickname,                 // 프론트 계산값 그대로 전달
+                    vocabCorrect = _state.value.vocabCorrect, // 0..9
+                    readingCorrect = totalReadingCorrect      // 0..9 (OX+독해)
+                )
+            }.onSuccess { saved ->
+                // 필요하면 saved.nickname_title 등으로 UI/캐시 갱신
+                // 예: 토스트/스낵바 or 마이페이지 프리패치 등
+            }.onFailure { e ->
+                // TODO: 에러 핸들링 (스낵바/다이얼로그)
+                e.printStackTrace()
+            }
         }
     }
+
+
 }
 
 
@@ -444,18 +453,18 @@ fun NicknameTestFlowScreen(
 }
 
 
-// ===== Preview (DI 없이 미리보기용) =====
-@Preview(showBackground = true)
-@Composable
-private fun PreviewNicknameTestFlowScreen_Vocab() {
-    // Hilt 없이 ViewModel 대체: remember로 임시 인스턴스
-    val fakeVm = remember { NicknameViewModel() }
-    MaterialTheme {
-        Surface {
-            NicknameTestFlowScreen(
-                viewModel = fakeVm,
-                onAllFinished = { _, _, _ -> }
-            )
-        }
-    }
-}
+//// ===== Preview (DI 없이 미리보기용) =====
+//@Preview(showBackground = true)
+//@Composable
+//private fun PreviewNicknameTestFlowScreen_Vocab() {
+//    // Hilt 없이 ViewModel 대체: remember로 임시 인스턴스
+//    val fakeVm = remember { NicknameViewModel() }
+//    MaterialTheme {
+//        Surface {
+//            NicknameTestFlowScreen(
+//                viewModel = fakeVm,
+//                onAllFinished = { _, _, _ -> }
+//            )
+//        }
+//    }
+//}
