@@ -68,7 +68,13 @@ fun TermsScaffold(
     val atBottom by remember { derivedStateOf { scrollState.value >= scrollState.maxValue } }
     val buttonEnabled = if (requireScrollToEnd) atBottom else true
 
-    Column(Modifier.fillMaxSize()) {
+//    Column(Modifier.fillMaxSize()) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            //.navigationBarsPadding()   // 제스처/소프트키 영역 회피(옵션)
+            .padding(bottom = 48.dp)   // ★ 버튼을 바닥에서 48dp 띄움
+    ) {
         // 상태바 높이만큼 안전하게 띄우기 (선택)
         Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
         // 원하는 추가 여백 16dp
@@ -122,6 +128,7 @@ fun TermsScaffold(
 
         // 하단 버튼 (동일)
         Divider(thickness = 1.dp, color = Color(0xFFE0E0E0))
+
         Button(
             onClick = onComplete,
             enabled = buttonEnabled,
