@@ -149,11 +149,214 @@ fun StudyWeeklyScreen(
             onGoStudyClick = onGoStudyClick,
             onBodyClick = {
                 if (isPast) onOpenPastStudy(selected)
-                // 오늘/미래는 동작 없음(필요 시 토스트 처리)
+            },
+            showResetToToday = selected != today,     // ✅ 오늘이 아니면 버튼 표시
+            onResetToToday = {                        // ✅ 클릭 시 오늘로
+                selected = today
             }
         )
     }
 }
+
+//카드 우측용 “오늘로” 칩 컴포저블 추가
+@Composable
+private fun ResetToTodayChip(
+    onClick: () -> Unit,
+    height: Dp = 28.dp
+) {
+    val isPreview = LocalInspectionMode.current
+    val painter = if (!isPreview)
+        runCatching { painterResource(R.drawable.img_reset) }.getOrNull()
+    else null
+
+    if (painter != null) {
+        Image(
+            painter = painter,
+            contentDescription = "오늘 날짜로 이동",
+            modifier = Modifier
+                .height(height)
+                .clip(RoundedCornerShape(999.dp))
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) { onClick() }
+        )
+    } else {
+        // 대체(프리뷰)
+        Surface(
+            shape = RoundedCornerShape(999.dp),
+            color = Color(0xFFFFE066), // 필요시 브랜드 노랑으로 교체
+            shadowElevation = 0.dp
+        ) {
+            Text(
+                text = "오늘 날짜로",
+                fontSize = 12.sp,
+                fontFamily = Pretendard,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF333333),
+                modifier = Modifier
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) { onClick() }
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            )
+        }
+    }
+}
+
+///* ──────────────────────────────── 주간 캘린더 (숫자 칩) ──────────────────────────────── */
+//@Composable
+//private fun WeeklyCalendarBar(
+//    selectedDateLabel: String, // "YYYY-MM-DD"
+//    onPrevWeek: () -> Unit,
+//    onNextWeek: () -> Unit,
+//    onSelectDate: (String) -> Unit,
+//    hasStudy: (String) -> Boolean
+//) {
+//    val week = remember(selectedDateLabel) { buildWeekFrom(selectedDateLabel) } // 월~일
+//    val today = remember { toDateLabel(Calendar.getInstance()) }
+//    val arrowSlotWidth = 28.dp // 좌우 화살표 폭(윗줄/아랫줄 정렬 맞춤)
+//
+//    // 1) 요일 라벨 행 (오늘 요일만 파란 텍스트 + 위쪽 파란 점)
+//    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+//        Box(Modifier.width(arrowSlotWidth)) { /* left spacer for alignment */ }
+//
+//        val todayDowIndex = remember(week, today) {
+//            week.indexOfFirst { it == today }.coerceAtLeast(0)
+//        }
+//
+//        listOf("월", "화", "수", "목", "금", "토", "일").forEachIndexed { i, label ->
+//            val isTodayDow = i == todayDowIndex
+//            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+//                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+//                    // 위쪽 파란 점 (오늘 요일 표시)
+//                    if (isTodayDow) {
+//                        Box(
+//                            Modifier
+//                                .size(6.dp)
+//                                .clip(RoundedCornerShape(50))
+//                                .background(BrandBlue)
+//                        )
+//                    } else {
+//                        Spacer(Modifier.height(6.dp))
+//                    }
+//                    Spacer(Modifier.height(2.dp))
+//                    Text(
+//                        text = label,
+//                        fontSize = 14.sp,
+//                        fontFamily = Pretendard,
+//                        fontWeight = FontWeight.Medium,
+//                        color = if (isTodayDow) BrandBlue else Color.Black
+//                    )
+//                }
+//            }
+//        }
+//
+//        Box(Modifier.width(arrowSlotWidth)) { /* right spacer for alignment */ }
+//    }
+//
+//    Spacer(Modifier.height(8.dp))
+//
+//    // 2) 날짜 칩 행 (숫자 칩)
+//    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+//        // < 지난주
+//        Box(
+//            modifier = Modifier
+//                .width(arrowSlotWidth)
+//                .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onPrevWeek() },
+//            contentAlignment = Alignment.Center
+//        ) {
+//            Text("<", fontSize = 18.sp, fontFamily = Pretendard, fontWeight = FontWeight.SemiBold, color = BrandBlue)
+//        }
+//
+//        // 칩 크기 (피그마 간격 감안, 요일 라벨과 수평 정렬)
+//        val chipWidth  = 44.dp
+//        val chipHeight = 56.dp
+//        val chipRadius = 12.dp
+//
+//        week.forEach { day ->
+//            val isSelected = day == selectedDateLabel
+//            val isToday = day == today
+//            val studied = hasStudy(day)
+//            val dayNum = day.takeLast(2).removePrefix("0")
+//
+//            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+//                DayChip(
+//                    text = dayNum,              // ← 날짜(숫자), Pretendard 사용
+//                    selected = isSelected,
+//                    isToday = isToday,
+//                    studied = studied,
+//                    width = chipWidth,
+//                    height = chipHeight,
+//                    radius = chipRadius,
+//                ) { onSelectDate(day) }
+//            }
+//        }
+//
+//        // > 다음주
+//        Box(
+//            modifier = Modifier
+//                .width(arrowSlotWidth)
+//                .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onNextWeek() },
+//            contentAlignment = Alignment.Center
+//        ) {
+//            Text(">", fontSize = 18.sp, fontFamily = Pretendard, fontWeight = FontWeight.SemiBold, color = BrandBlue)
+//        }
+//    }
+//}
+//@Composable
+//private fun DayChip(
+//    text: String,
+//    selected: Boolean,
+//    isToday: Boolean,
+//    studied: Boolean,
+//    width: Dp,
+//    height: Dp,
+//    radius: Dp,
+//    onClick: () -> Unit
+//) {
+//    val bg = if (selected) BrandBlue else GrayBg
+//    val contentColor = if (selected) Color.White else Color.Black
+//    val border = if (!selected && isToday) BorderStroke(1.5.dp, BrandBlue) else null
+//
+//    Surface(
+//        shape = RoundedCornerShape(radius),
+//        color = bg,
+//        border = border,
+//        shadowElevation = if (selected) 2.dp else 0.dp,
+//        modifier = Modifier
+//            .width(width)
+//            .height(height)
+//            .clip(RoundedCornerShape(radius))
+//            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onClick() }
+//    ) {
+//        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+//            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+//                Spacer(Modifier.height(6.dp))
+//                Text(
+//                    text = text,
+//                    fontSize = 18.sp,
+//                    fontFamily = Pretendard,         // ✅ Pretendard로 날짜 숫자 표시
+//                    fontWeight = FontWeight.Medium,
+//                    color = contentColor
+//                )
+//                Spacer(Modifier.height(6.dp))
+//                // 학습 여부 점(숫자 아래 도트)
+//                if (studied) {
+//                    Box(
+//                        Modifier
+//                            .size(6.dp)
+//                            .clip(RoundedCornerShape(50))
+//                            .background(if (selected) Color.White else BrandBlue)
+//                    )
+//                } else {
+//                    Spacer(Modifier.height(6.dp))
+//                }
+//            }
+//        }
+//    }
+//}
 
 /* ──────────────────────────────── 주간 캘린더 (피그마 칩) ──────────────────────────────── */
 @Composable
@@ -273,7 +476,9 @@ private fun OverviewCard(
     dateLabelForDisplay: String,   // "YYYY.MM.DD"
     bodyText: String?,
     onGoStudyClick: () -> Unit,
-    onBodyClick: () -> Unit
+    onBodyClick: () -> Unit,
+    showResetToToday: Boolean,          // ✅ 추가 + 오늘 날짜로 컴백
+    onResetToToday: () -> Unit          // ✅ 추가 + 오늘 날짜로 컴택
 ) {
     Surface(
         shape = RoundedCornerShape(16.dp),
@@ -282,13 +487,28 @@ private fun OverviewCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text(
-                text = dateLabelForDisplay,
-                fontSize = 14.sp,
-                fontFamily = Pretendard,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF616161)
-            )
+
+            // ── 상단 헤더: 날짜 + (조건부) 오늘로 버튼
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = dateLabelForDisplay,
+                    fontSize = 14.sp,
+                    fontFamily = Pretendard,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF616161)
+                )
+
+                if (showResetToToday) {
+                    ResetToTodayChip(              // 👈 아래 3)에서 정의
+                        onClick = onResetToToday,
+                        height = 28.dp
+                    )
+                }
+            }
 
             Spacer(Modifier.height(16.dp))
 
