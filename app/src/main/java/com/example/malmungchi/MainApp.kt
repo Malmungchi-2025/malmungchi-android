@@ -62,6 +62,12 @@ import com.malmungchi.feature.mypage.nickname.NicknameTestFlowScreen
 import com.malmungchi.feature.mypage.nickname.NicknameTestIntroScreen
 import com.malmungchi.feature.mypage.nickname.NicknameTestLoadingScreen
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 
 
 /* ────────────────────────────────────────────────────────────────────────────────
@@ -212,6 +218,16 @@ fun MainApp() {
                     }
                 }
             }
+//            Box(
+//                modifier = Modifier.fillMaxSize(),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                Image(
+//                    painter = painterResource(id = R.drawable.img_start),
+//                    contentDescription = "앱 시작 이미지",
+//                    modifier = Modifier.size(160.dp)   // ⬅️ 원하시는 크기로 조절
+//                )
+//            }
 
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -301,6 +317,24 @@ fun MainApp() {
 
         // 약관
         composable(TermsRoute.Agreement) {
+            // ✅ 상세 화면에서 돌아올 때 저장된 값을 관찰
+            val agreeApp by navController.currentBackStackEntry!!
+                .savedStateHandle
+                .getStateFlow("agree_app", false)
+                .collectAsState()
+
+            // ✅ 추가: 개인정보 동의 수신
+            val agreePrivacy by navController.currentBackStackEntry!!
+                .savedStateHandle
+                .getStateFlow("agree_privacy", false)
+                .collectAsState()
+
+            // ✅ 추가: 마케팅 동의 수신
+            val agreeMarketing by navController.currentBackStackEntry!!
+                .savedStateHandle
+                .getStateFlow("agree_marketing", false)
+                .collectAsState()
+
             TermsAgreementScreen(
                 onOpenAppTerms = { navController.navigate(TermsRoute.App) },
                 onOpenPrivacy = { navController.navigate(TermsRoute.Privacy) },
@@ -310,25 +344,47 @@ fun MainApp() {
                         popUpTo(TermsRoute.Agreement) { inclusive = true }
                         launchSingleTop = true
                     }
-                }
+                },
+                // ⬇️ 새로 추가한 파라미터
+                externalAppAgree = agreeApp,
+                externalPrivacyAgree = agreePrivacy,
+                externalMarketingAgree = agreeMarketing
             )
         }
         composable(TermsRoute.App) {
             AppTermsScreen(
                 onBack = { navController.popBackStack() },
-                onDone = { navController.popBackStack() }
+                onDone = {
+                    // ✅ 상세 화면에서 '동의' 눌렀다는 결과를 이전 화면에 남김
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("agree_app", true)
+                    navController.popBackStack()
+                }
             )
         }
         composable(TermsRoute.Privacy) {
             PrivacyTermsScreen(
                 onBack = { navController.popBackStack() },
-                onDone = { navController.popBackStack() }
+                onDone = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("agree_privacy", true)   // ✅ 개인정보 동의 신호
+                    navController.popBackStack()
+                }
+//                onDone = { navController.popBackStack() }
             )
         }
         composable(TermsRoute.Marketing) {
             MarketingTermsScreen(
                 onBack = { navController.popBackStack() },
-                onDone = { navController.popBackStack() }
+                onDone = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("agree_marketing", true)  // ✅ 마케팅 동의 신호
+                    navController.popBackStack()
+                }
+                //onDone = { navController.popBackStack() }
             )
         }
 

@@ -97,9 +97,16 @@ fun EmailLoginScreen(
                         //Icon(Icons.Filled.ArrowBack, contentDescription = "뒤로")
                         //Icon(Icons.Filled.ArrowBack, contentDescription = "뒤로", tint = Color.Black)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.White,          // ← 상단바 배경 흰색
+                    scrolledContainerColor = Color.White,  // ← 스크롤시도 흰색 유지
+                    navigationIconContentColor = Color.Black,
+                    titleContentColor = Color.Black
+                )
             )
-        }
+        },
+        containerColor = Color.White   // ← Scaffold 전체 배경도 흰색
     ) { inner ->
         Column(
             modifier = Modifier

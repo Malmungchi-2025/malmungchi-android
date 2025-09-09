@@ -58,10 +58,11 @@ fun MyPageRoute(
     if (recentIndex >= pageCount) recentIndex = (pageCount - 1).coerceAtLeast(0)
 
     when {
-        ui.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        ui.loading -> Box(
+            Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
             Text("불러오는 중…")
         }
-        ui.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        ui.error != null -> Box(Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
             Text("에러: ${ui.error}")
         }
         else -> {
@@ -106,7 +107,7 @@ fun MyPageScreen(
             .fillMaxSize()
             .padding(horizontal = ScreenPadding)
     ) {
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(36.dp))
         MyPageTopBar(
             title = "마이페이지",
             onClickSettings = onClickSettings
@@ -220,7 +221,9 @@ private fun ProfileBlock(
         Column(
             modifier = Modifier
                 .weight(1f)
+                .background(Color.White)
                 .fillMaxHeight(),
+
         ) {
             Row(
                 modifier = Modifier

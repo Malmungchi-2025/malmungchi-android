@@ -43,7 +43,12 @@ fun TermsAgreementScreen(
     onOpenAppTerms: () -> Unit,
     onOpenPrivacy: () -> Unit,
     onOpenMarketing: () -> Unit,
-    onAgreeContinue: () -> Unit
+    onAgreeContinue: () -> Unit,
+
+    // ✅ 추가: 상세 화면에서 돌아온 동의 결과(앱 서비스)
+    externalAppAgree: Boolean = false,
+    externalPrivacyAgree: Boolean = false,     // ✅ 추가
+    externalMarketingAgree: Boolean = false    // ✅ 추가
 ) {
     // ---- Colors ----
     val blue = Color(0xFF195FCF)
@@ -56,6 +61,13 @@ fun TermsAgreementScreen(
     var privacyAgree by remember { mutableStateOf(false) }   // (필수)
     var marketingAgree by remember { mutableStateOf(false) } // (선택)
 
+    // ✅ 외부 신호 들어오면 해당 체크 반영
+    // 상세에서 돌아온 신호 적용
+    LaunchedEffect(externalAppAgree)       { if (externalAppAgree)       appAgree = true }
+    LaunchedEffect(externalPrivacyAgree)   { if (externalPrivacyAgree)   privacyAgree = true }     // ✅
+    LaunchedEffect(externalMarketingAgree) { if (externalMarketingAgree) marketingAgree = true }   // ✅
+
+
     // 전체동의 → 개별 동기화
     LaunchedEffect(allAgree) {
         if (allAgree) {
@@ -63,7 +75,15 @@ fun TermsAgreementScreen(
             privacyAgree = true
             marketingAgree = true
         }
+        // allAgree가 false일 땐 개별 상태를 유지 (외부에서 온 동의값을 덮어쓰지 않음)
     }
+//    LaunchedEffect(allAgree) {
+//        if (allAgree) {
+//            appAgree = true
+//            privacyAgree = true
+//            marketingAgree = true
+//        }
+//    }
     // 개별이 바뀌면 전체동의 재계산
     LaunchedEffect(appAgree, privacyAgree, marketingAgree) {
         allAgree = appAgree && privacyAgree && marketingAgree
@@ -94,7 +114,7 @@ fun TermsAgreementScreen(
                     painter = painterResource(id = safeLogoRes),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(56.dp)
+                        .size(84.dp)
                         .background(Color.Transparent, RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Fit
                 )
@@ -117,7 +137,7 @@ fun TermsAgreementScreen(
                 }
             }
 
-            Spacer(Modifier.height(12.dp)) // ← width가 아니라 height
+            Spacer(Modifier.height(20.dp)) // ← width가 아니라 height
 
             Text(
                 text = "말뭉치에\n오신 것을 환영합니다.",
@@ -129,7 +149,7 @@ fun TermsAgreementScreen(
                 )
             )
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
 
             Text(
                 text = "회원가입 전, 약관들을 확인해주세요.",

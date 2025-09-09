@@ -23,8 +23,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -90,7 +92,9 @@ fun BottomNavBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .navigationBarsPadding()    // 인셋을 먼저 더하고
+            //.navigationBarsPadding()    // 인셋을 먼저 더하고
+            .navigationBarsPadding()   // ✅ 시스템 네비게이션바 만큼 여백 확보 (좌/우/하)
+            //.padding(bottom = 8.dp)    // ✅ 살짝 더 띄워서 손가락/그림자 공간 확보
             .background(Color.White)    // 그 면적 전체에 흰 배경을 칠한다
     ) {
 
@@ -98,9 +102,10 @@ fun BottomNavBar(
         modifier = modifier
             .fillMaxWidth()
             //.navigationBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+            //.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
             .height(capsuleHeight),
-        shape = RoundedCornerShape(cornerRadius),
+        shape = RectangleShape, // ✅ 네모
+        //shape = RoundedCornerShape(cornerRadius),
         color = Color.White,
         tonalElevation = 2.dp,
         shadowElevation = 8.dp
@@ -161,7 +166,8 @@ fun BottomNavBar(
                         softWrap = false,            // ✅ 줄바꿈 비허용
                         overflow = TextOverflow.Clip,// ✅ 잘라도 말줄임표 없이 자르기
                         color = labelColor,
-                        fontFamily = Pretendard as? FontFamily ?: FontFamily.SansSerif
+                        fontFamily = Pretendard as? FontFamily ?: FontFamily.SansSerif,
+                        fontWeight = FontWeight.Medium    // ★ 미디엄
                     )
                 }
             }
