@@ -26,6 +26,10 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 
+
+
+
+
 // ===== Palette =====
 private val BrandBlue = Color(0xFF195FCF)
 private val TrackGray = Color(0xFFFAFAFA)
@@ -63,7 +67,10 @@ fun NicknameTestOxScreen(
 
     val q = questions.getOrNull(index)
 
-    Column(Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, bottom = 48.dp)) {
+    Column(Modifier
+        .fillMaxSize()
+        .background(Color.White)
+        .padding(start = 20.dp, end = 20.dp, bottom = 48.dp)) {
         Spacer(Modifier.height(48.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             BackChevron(onClick = {
@@ -134,146 +141,6 @@ fun NicknameTestOxScreen(
 }
 
 
-//@Composable
-//fun NicknameTestOxScreen(
-//    questions: List<OxQuestion>,
-//    answeredGlobalCount: Int,                // 이전 섹션까지 푼 수 (progress에 사용)
-//    onBackClick: () -> Unit = {},
-//    onSubmitAnswer: (questionId: Int, chosenIsO: Boolean, isCorrect: Boolean) -> Unit = { _,_,_ -> },
-//    onFinishOx: () -> Unit = {}              // 2문제 완료 시 다음 유형으로 진행
-//) {
-//    var index by remember { mutableStateOf(0) }
-//    var selectedIsO by remember { mutableStateOf<Boolean?>(null) }
-//
-//    val q = questions.getOrNull(index)
-//
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .padding(start = 20.dp, end = 20.dp, bottom = 48.dp)
-//    ) {
-//        Spacer(Modifier.height(48.dp))
-//
-//        Row(
-//            modifier = Modifier.fillMaxWidth(),
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            BackChevron(onClick = onBackClick)
-//        }
-//
-//        Spacer(Modifier.height(42.dp))
-//
-//        // === Progress (전체 18문항 기준) ===
-//        val totalQuestions = 18
-//        val solved = answeredGlobalCount + index
-//        val progress = solved.toFloat() / totalQuestions.toFloat()
-//        ProgressBarLarge(
-//            progress = progress,
-//            trackColor = TrackGray,
-//            progressColor = BrandBlue,
-//            height = 10.dp
-//        )
-//
-//        // 본문/선지 영역은 좌우 6dp 추가 인셋
-//        Column(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(horizontal = 6.dp)
-//        ) {
-//            Spacer(Modifier.height(32.dp))
-//
-//            // Q 번호 (가운데)
-//            Text(
-//                text = q?.numberLabel.orEmpty(),
-//                fontFamily = Pretendard,
-//                fontSize = 18.sp,
-//                fontWeight = FontWeight.SemiBold,
-//                color = Color.Black,
-//                textAlign = TextAlign.Center,
-//                modifier = Modifier.fillMaxWidth()
-//            )
-//
-//            Spacer(Modifier.height(12.dp))
-//
-//            // ===== 문제 문장 (가운데 정렬, 22, 세미볼드, 줄간격 150%) =====
-//            Text(
-//                text = "지진 대비 훈련이 대피 방법만을 다루어야 한다고 주장하고 있다.",
-//                fontFamily = Pretendard,
-//                fontSize = 22.sp,
-//                fontWeight = FontWeight.SemiBold,
-//                color = Color.Black,
-//                lineHeight = 33.sp, // 150%
-//                textAlign = TextAlign.Center,
-//                modifier = Modifier.fillMaxWidth()
-//            )
-//
-//            Spacer(Modifier.height(24.dp))
-//
-//            // ===== 본문 카드 (좌우 6dp 더 안쪽, 세미볼드 18, 그림자) =====
-//            StatementCard(
-//                text = q?.statement.orEmpty(),
-//                modifier = Modifier.padding(horizontal = 12.dp) // 다른 요소보다 좌우 6dp 추가
-//            )
-//
-//            Spacer(Modifier.height(32.dp))
-//
-//            // ===== O / X 선택 (더 큰 버튼 + 44sp, Medium) =====
-//            Row(
-//                modifier = Modifier.fillMaxWidth(),
-//                horizontalArrangement = Arrangement.spacedBy(12.dp)
-//            ) {
-//                OxOption(
-//                    label = "O",
-//                    selected = selectedIsO == true,
-//                    modifier = Modifier.weight(1f),
-//                    onClick = { selectedIsO = true }
-//                )
-//                OxOption(
-//                    label = "X",
-//                    selected = selectedIsO == false,
-//                    modifier = Modifier.weight(1f),
-//                    onClick = { selectedIsO = false }
-//                )
-//            }
-//        }
-//
-//        Spacer(Modifier.weight(1f))
-//
-//        val enabled = selectedIsO != null
-//        Button(
-//            onClick = {
-//                val chosen = selectedIsO ?: return@Button
-//                val correct = (q?.answerIsO == chosen)
-//                onSubmitAnswer(q!!.id, chosen, correct)
-//
-//                if (index < questions.lastIndex) {
-//                    index += 1
-//                    selectedIsO = null
-//                } else {
-//                    onFinishOx()
-//                }
-//            },
-//            enabled = enabled,
-//            colors = ButtonDefaults.buttonColors(
-//                containerColor = if (enabled) BrandBlue else TrackGray,
-//                contentColor = if (enabled) Color.White else TextGray
-//            ),
-//            shape = MaterialTheme.shapes.extraLarge,
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(horizontal = 80.dp)
-//                .height(48.dp)
-//                .align(Alignment.CenterHorizontally)
-//        ) {
-//            Text(
-//                text = "정답 제출",
-//                fontFamily = Pretendard,
-//                fontSize = 16.sp,
-//                fontWeight = FontWeight.SemiBold
-//            )
-//        }
-//    }
-//}
 
 // ===== 작은 부품들 =====
 
@@ -379,33 +246,36 @@ private fun ProgressBarLarge(
     }
 }
 
-//// ===== Preview =====
-//@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
-//@Composable
-//private fun PreviewNicknameTestOxScreen() {
-//    val sample = listOf(
-//        OxQuestion(
-//            id = 101,
-//            numberLabel = "Q10",
-//            statement = "지진이 발생하면 건물 붕괴뿐만 아니라\n화재와 가스 누출 같은 2차 피해도 발생할 수 있다. 따라서 지진 대비 훈련에서는 단순히 대피 방법뿐만 아니라 화재 예방 조치도 포함되어야 한다.",
-//            answerIsO = true
-//        ),
-//        OxQuestion(
-//            id = 102,
-//            numberLabel = "Q11",
-//            statement = "지진 대비 훈련은 연 1회만 해도 충분하므로\n평상시 대피 요령을 복습할 필요가 없다.",
-//            answerIsO = false
-//        )
-//    )
-//    MaterialTheme {
-//        Surface {
-//            NicknameTestOxScreen(
-//                questions = sample,
-//                answeredGlobalCount = 9, // 앞의 어휘 9문제 완료했다고 가정
-//                onBackClick = {},
-//                onSubmitAnswer = { _,_,_ -> },
-//                onFinishOx = { /* 다음 유형으로 이동 */ }
-//            )
-//        }
-//    }
-//}
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Composable
+private fun PreviewNicknameTestOxScreen() {
+    val sample = listOf(
+        OxQuestion(
+            id = 101,
+            numberLabel = "Q10",
+            statement = "지진이 발생하면 건물 붕괴뿐만 아니라 화재와 가스 누출 같은 2차 피해도 발생할 수 있다.\n" +
+                    "따라서 지진 대비 훈련에서는 단순히 대피 방법뿐만 아니라 화재 예방 조치도 포함되어야 한다.",
+            answerIsO = true
+        ),
+        OxQuestion(
+            id = 102,
+            numberLabel = "Q11",
+            statement = "지진 대비 훈련은 연 1회만 해도 충분하므로 평상시 대피 요령을 복습할 필요가 없다.",
+            answerIsO = false
+        )
+    )
+
+    MaterialTheme {
+        Surface(color = Color.White) {
+            NicknameTestOxScreen(
+                questions = sample,
+                answeredGlobalCount = 9, // 앞의 섹션에서 9문항 푼 상태 가정
+                onBackClick = {},
+                onFinishOx = { /* 미리보기: 아무 작업 없음 */ },
+                initialIndex = 0
+            )
+        }
+    }
+}
+
+
