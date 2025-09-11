@@ -78,5 +78,7 @@ fun QuizLoadingScreen(
                 color = Color(0xFF989898)
             )
         }
+
+
     }
 }

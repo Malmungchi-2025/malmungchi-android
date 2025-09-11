@@ -92,8 +92,9 @@ fun StudyReadingScreen(
 
     // 공통 텍스트 스타일
     val commonTextStyle = TextStyle(
-        fontSize = 14.sp,
-        lineHeight = 22.sp,
+        fontSize = 16.sp,
+        fontWeight = FontWeight.Medium,
+        lineHeight = (16f * 1.6f).sp,  // == 25.6sp (≈ 160%)
         color = Color(0xFF333333),
         textAlign = TextAlign.Start
     )
