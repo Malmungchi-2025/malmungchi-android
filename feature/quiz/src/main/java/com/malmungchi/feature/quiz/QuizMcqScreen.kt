@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.malmungchi.core.designsystem.Pretendard
+import com.malmungchi.core.model.quiz.McqStep
+import com.malmungchi.core.model.quiz.QuizOption
 
 // ✅ 도메인 모델은 ViewModel 쪽(같은 패키지)에 이미 있음: McqStep, QuizOption
 // sealed interface QuizStep { ... }
@@ -72,7 +74,7 @@ fun QuizMcqScreen(
         Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(start = 20.dp, end = 20.dp, bottom = 48.dp)
+            .padding(start = 20.dp, top = 48.dp, end = 20.dp, bottom = 48.dp)
     ) {
         Spacer(Modifier.height(16.dp))
 
@@ -105,7 +107,9 @@ fun QuizMcqScreen(
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.width(24.dp)) // 오른쪽 비워 중앙정렬 유지
+            Spacer(
+                modifier = Modifier.size(48.dp) // IconButton과 동일 크기(40~48dp)
+            )
         }
 
         Spacer(Modifier.height(16.dp))
