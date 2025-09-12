@@ -6,10 +6,12 @@ import com.malmungchi.data.api.TodayStudyApi
 import com.malmungchi.data.api.AuthService
 import com.malmungchi.data.BuildConfig              // ★ 라이브러리 모듈 BuildConfig 경로
 import com.malmungchi.data.api.LevelTestApi
+import com.malmungchi.data.api.QuizApi
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitProvider {
 
@@ -70,6 +72,13 @@ object RetrofitProvider {
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
+
+    fun getQuizApi(
+        context: Context,
+        onUnauthorized: () -> Unit = {}
+    ): QuizApi = getRetrofit(context, onUnauthorized).create(QuizApi::class.java)
+
+
 
     // RetrofitProvider.kt
 

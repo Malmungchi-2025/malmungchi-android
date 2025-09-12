@@ -10,6 +10,7 @@ import com.malmungchi.data.api.TodayStudyApi
 import com.malmungchi.data.implementation.repository.LevelTestRepositoryImpl
 import com.malmungchi.data.implementation.repository.TodayStudyRepositoryImpl
 import com.malmungchi.core.repository.AuthRepository
+import com.malmungchi.data.api.QuizApi
 import com.malmungchi.data.implementation.repository.AuthRepositoryImpl
 import com.malmungchi.data.net.RetrofitProvider
 import dagger.Module
@@ -17,6 +18,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import retrofit2.Retrofit
 import javax.inject.Singleton
 
 @InstallIn(SingletonComponent::class)
@@ -63,6 +65,8 @@ object NetworkModule {
     ): LevelTestRepository {
         return LevelTestRepositoryImpl(api)
     }
+
+
 //    @Provides
 //    @Singleton
 //    fun provideAuthRepository(
