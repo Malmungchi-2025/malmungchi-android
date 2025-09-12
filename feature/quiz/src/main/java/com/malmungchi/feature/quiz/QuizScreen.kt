@@ -72,7 +72,7 @@ fun QuizScreen(
             text = "퀴즈뭉치",
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 8.dp, bottom = 28.dp),
+                .padding(top = 32.dp, bottom = 28.dp),
             style = TextStyle(
                 fontFamily = Pretendard,
                 fontSize = 24.sp,

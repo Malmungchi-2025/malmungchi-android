@@ -1,5 +1,7 @@
 package com.malmungchi.feature.quiz
 
+import com.malmungchi.core.model.quiz.QuizSet
+
 /** 결과화면 등에서 받은 wrongIds 로 '재도전'용 QuizSet 을 만든다. */
 fun buildRetrySetFromWrong(
     original: QuizSet,
@@ -7,7 +9,7 @@ fun buildRetrySetFromWrong(
 ): QuizSet {
     val filtered = original.steps.filter { it.id in wrongIds }
     return original.copy(
-        id = original.id + "_retry",
+        //id = original.id + "_retry",
         steps = filtered
     )
 }

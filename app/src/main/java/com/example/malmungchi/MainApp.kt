@@ -2,6 +2,7 @@ package com.example.malmungchi
 
 
 import android.content.Context
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -65,9 +66,18 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.malmungchi.feature.quiz.QuizCategoryRoute
+import com.malmungchi.feature.quiz.QuizCompleteScreen
+import com.malmungchi.feature.quiz.QuizFlowViewModel
+import com.malmungchi.feature.quiz.QuizLoadingScreen
+import com.malmungchi.feature.quiz.QuizRetryAllResultScreen
+import com.malmungchi.feature.quiz.QuizRetryHost
+import com.malmungchi.feature.quiz.QuizRetryIntroScreen
+import com.malmungchi.feature.quiz.QuizSolveHost
 
 
 /* ────────────────────────────────────────────────────────────────────────────────
@@ -107,6 +117,16 @@ private fun clearSession(context: Context) {
         .remove(KEY_TOKEN)
         .remove(KEY_REFRESH) // ★ 추가
         .apply()
+}
+
+@Composable
+private fun WithBottomBar(
+    navController: NavHostController,
+    content: @Composable (innerPadding: PaddingValues) -> Unit
+) {
+    Scaffold(bottomBar = { BottomNavBar(navController = navController) }) { inner ->
+        Box(Modifier.padding(inner)) { content(inner) }
+    }
 }
 
 /* ────────────────────────────────────────────────────────────────────────────────
@@ -832,14 +852,170 @@ fun MainApp() {
         }
 
         // 탭 라우트 → MainScreen으로 위임 (초간단 라우터)
-        composable("quiz") {
-            MainScreen(
-                initialTab = "quiz", // 👈 MainScreen이 이 값을 보고 탭 선택
-                onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } }
-                ,
-                onOpenSettings   = { navController.navigate("settings") }
-            )
+//        composable("quiz") {
+//            MainScreen(
+//                initialTab = "quiz", // 👈 MainScreen이 이 값을 보고 탭 선택
+//                onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } }
+//                ,
+//                onOpenSettings   = { navController.navigate("settings") }
+//            )
+//        }
+
+// ─────────────────────────────────────────────
+// 🧩 퀴즈 그래프 (QuizScreen → Loading → Solve → Retry → Result → Complete)
+// ─────────────────────────────────────────────
+        navigation(
+            route = "quiz_graph",
+            startDestination = "quiz_home"
+        ) {
+            // 0) 홈(카테고리)
+            composable("quiz_home") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("quiz_graph")
+                }
+                val vm: QuizFlowViewModel = hiltViewModel(parentEntry)
+                WithBottomBar(navController as NavHostController) {
+                    QuizCategoryRoute(
+                        vm = vm,
+                        onPickCategory = { label ->
+                            Log.d("NAV", "Pick category: $label")
+                            // 한글 라우트 안전하게 인코딩
+                            val arg = java.net.URLEncoder.encode(
+                                label, java.nio.charset.StandardCharsets.UTF_8.toString()
+                            )
+                            navController.navigate("quiz_loading/$arg") { launchSingleTop = true }
+                        }
+                    )
+                }
+            }
+
+            // 1) 로딩 화면: route arg(라벨)로 startQuiz 실행
+            composable(
+                route = "quiz_loading/{cat}",
+                arguments = listOf(
+                    androidx.navigation.navArgument("cat") {
+                        type = androidx.navigation.NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("quiz_graph")
+                }
+                val vm: QuizFlowViewModel = hiltViewModel(parentEntry)
+
+                val raw = backStackEntry.arguments?.getString("cat")!!
+                val catLabel = remember(raw) {
+                    java.net.URLDecoder.decode(raw, java.nio.charset.StandardCharsets.UTF_8.toString())
+                }
+
+                // 🚀 여기서 실제 세트 생성/호출 (String 라벨로!)
+                LaunchedEffect(catLabel) {
+                    vm.startQuiz(catLabel)   // 내부에서 createOrGetBatch API 호출 → ui.loading=true
+                }
+
+                QuizLoadingScreen(
+                    vm = vm,
+                    onBackToHome = {
+                        // 아이콘 back & 시스템 back 동일
+                        navController.popBackStack("quiz_home", inclusive = false)
+                    },
+                    onReadyToSolve = {
+                        // 세트 로드 완료 → 풀이로
+                        navController.navigate("quiz_solve") { launchSingleTop = true }
+                    }
+                )
+            }
+
+            // 2) 7문항 풀이
+            composable("quiz_solve") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("quiz_graph")
+                }
+                val vm: QuizFlowViewModel = hiltViewModel(parentEntry)
+
+                QuizSolveHost(
+                    vm = vm,
+                    onQuitToHome = {
+                        navController.navigate("quiz_home") {
+                            popUpTo("quiz_graph") { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    },
+                    onAllFinished = {
+                        navController.navigate("quiz_retry_intro") { launchSingleTop = true }
+                    },
+                    postSubmitDelayMs = 1000L
+                )
+            }
+
+            // 3) 재도전 인트로
+            composable("quiz_retry_intro") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("quiz_graph")
+                }
+                val vm: QuizFlowViewModel = hiltViewModel(parentEntry)
+
+                LaunchedEffect(Unit) {
+                    vm.startRetryFromWrong()
+                    kotlinx.coroutines.delay(600)
+                    if (vm.ui.value.finished) {
+                        navController.navigate("quiz_retry_result") { launchSingleTop = true }
+                    } else {
+                        navController.navigate("quiz_retry_solve") { launchSingleTop = true }
+                    }
+                }
+
+                QuizRetryIntroScreen()
+            }
+
+            // 4) 재도전 풀이
+            composable("quiz_retry_solve") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("quiz_graph")
+                }
+                val vm: QuizFlowViewModel = hiltViewModel(parentEntry)
+
+                QuizRetryHost(
+                    vm = vm,
+                    onFinish = {
+                        navController.navigate("quiz_retry_result") { launchSingleTop = true }
+                    },
+                    onBack = { navController.navigateUp() }
+                )
+            }
+
+            // 5) 재도전 결과
+            composable("quiz_retry_result") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("quiz_graph")
+                }
+                val vm: QuizFlowViewModel = hiltViewModel(parentEntry)
+                val ui by vm.ui.collectAsState()
+
+                val results = remember { vm.buildRetryResultItems() }
+                QuizRetryAllResultScreen(
+                    categoryTitle = ui.headerTitle,
+                    results = results,
+                    onBack = { navController.popBackStack() },
+                    onFinishClick = {
+                        navController.navigate("quiz_complete") { launchSingleTop = true }
+                    }
+                )
+            }
+
+            // 6) 완료
+            composable("quiz_complete") {
+                QuizCompleteScreen(
+                    onNextClick = {
+                        navController.navigate("quiz_home") {
+                            popUpTo("quiz_graph") { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
         }
+
         composable("ai") {
             MainScreen(initialTab = "ai", onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } },onOpenSettings   = { navController.navigate("settings") })
         }
@@ -941,37 +1117,37 @@ fun MainApp() {
             )
         }
 
-        composable("nickname_test_intro") {
-            NicknameTestIntroScreen(
-                onBackClick = {
-                    // 인트로에서 back → 마이페이지로
-                    navController.navigate("mypage") {
-                        popUpTo("nickname_test_intro") { inclusive = true }
-                        launchSingleTop = true
-                    }
-                },
-                onStartClick = {
-                    // 시작하기 → 로딩
-                    navController.navigate("nickname_test_loading") { launchSingleTop = true }
-                }
-            )
-        }
+//        composable("nickname_test_intro") {
+//            NicknameTestIntroScreen(
+//                onBackClick = {
+//                    // 인트로에서 back → 마이페이지로
+//                    navController.navigate("mypage") {
+//                        popUpTo("nickname_test_intro") { inclusive = true }
+//                        launchSingleTop = true
+//                    }
+//                },
+//                onStartClick = {
+//                    // 시작하기 → 로딩
+//                    navController.navigate("nickname_test_loading") { launchSingleTop = true }
+//                }
+//            )
+//        }
 
-        composable("nickname_test_loading") {
-            NicknameTestLoadingScreen(
-                onBackClick = {
-                    navController.navigate("mypage") {
-                        popUpTo("nickname_test_loading") { inclusive = true }
-                        launchSingleTop = true
-                    }
-                },
-                onNavigateNext = {                       // ✅ 필수 파라미터 전달
-                    navController.navigate("nickname_test_flow") {
-                        launchSingleTop = true
-                    }
-                }
-            )
-        }
+//        composable("nickname_test_loading") {
+//            NicknameTestLoadingScreen(
+//                onBackClick = {
+//                    navController.navigate("mypage") {
+//                        popUpTo("nickname_test_loading") { inclusive = true }
+//                        launchSingleTop = true
+//                    }
+//                },
+//                onNavigateNext = {                       // ✅ 필수 파라미터 전달
+//                    navController.navigate("nickname_test_flow") {
+//                        launchSingleTop = true
+//                    }
+//                }
+//            )
+//        }
 //        composable("word_collection") {
 //            var favOnly by remember { mutableStateOf(false) }
 //

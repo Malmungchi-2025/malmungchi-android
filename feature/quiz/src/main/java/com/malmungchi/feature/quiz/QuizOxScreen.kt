@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.malmungchi.core.designsystem.Pretendard
+import com.malmungchi.core.model.quiz.OxStep
 
 /* ---------------------------------------------------------
  * 팔레트
@@ -64,7 +65,7 @@ fun QuizOxScreen(
         Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(start = 20.dp, end = 20.dp, bottom = 48.dp)
+            .padding(start = 20.dp, top = 48.dp, end = 20.dp, bottom = 48.dp)
     ) {
         Spacer(Modifier.height(16.dp))
 
@@ -94,7 +95,9 @@ fun QuizOxScreen(
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.width(24.dp))
+            Spacer(
+                modifier = Modifier.size(48.dp) // IconButton과 동일 크기(40~48dp)
+            )
         }
 
         Spacer(Modifier.height(16.dp))

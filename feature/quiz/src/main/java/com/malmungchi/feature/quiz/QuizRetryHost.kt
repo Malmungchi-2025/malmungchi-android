@@ -14,6 +14,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.malmungchi.core.designsystem.Pretendard
+import com.malmungchi.core.model.quiz.McqStep
+import com.malmungchi.core.model.quiz.OxStep
+import com.malmungchi.core.model.quiz.QuizCategory
+import com.malmungchi.core.model.quiz.QuizOption
+import com.malmungchi.core.model.quiz.QuizSet
+import com.malmungchi.core.model.quiz.ShortStep
+import com.malmungchi.core.model.quiz.Submission
+import com.malmungchi.core.repository.QuizRepository
 
 
 private val BrandBlue = Color(0xFF195FCF)
@@ -26,10 +34,28 @@ fun QuizRetryHost(
 ) {
     val ui by vm.ui.collectAsState()
 
+    // ★★★ [추가] finished 상태면 결과 화면을 바로 렌더하고 조기 return
+    if (ui.finished) {
+        QuizRetryAllResultScreen(
+            categoryTitle = ui.headerTitle,
+            results = vm.buildRetryResultItems(),
+            onBack = onBack,
+            onFinishClick = { onFinish(ui.correctCount) }
+        )
+        return
+    }
+
     val step = ui.displayStep
     val total = ui.total
     val progress = ui.progress
-    val submitted = vm.currentSubmitted()
+
+    // ★★★ 추가: 선택 상태를 StateFlow로 구독해야 클릭 시 UI가 갱신됩니다.
+    val selectedMcq  by vm.currentMcq.collectAsState()
+    val selectedOx   by vm.currentOx.collectAsState()
+    val shortAnswer  by vm.currentShort.collectAsState()
+
+    val submittedRaw = vm.currentSubmitted()
+    val submitted = if (vm.isRetryMode()) false else submittedRaw
     val isLast = vm.isLastStep()
 
     Box(Modifier.fillMaxSize().background(Color.White)) {
@@ -38,7 +64,7 @@ fun QuizRetryHost(
                 categoryTitle = ui.headerTitle,
                 step = step, total = total, progress = progress,
                 question = q,
-                selectedOptionId = vm.currentSelectedOptionId(),
+                selectedOptionId = selectedMcq,
                 submitted = submitted,
                 onSelect = { vm.onEvent(QuizEvent.SelectMcq(it)) },
                 onSubmit = { vm.onEvent(QuizEvent.Submit) },
@@ -49,7 +75,7 @@ fun QuizRetryHost(
                 categoryTitle = ui.headerTitle,
                 step = step, total = total, progress = progress,
                 question = q,
-                selectedIsO = vm.currentSelectedIsO(),
+                selectedIsO = selectedOx,
                 submitted = submitted,
                 onSelect = { vm.onEvent(QuizEvent.SelectOx(it)) },
                 onSubmit = { vm.onEvent(QuizEvent.Submit) },
@@ -60,7 +86,7 @@ fun QuizRetryHost(
                 categoryTitle = ui.headerTitle,
                 step = step, total = total, progress = progress,
                 question = q,
-                inputText = vm.currentShortText(),
+                inputText = shortAnswer,
                 submitted = submitted,
                 isCorrect = vm.isCurrentCorrect(),
                 onInputChange = { vm.onEvent(QuizEvent.FillShort(it)) },
@@ -287,6 +313,8 @@ private fun previewOriginalSet(): QuizSet = QuizSet(
     )
 )
 
+
+
 /* (A) 이전 단계(2/2, 미제출) */
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "재도전 · 이전 단계(제출 전)")
 @Composable
@@ -294,14 +322,14 @@ private fun Preview_Retry_Previous_Step() {
     MaterialTheme {
         Surface(color = Color.White) {
             val retrySet = buildRetrySetFromWrong(previewOriginalSet(), listOf("q1", "q3"))
-            val vm = remember(retrySet.id + "_prev") {
-                QuizFlowViewModel().apply {
-                    onEvent(QuizEvent.LoadWithSet(retrySet))
-                    onEvent(QuizEvent.SelectMcq(3)) // 오답
-                    onEvent(QuizEvent.Submit)       // 제출
-                    onEvent(QuizEvent.Next)         // 다음으로 이동(=2/2 미제출)
-                }
+            val vm = remember(/*retrySet.id + "_prev"*/ "retry_prev", retrySet) {
+            QuizFlowViewModel().apply {
+                onEvent(QuizEvent.LoadWithSet(retrySet))
+                onEvent(QuizEvent.SelectMcq(3))
+                onEvent(QuizEvent.Submit)
+                onEvent(QuizEvent.Next)
             }
+        }
             QuizRetryHost(vm = vm, onFinish = {}, onBack = {})
         }
     }
@@ -314,11 +342,11 @@ private fun Preview_Retry_AfterSubmit() {
     MaterialTheme {
         Surface(color = Color.White) {
             val retrySet = buildRetrySetFromWrong(previewOriginalSet(), listOf("q1", "q3"))
-            val vm = remember(retrySet.id + "_after") {
+            val vm = remember(/*retrySet.id + "_after"*/ "retry_after", retrySet) {
                 QuizFlowViewModel().apply {
                     onEvent(QuizEvent.LoadWithSet(retrySet))
                     onEvent(QuizEvent.SelectMcq(3))
-                    onEvent(QuizEvent.Submit) // 이동 X → 하단 버튼 노출
+                    onEvent(QuizEvent.Submit)
                 }
             }
             QuizRetryHost(vm = vm, onFinish = {}, onBack = {})
@@ -333,7 +361,7 @@ private fun Preview_Retry_Explanation_Open() {
     MaterialTheme {
         Surface(color = Color.White) {
             val retrySet = buildRetrySetFromWrong(previewOriginalSet(), listOf("q1", "q3"))
-            val vm = remember(retrySet.id + "_exp") {
+            val vm = remember(/*retrySet.id + "_exp"*/ "retry_exp", retrySet) {
                 QuizFlowViewModel().apply {
                     onEvent(QuizEvent.LoadWithSet(retrySet))
                     onEvent(QuizEvent.SelectMcq(3))
@@ -353,11 +381,11 @@ private fun Preview_Retry_Last_Step_Result() {
     MaterialTheme {
         Surface(color = Color.White) {
             val lastOnly = buildRetrySetFromWrong(previewOriginalSet(), listOf("q3"))
-            val vm = remember(lastOnly.id + "_last") {
+            val vm = remember(/*lastOnly.id + "_last"*/ "retry_last", lastOnly) {
                 QuizFlowViewModel().apply {
                     onEvent(QuizEvent.LoadWithSet(lastOnly))
                     onEvent(QuizEvent.FillShort("금일"))
-                    onEvent(QuizEvent.Submit) // 하단 "결과 보기"
+                    onEvent(QuizEvent.Submit)
                 }
             }
             QuizRetryHost(vm = vm, onFinish = { }, onBack = {})
