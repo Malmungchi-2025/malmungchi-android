@@ -51,6 +51,7 @@ class AuthRepositoryImpl @Inject constructor(
             val user = r.result
             if (user != null) {
                 SessionManager.updateLevel(user.level)   // ✅ 새 메서드
+                SessionManager.updateNicknameTitle(user.nickname_title)
             }
             user
         } else null

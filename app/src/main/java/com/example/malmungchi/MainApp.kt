@@ -1,6 +1,7 @@
 package com.example.malmungchi
 
 
+import NicknameCardScreen
 import android.content.Context
 import android.util.Log
 import androidx.activity.compose.BackHandler
@@ -70,6 +71,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.malmungchi.feature.mypage.MyPageViewModel
 import com.malmungchi.feature.quiz.QuizCategoryRoute
 import com.malmungchi.feature.quiz.QuizCompleteScreen
 import com.malmungchi.feature.quiz.QuizFlowViewModel
@@ -78,6 +80,7 @@ import com.malmungchi.feature.quiz.QuizRetryAllResultScreen
 import com.malmungchi.feature.quiz.QuizRetryHost
 import com.malmungchi.feature.quiz.QuizRetryIntroScreen
 import com.malmungchi.feature.quiz.QuizSolveHost
+
 
 
 /* ────────────────────────────────────────────────────────────────────────────────
@@ -1027,13 +1030,49 @@ fun MainApp() {
 //            MainScreen(initialTab = "mypage", onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } },onOpenSettings   = { navController.navigate("settings") })
 //        }
 
+//        composable("mypage") {
+//            com.malmungchi.feature.mypage.MyPageRoute(
+//                onClickSettings = { navController.navigate("settings") },
+//                onClickViewAllWords = { navController.navigate("word_collection") },
+//                onClickViewAllBadges = { /* TODO */ },
+//                onClickViewNicknameTest = {                 // 🔹 말풍선 탭 → 인트로
+//                    navController.navigate("nickname_test_intro") { launchSingleTop = true }
+//                }
+//            )
+//        }
         composable("mypage") {
             com.malmungchi.feature.mypage.MyPageRoute(
                 onClickSettings = { navController.navigate("settings") },
                 onClickViewAllWords = { navController.navigate("word_collection") },
                 onClickViewAllBadges = { /* TODO */ },
-                onClickViewNicknameTest = {                 // 🔹 말풍선 탭 → 인트로
+                onClickViewNicknameTest = { // 말풍선 탭 → 인트로
                     navController.navigate("nickname_test_intro") { launchSingleTop = true }
+                },
+                onClickViewNicknameCard = { // 별명 카드로 이동하는 콜백
+                    navController.navigate("nickname_card_screen") { launchSingleTop = true }
+                }
+            )
+        }
+
+        composable("nickname_card_screen") {
+            val viewModel: MyPageViewModel = hiltViewModel()
+            val ui by viewModel.ui.collectAsState()
+
+            // LocalContext를 통해 MainActivity에 접근
+            val context = LocalContext.current
+            val activity = context as? MainActivity
+
+            // 닉네임 카드 화면
+            NicknameCardScreen(
+                navController = navController,
+                userName = ui.userName,
+                nickname = ui.user?.nickname_title ?: "별명 없음",
+                onExit = {
+                    navController.popBackStack()  // 뒤로가기
+                },
+                onSaveImage = { nickname ->
+                    // MainActivity에서 전달한 onSaveImageClicked를 호출
+                    activity?.onSaveImageClicked(nickname)
                 }
             )
         }
@@ -1051,6 +1090,9 @@ fun MainApp() {
                 }
             )
         }
+
+
+
 
         composable("nickname_test_loading") {
             NicknameTestLoadingScreen(
