@@ -55,7 +55,9 @@ fun QuizRetryHost(
     val shortAnswer  by vm.currentShort.collectAsState()
 
     val submittedRaw = vm.currentSubmitted()
-    val submitted = if (vm.isRetryMode()) false else submittedRaw
+    // ★ Fix: 리트라이에서도 제출 상태 그대로 쓰기
+    val submitted = vm.currentSubmitted()
+    //val submitted = if (vm.isRetryMode()) false else submittedRaw
     val isLast = vm.isLastStep()
 
     Box(Modifier.fillMaxSize().background(Color.White)) {
@@ -174,7 +176,9 @@ fun ExplanationDialog(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,       // ✅ SemiBold
                     color = Color.Black,
-                    textAlign = TextAlign.Center            // ✅ centered
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                    // ✅ centered
                 )
             }
         },
@@ -186,7 +190,8 @@ fun ExplanationDialog(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,         // ✅ Medium
                     color = Color.Black,
-                    textAlign = TextAlign.Center            // ✅ centered
+                    textAlign = TextAlign.Center ,
+                    modifier = Modifier.fillMaxWidth() // ✅ centered
                 )
             }
         }
@@ -215,71 +220,102 @@ private fun BottomActionBar(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 16.dp)
-                        .navigationBarsPadding(), // 하단 시스템바 피하기
+                        .navigationBarsPadding(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     OutlinedButton(
-                        onClick = onShowExplanation,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp),
+                        onClick = onShowExplanation,        // 다이얼로그 열기 (열려있으면 다시 눌러도 무방)
+                        modifier = Modifier.weight(1f).height(48.dp),
                         border = BorderStroke(2.dp, BrandBlue),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color.Transparent,
-                            contentColor = BrandBlue
+                            containerColor = Color.Transparent, contentColor = BrandBlue
                         ),
                         shape = MaterialTheme.shapes.extraLarge
                     ) {
-                        Text(
-                            "해설 보기",
-                            fontFamily = Pretendard,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = BrandBlue
-                        )
+                        Text("해설 보기", fontFamily = Pretendard, fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold, color = BrandBlue)
                     }
 
                     Button(
-                        onClick = onNext,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = BrandBlue,
-                            contentColor = Color.White
-                        ),
+                        onClick = onNext,                    // 다음 문제 or 결과 보기
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White),
                         shape = MaterialTheme.shapes.extraLarge
                     ) {
-                        Text(
-                            if (isLast) "결과 보기" else "다음 문제",
-                            fontFamily = Pretendard,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        Text(if (isLast) "결과 보기" else "다음 문제",
+                            fontFamily = Pretendard, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
-            } else {
-                Button(
-                    onClick = onConfirmExplanation,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 48.dp)
-                        .navigationBarsPadding()
-                        .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = BrandBlue,
-                        contentColor = Color.White
-                    ),
-                    shape = MaterialTheme.shapes.extraLarge
-                ) {
-                    Text(
-                        "확인했어요",
-                        fontFamily = Pretendard,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
             }
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(horizontal = 20.dp, vertical = 16.dp)
+//                        .navigationBarsPadding(), // 하단 시스템바 피하기
+//                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+//                ) {
+//                    OutlinedButton(
+//                        onClick = onShowExplanation,
+//                        modifier = Modifier
+//                            .weight(1f)
+//                            .height(48.dp),
+//                        border = BorderStroke(2.dp, BrandBlue),
+//                        colors = ButtonDefaults.outlinedButtonColors(
+//                            containerColor = Color.Transparent,
+//                            contentColor = BrandBlue
+//                        ),
+//                        shape = MaterialTheme.shapes.extraLarge
+//                    ) {
+//                        Text(
+//                            "해설 보기",
+//                            fontFamily = Pretendard,
+//                            fontSize = 16.sp,
+//                            fontWeight = FontWeight.SemiBold,
+//                            color = BrandBlue
+//                        )
+//                    }
+//
+//                    Button(
+//                        onClick = onNext,
+//                        modifier = Modifier
+//                            .weight(1f)
+//                            .height(48.dp),
+//                        colors = ButtonDefaults.buttonColors(
+//                            containerColor = BrandBlue,
+//                            contentColor = Color.White
+//                        ),
+//                        shape = MaterialTheme.shapes.extraLarge
+//                    ) {
+//                        Text(
+//                            if (isLast) "결과 보기" else "다음 문제",
+//                            fontFamily = Pretendard,
+//                            fontSize = 16.sp,
+//                            fontWeight = FontWeight.SemiBold
+//                        )
+//                    }
+//                }
+//            } else {
+//                Button(
+//                    onClick = onConfirmExplanation,
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 48.dp)
+//                        .navigationBarsPadding()
+//                        .height(48.dp),
+//                    colors = ButtonDefaults.buttonColors(
+//                        containerColor = BrandBlue,
+//                        contentColor = Color.White
+//                    ),
+//                    shape = MaterialTheme.shapes.extraLarge
+//                ) {
+//                    Text(
+//                        "확인했어요",
+//                        fontFamily = Pretendard,
+//                        fontSize = 16.sp,
+//                        fontWeight = FontWeight.SemiBold
+//                    )
+//                }
+//            }
         }
     }
 }

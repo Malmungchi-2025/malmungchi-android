@@ -6,6 +6,7 @@ import com.malmungchi.core.model.quiz.QuizCategory
 import com.malmungchi.core.model.quiz.QuizOption
 import com.malmungchi.core.model.quiz.QuizSet
 import com.malmungchi.core.model.quiz.QuizStep
+import com.malmungchi.core.model.quiz.RewardResult
 import com.malmungchi.core.model.quiz.ShortStep
 import com.malmungchi.core.model.quiz.Submission
 import com.malmungchi.core.repository.QuizRepository
@@ -42,6 +43,12 @@ class QuizRepositoryImpl(
         val res = api.submit(SubmitBody(batchId, questionIndex, payload))
         require(res.success && res.result != null) { res.message ?: "제출 실패" }
         return res.result!!.isCorrect
+    }
+
+    override suspend fun rewardAttempt(attemptId: Long): RewardResult {
+        val res = api.rewardAttempt(RewardBody(attemptId))
+        require(res.success && res.result != null) { res.message ?: "보상 지급 실패" }
+        return res.result!!.toDomain()
     }
 }
 
@@ -91,3 +98,11 @@ private fun toCategory(code: String): QuizCategory = when (code) {
     "ADVANCED" -> QuizCategory.ADVANCED
     else -> QuizCategory.BASIC
 }
+
+private fun RewardResultDto.toDomain(): RewardResult = RewardResult(
+    rewardPoint = rewardPoint,
+    basePoint = basePoint,
+    bonusAllCorrect = bonusAllCorrect,
+    allCorrect = allCorrect,
+    totalPoint = totalPoint
+)

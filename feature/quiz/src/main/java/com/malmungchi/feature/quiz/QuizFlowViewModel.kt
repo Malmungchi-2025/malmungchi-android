@@ -46,18 +46,36 @@ class FakeQuizRepo(
         id = "123",
         category = QuizCategory.BASIC,
         steps = listOf(
-            McqStep("1","MCQ Q1",
-                listOf(QuizOption(1,"A"), QuizOption(2,"B"), QuizOption(3,"C"), QuizOption(4,"D")),
+            McqStep("1", "MCQ Q1",
+                listOf(QuizOption(1, "A"), QuizOption(2, "B"), QuizOption(3, "C"), QuizOption(4, "D")),
                 correctOptionId = 2, explanation = "정답은 2번 B 입니다."
             ),
-            OxStep("2","OX Q2", answerIsO = true, explanation = "사실입니다."),
-            ShortStep("3","가이드","오늘 안에 보내줄게.","오늘","금일","격식체로 바꾸면 ‘금일’.")
+            OxStep("2", "OX Q2", answerIsO = true, explanation = "사실입니다."),
+            ShortStep("3", "가이드", "오늘 안에 보내줄게.", "오늘", "금일", "격식체로 바꾸면 ‘금일’.")
         )
     )
 ) : QuizRepository {
+
     override suspend fun createBatch(categoryKor: String, len: Int?) = set
+
     override suspend fun getBatch(batchId: Long) = set
+
     override suspend fun submit(batchId: Long, questionIndex: Int, submission: Submission) = true
+
+    // ⬇️ 추가된 부분: rewardAttempt 메서드 구현
+    override suspend fun rewardAttempt(attemptId: Long): RewardResult {
+        // 여기서는 간단한 테스트용 로직
+        val rewardPoint = if (attemptId == 123L) 20 else 15 // 예시: attemptId가 123일 경우 20포인트 지급
+        val totalPoint = 100 + rewardPoint // 예시: 기존 포인트 + 지급 포인트
+
+        return RewardResult(
+            rewardPoint = rewardPoint,
+            basePoint = 15,
+            bonusAllCorrect = if (rewardPoint == 20) 5 else 0,
+            allCorrect = rewardPoint == 20,
+            totalPoint = totalPoint
+        )
+    }
 }
 
 /* ===== ViewModel ===== */
@@ -181,10 +199,10 @@ class QuizFlowViewModel @Inject constructor(
                     secondSelections[q.id] = sel
                     secondCorrectness[q.id] = isCorrect
                 }
-                // ✅ 재도전 모드에서는 제출 직후 자동으로 다음 문항으로 이동
-                if (isRetryMode) {
-                    goNextFromSubmitted()
-                }
+//                // ✅ 재도전 모드에서는 제출 직후 자동으로 다음 문항으로 이동
+//                if (isRetryMode) {
+//                    goNextFromSubmitted()
+//                }
             }.onFailure { e ->
                 _ui.update { it.copy(error = e.message ?: "제출 실패") }
             }
@@ -304,10 +322,34 @@ class QuizFlowViewModel @Inject constructor(
             QuizEvent.Submit           -> submitCurrent()           // ★ 서버 제출 사용
             QuizEvent.Next             -> goNextFromSubmitted()
             QuizEvent.Back             -> goBack()
-            QuizEvent.ShowExplanation  ->
-                _ui.update { it.copy(showExplanation = true, explanation = currentExplanation()) }
+            QuizEvent.ShowExplanation -> {
+                val set = quizSet ?: return
+                val cur = set.steps.getOrNull(_ui.value.index) ?: return
+                val (answerText, exp) = buildAnswerAndExplanation(cur)
+                val dialogText = "정답은 [$answerText] 입니다!\n$exp"  // ← 제목 + 본문
+                _ui.update { it.copy(showExplanation = true, explanation = dialogText) }
+            }
+//            QuizEvent.ShowExplanation  ->
+//                _ui.update { it.copy(showExplanation = true, explanation = currentExplanation()) }
             QuizEvent.HideExplanation  ->
                 _ui.update { it.copy(showExplanation = false, explanation = null) }
+        }
+    }
+
+    //포인트 지급 api 연동
+    fun rewardCurrentAttempt(
+        onSuccess: (RewardResult) -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
+        val attemptId = quizSet?.id?.toLongOrNull()
+        if (attemptId == null) {
+            onError("잘못된 시도 ID")
+            return
+        }
+        viewModelScope.launch {
+            runCatching { repo.rewardAttempt(attemptId) }
+                .onSuccess { onSuccess(it) }
+                .onFailure { e -> onError(e.message ?: "포인트 지급 실패") }
         }
     }
 
@@ -321,6 +363,22 @@ class QuizFlowViewModel @Inject constructor(
         true -> "O"
         false -> "X"
         null -> null
+    }
+
+    //정답 이벤트(해설)
+    private fun buildAnswerAndExplanation(step: QuizStep): Pair<String, String> = when (step) {
+        is McqStep -> {
+            val ans = step.options.firstOrNull { it.id == step.correctOptionId }?.label.orEmpty()
+            ans to (step.explanation.orEmpty())
+        }
+        is OxStep -> {
+            val ans = if (step.answerIsO == true) "O" else "X"
+            ans to (step.explanation.orEmpty())
+        }
+        is ShortStep -> {
+            val ans = step.answerText.orEmpty()
+            ans to (step.explanation.orEmpty())
+        }
     }
 
     /* --- 동기 로딩 & 초기화 --- */

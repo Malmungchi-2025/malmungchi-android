@@ -3,6 +3,7 @@ package com.malmungchi.feature.quiz
 // ===== Imports =====
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -31,6 +32,9 @@ import com.malmungchi.core.designsystem.Pretendard
 /* ---------- 팔레트 ---------- */
 private val BrandBlue = Color(0xFF195FCF)
 private val BgBlue    = Color(0xFFEFF4FB)
+private val CorrectFill = Color(0xFFD1DFF5) // ✅ 정답 내부색
+private val WrongRed    = Color(0xFFFF0000) // ✅ 오답 테두리
+private val WrongFill   = Color(0xFFFFCCCC) // ✅ 오답 내부색
 private val ChipGray  = Color(0xFFF7F7F7)
 private val ChipSel   = Color(0xFFE0E0E0)
 private val LabelGray = Color(0xFF616161)
@@ -70,14 +74,14 @@ fun QuizRetryAllResultScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(start = 20.dp, end = 20.dp, bottom = 16.dp)
+            .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 16.dp)
     ) {
         Spacer(Modifier.height(16.dp))
 
         // ----- TopBar : ← + 타이틀 중앙 -----
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) {
-                if (inPreview || backIconRes == null) {
+                if (LocalInspectionMode.current) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "뒤로",
@@ -85,7 +89,7 @@ fun QuizRetryAllResultScreen(
                     )
                 } else {
                     Icon(
-                        painter = painterResource(id = backIconRes),
+                        painter = painterResource(id = R.drawable.ic_back), // ← 고정
                         contentDescription = "뒤로",
                         tint = Color.Unspecified
                     )
@@ -100,7 +104,8 @@ fun QuizRetryAllResultScreen(
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.width(24.dp)) // 오른쪽 비워 중앙정렬 유지
+            // 오른쪽 더미 영역을 왼쪽 IconButton(48dp)과 동일하게
+            Spacer(modifier = Modifier.size(56.dp))
         }
 
         Spacer(Modifier.height(16.dp))
@@ -108,7 +113,7 @@ fun QuizRetryAllResultScreen(
         // ----- 결과 리스트 -----
         LazyColumn(
             modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(vertical = 8.dp)
+            contentPadding = PaddingValues(top = 8.dp)
         ) {
             itemsIndexed(results) { _, item ->
                 RetryResultCard(
@@ -121,23 +126,30 @@ fun QuizRetryAllResultScreen(
         }
 
         // ----- 하단 완료 버튼 -----
-        Button(
-            onClick = onFinishClick,
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp),
-            shape = MaterialTheme.shapes.extraLarge,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = BrandBlue,
-                contentColor = Color.White
-            )
+                .padding(bottom = 48.dp),
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Text(
-                "학습 마치기",
-                fontFamily = Pretendard,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+            Button(
+                onClick = onFinishClick,
+                modifier = Modifier
+                    .fillMaxWidth(0.5f)      // 가로 절반
+                    .height(48.dp),          // 높이는 기존 유지(원하면 44~48dp 권장)
+                shape = MaterialTheme.shapes.extraLarge,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BrandBlue,
+                    contentColor = Color.White
+                )
+            ) {
+                Text(
+                    "학습 마치기",
+                    fontFamily = Pretendard,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }
@@ -229,20 +241,42 @@ private fun RetryResultCard(
             }
         }
 
-        // 3) 좌상단 결과 아이콘 (리소스 없으면 미리보기 아이콘 폴백)
-        val wantRes = if (item.isCorrect) correctIconRes else wrongIconRes
-        val painter = wantRes?.let { runCatching { painterResource(it) }.getOrNull() }
-        if (painter != null && !inPreview) {
+        // 좌상단 결과 아이콘
+        val resId = if (item.isCorrect)
+            (correctIconRes ?: R.drawable.ic_correct)
+        else
+            (wrongIconRes   ?: R.drawable.ic_wrong)
+
+        if (!inPreview) {
             Image(
-                painter = painter, contentDescription = null,
-                modifier = Modifier.align(Alignment.TopStart).offset(x = (-8).dp, y = (-8).dp).size(48.dp).zIndex(1f)
+                painter = painterResource(id = resId),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = (-12).dp, y = (-12).dp)
+                    .size(120.dp)           // ← 72~88.dp 권장
+                    .zIndex(1f)
             )
+//            Icon(
+//                painter = painterResource(id = resId),
+//                contentDescription = null,
+//                tint = Color.Unspecified,
+//                modifier = Modifier
+//                    .align(Alignment.TopStart)
+//                    .offset(x = (-8).dp, y = (-8).dp)
+//                    .size(48.dp)
+//                    .zIndex(1f)
+//            )
         } else {
             Icon(
                 imageVector = if (item.isCorrect) Icons.Filled.CheckCircle else Icons.Filled.Close,
                 contentDescription = null,
                 tint = if (item.isCorrect) BrandBlue else Color(0xFFFF0D0D),
-                modifier = Modifier.align(Alignment.TopStart).offset(x = (-8).dp, y = (-8).dp).size(48.dp).zIndex(1f)
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = (-8).dp, y = (-8).dp)
+                    .size(48.dp)
+                    .zIndex(1f)
             )
         }
     }
@@ -275,16 +309,26 @@ private fun InfoRow(label: String, value: String, startPadding: Dp = 0.dp, endPa
 private fun McqResult(options: List<String>, user: String?, correct: String) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         options.forEach { opt ->
-            val isCorrect = opt == correct
-            val isUserSel = opt == user && !isCorrect
+            val isCorrectOpt = opt == correct
+            val isUserWrong  = (user == opt) && !isCorrectOpt
+
+            val bgColor = when {
+                isCorrectOpt -> CorrectFill
+                isUserWrong  -> WrongFill
+                else         -> ChipGray
+            }
+            val borderColor = when {
+                isCorrectOpt -> BrandBlue
+                isUserWrong  -> WrongRed
+                else         -> Color(0xFFE0E0E0)
+            }
+
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(2.dp, borderColor, RoundedCornerShape(12.dp)), // ✅ 테두리 적용
                 shape = RoundedCornerShape(12.dp),
-                color = when {
-                    isCorrect -> BrandBlue
-                    isUserSel -> ChipSel
-                    else      -> ChipGray
-                }
+                color = bgColor
             ) {
                 Text(
                     text = opt,
@@ -292,12 +336,39 @@ private fun McqResult(options: List<String>, user: String?, correct: String) {
                     fontFamily = Pretendard,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = if (isCorrect) Color.White else Color.Black
+                    color = Color.Black // ✅ 내부색이 연하니 가독성 유지
                 )
             }
         }
     }
 }
+//@Composable
+//private fun McqResult(options: List<String>, user: String?, correct: String) {
+//    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+//        options.forEach { opt ->
+//            val isCorrect = opt == correct
+//            val isUserSel = opt == user && !isCorrect
+//            Surface(
+//                modifier = Modifier.fillMaxWidth(),
+//                shape = RoundedCornerShape(12.dp),
+//                color = when {
+//                    isCorrect -> BrandBlue
+//                    isUserSel -> ChipSel
+//                    else      -> ChipGray
+//                }
+//            ) {
+//                Text(
+//                    text = opt,
+//                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+//                    fontFamily = Pretendard,
+//                    fontSize = 14.sp,
+//                    fontWeight = FontWeight.Medium,
+//                    color = if (isCorrect) Color.White else Color.Black
+//                )
+//            }
+//        }
+//    }
+//}
 
 /* ---------- OX 렌더 ---------- */
 @Composable
@@ -305,16 +376,26 @@ private fun OxResult(user: String?, correct: String) {
     val tiles = listOf("O", "X")
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         tiles.forEach { t ->
-            val isCorrect = t == correct
-            val isUserSel = t == user && !isCorrect
+            val isCorrectTile = t == correct
+            val isUserWrong   = (t == user) && !isCorrectTile
+
+            val bgColor = when {
+                isCorrectTile -> CorrectFill
+                isUserWrong   -> WrongFill
+                else          -> ChipGray
+            }
+            val borderColor = when {
+                isCorrectTile -> BrandBlue
+                isUserWrong   -> WrongRed
+                else          -> Color(0xFFE0E0E0)
+            }
+
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(2.dp, borderColor, RoundedCornerShape(12.dp)), // ✅ 테두리
                 shape = RoundedCornerShape(12.dp),
-                color = when {
-                    isCorrect -> BrandBlue
-                    isUserSel -> ChipSel
-                    else      -> ChipGray
-                }
+                color = bgColor
             ) {
                 Text(
                     text = t,
@@ -322,21 +403,54 @@ private fun OxResult(user: String?, correct: String) {
                     fontFamily = Pretendard,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isCorrect) Color.White else Color.Black
+                    color = Color.Black
                 )
             }
         }
     }
 }
+//@Composable
+//private fun OxResult(user: String?, correct: String) {
+//    val tiles = listOf("O", "X")
+//    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+//        tiles.forEach { t ->
+//            val isCorrect = t == correct
+//            val isUserSel = t == user && !isCorrect
+//            Surface(
+//                modifier = Modifier.fillMaxWidth(),
+//                shape = RoundedCornerShape(12.dp),
+//                color = when {
+//                    isCorrect -> BrandBlue
+//                    isUserSel -> ChipSel
+//                    else      -> ChipGray
+//                }
+//            ) {
+//                Text(
+//                    text = t,
+//                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+//                    fontFamily = Pretendard,
+//                    fontSize = 16.sp,
+//                    fontWeight = FontWeight.SemiBold,
+//                    color = if (isCorrect) Color.White else Color.Black
+//                )
+//            }
+//        }
+//    }
+//}
 
 /* ---------- 단답형 렌더 ---------- */
 @Composable
 private fun ShortResult(user: String?, correct: String, isCorrect: Boolean) {
-    val color = if (isCorrect) BrandBlue else Color(0xFFFF0D0D)
+    val bgColor = if (isCorrect) CorrectFill else WrongFill
+    val border  = if (isCorrect) BrandBlue   else WrongRed
+    val textCol = if (isCorrect) BrandBlue   else WrongRed
+
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(2.dp, border, RoundedCornerShape(12.dp)), // ✅ 테두리
         shape = RoundedCornerShape(12.dp),
-        color = ChipGray
+        color = bgColor
     ) {
         Row(
             Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -347,11 +461,33 @@ private fun ShortResult(user: String?, correct: String, isCorrect: Boolean) {
                 fontFamily = Pretendard,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = color
+                color = textCol
             )
         }
     }
 }
+//@Composable
+//private fun ShortResult(user: String?, correct: String, isCorrect: Boolean) {
+//    val color = if (isCorrect) BrandBlue else Color(0xFFFF0D0D)
+//    Surface(
+//        modifier = Modifier.fillMaxWidth(),
+//        shape = RoundedCornerShape(12.dp),
+//        color = ChipGray
+//    ) {
+//        Row(
+//            Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Text(
+//                text = user.orEmpty(),
+//                fontFamily = Pretendard,
+//                fontSize = 16.sp,
+//                fontWeight = FontWeight.SemiBold,
+//                color = color
+//            )
+//        }
+//    }
+//}
 
 /* ---------- 프리뷰 (OX 1, 4지, 단답형 포함, 총 7문항) ---------- */
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "재도전 결과 리스트")

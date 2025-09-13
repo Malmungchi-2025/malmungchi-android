@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 // ✅ 완료 화면 UI
 @Composable
 fun QuizCompleteScreen(
+    vm: QuizFlowViewModel? = null,
     onNextClick: () -> Unit = {},
     pretendard: FontFamily = FontFamily.Default, // 🎯 기본 폰트 fallback
     showImage: Boolean = true, // 🎯 Preview에서는 이미지 생략 가능
@@ -88,12 +89,25 @@ fun QuizCompleteScreen(
 
         // 🎯 하단 버튼
         Button(
-            onClick = { onNextClick() },
+            onClick = {
+                // ⬇️ 종료하기 누르면 포인트 지급 → 성공 후 onNextClick()
+                vm?.rewardCurrentAttempt(
+                    onSuccess = { /* it.rewardPoint, it.totalPoint 사용 가능 */
+                        onNextClick()
+                    },
+                    onError = {
+                        // 실패해도 일단 다음으로 이동하고 싶다면:
+                        onNextClick()
+                        // 또는 Snackbar/Toast를 띄우고 멈추려면 여기서 처리
+                    }
+                ) ?: onNextClick()
+            },
             shape = RoundedCornerShape(50),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 32.dp)
+                .fillMaxWidth(0.5f) // ✅ 폭을 부모의 절반으로
+                .align(Alignment.CenterHorizontally)
+                .padding(bottom = 48.dp)
                 .height(48.dp)
         ) {
             Text(

@@ -2,6 +2,7 @@ package com.malmungchi.core.repository
 
 import com.malmungchi.core.model.quiz.QuizSet
 import com.malmungchi.core.model.quiz.Submission
+import com.malmungchi.core.model.quiz.RewardResult
 
 
 interface QuizRepository {
@@ -12,4 +13,7 @@ interface QuizRepository {
         questionIndex: Int,
         submission: Submission
     ): Boolean? // isCorrect (nullable)
+
+    // ⬇️ 추가
+    suspend fun rewardAttempt(attemptId: Long): RewardResult
 }
