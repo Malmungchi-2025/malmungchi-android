@@ -1,5 +1,6 @@
 package com.malmungchi.feature.mypage
 
+import NicknameCardScreen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -46,7 +47,8 @@ fun MyPageRoute(
     onClickSettings: () -> Unit = {},
     onClickViewAllWords: () -> Unit = {},
     onClickViewAllBadges: () -> Unit = {},
-    onClickViewNicknameTest: () -> Unit = {}
+    onClickViewNicknameTest: () -> Unit = {},
+    onClickViewNicknameCard: () -> Unit = {}  // 별명 카드로 이동하는 콜백 추가
 ) {
     val ui by viewModel.ui.collectAsState()
 
@@ -66,22 +68,29 @@ fun MyPageRoute(
             Text("에러: ${ui.error}")
         }
         else -> {
-            MyPageScreen(
-                userName = ui.userName,
-                levelLabel = ui.levelLabel,          // 0:입문, 1:기초, 2:활용, 3:심화, 그 외:고급
-                levelProgress = ui.levelProgress,    // 0..1 (4단계 이상은 1.0)
-                onClickSettings = onClickSettings,
-                onClickViewAllWords = onClickViewAllWords,
-                onClickViewAllBadges = onClickViewAllBadges,
-                onClickNicknameTest = { onClickViewNicknameTest() },
-                recentItems = ui.recentVocab,
-                currentRecentIndex = recentIndex,
-                onChangeRecentIndex = { next ->
-                    if (pageCount > 0) {
-                        recentIndex = next.coerceIn(0, pageCount - 1)
-                    }
-                }
-            )
+            // 별명 검사
+            if (ui.user?.nickname_title.isNullOrBlank()) {
+                // 별명이 없다면 별명 테스트 화면으로 이동
+                MyPageScreen(
+                    userName = ui.userName,
+                    levelLabel = ui.levelLabel,
+                    levelProgress = ui.levelProgress,
+                    onClickSettings = onClickSettings,
+                    onClickViewAllWords = onClickViewAllWords,
+                    onClickViewAllBadges = onClickViewAllBadges,
+                    onClickNicknameTest = { onClickViewNicknameTest() },  // 별명 테스트 클릭 시
+                    recentItems = ui.recentVocab,
+                    currentRecentIndex = 0,
+                    onChangeRecentIndex = {}
+                )
+            } else {
+                // 별명이 있으면 별명 카드 화면으로 이동
+                NicknameCardScreen(
+                    userName = ui.userName, // ui.userName을 전달
+                    nickname = ui.user?.nickname_title ?: "별명 없음",  // 별명 제목이 없으면 기본값
+                    onExit = onClickViewNicknameCard  // 완료 시 별명 화면으로 돌아가기
+                )
+            }
         }
     }
 }
@@ -182,6 +191,8 @@ private fun MyPageTopBar(
         }
     }
 }
+
+
 
 // ==== Profile ====
 private val AVATAR_SIZE = 80.dp

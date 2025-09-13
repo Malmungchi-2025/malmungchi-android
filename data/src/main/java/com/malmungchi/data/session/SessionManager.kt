@@ -1,6 +1,8 @@
 package com.malmungchi.data.session
 
 object SessionManager {
+    @Volatile
+    private var nicknameTitle: String? = null
     @Volatile var userId: Int? = null
         private set
 
@@ -15,6 +17,11 @@ object SessionManager {
         this.userId = userId
         this.token = token
         this.level = level
+    }
+
+    // nickname_title 업데이트 메서드
+    fun updateNicknameTitle(nicknameTitle: String?) {
+        this.nicknameTitle = nicknameTitle
     }
 
     // level만 갱신할 때

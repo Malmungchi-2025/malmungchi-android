@@ -20,7 +20,8 @@ data class UserDto(
     val name: String,
     val nickname: String?,
     val is_verified: Boolean,
-    val level: Int ? = null         // ✅ 서버가 내려주는 1~4
+    val level: Int ? = null,         // ✅ 서버가 내려주는 1~4
+    val nickname_title: String? = null // 추가된 nickname_title 필드
 )
 
 data class RegisterRequest(
