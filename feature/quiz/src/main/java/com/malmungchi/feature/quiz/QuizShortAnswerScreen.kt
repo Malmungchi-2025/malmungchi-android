@@ -170,6 +170,8 @@ fun QuizShortAnswerScreen(
 
             Spacer(Modifier.height(20.dp))
 
+            val trailingIconSize = 20.dp
+
             TextField(
                 value = inputText,
                 onValueChange = onInputChange,
@@ -183,11 +185,12 @@ fun QuizShortAnswerScreen(
                         color = TextGray
                     )
                 },
+
                 trailingIcon = {
                     when {
-                        !submitted -> SafeIcon(penIconRes, Icons.Filled.Edit, tint = TextGray)
-                        isCorrect  -> SafeIcon(correctIconRes, Icons.Filled.CheckCircle, tint = BrandBlue)
-                        else       -> SafeIcon(incorrectIconRes, Icons.Filled.Close, tint = ErrorRed)
+                        !submitted -> SafeIconSized(penIconRes, Icons.Filled.Edit, tint = TextGray, size = trailingIconSize)
+                        isCorrect  -> SafeIconSized(correctIconRes, Icons.Filled.CheckCircle, tint = BrandBlue, size = trailingIconSize)
+                        else       -> SafeIconSized(incorrectIconRes, Icons.Filled.Close, tint = ErrorRed, size = trailingIconSize)
                     }
                 },
                 textStyle = TextStyle(
@@ -267,6 +270,26 @@ fun QuizShortAnswerScreen(
 //        }
 //    }
 //}
+
+@Composable
+private fun SafeIconSized(
+    painterRes: Int?,
+    fallback: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String? = null,
+    tint: Color? = null,
+    size: Dp = 20.dp
+) {
+    val inPreview = LocalInspectionMode.current
+    val tryPainter = painterRes != null && !inPreview
+    if (tryPainter) {
+        val painter = runCatching { painterResource(id = painterRes!!) }.getOrNull()
+        if (painter != null) {
+            Icon(painter = painter, contentDescription = contentDescription, tint = tint ?: Color.Unspecified, modifier = Modifier.size(size))
+            return
+        }
+    }
+    Icon(imageVector = fallback, contentDescription = contentDescription, tint = tint ?: LocalContentColor.current, modifier = Modifier.size(size))
+}
 
 /* ---------- 밑줄 도우미 ---------- */
 private fun underlinedTextColored(

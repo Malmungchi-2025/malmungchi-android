@@ -170,18 +170,23 @@ fun QuizOxScreen(
             // 제출 후 결과 아이콘 표시(선택된 쪽 아래)
             if (submitted && selectedIsO != null) {
                 Spacer(Modifier.height(12.dp))
-                Row(Modifier.fillMaxWidth()) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(24.dp),                    // ← 결과 영역 고정 높이
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val iconSize = 20.dp
+
                     Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        if (selectedIsO == true) ResultIcon(
-                            isCorrect = isCorrect,
-                            inPreview = inPreview
-                        )
+                        if (submitted && selectedIsO == true) {
+                            ResultIcon(isCorrect = isCorrect, inPreview = inPreview, iconSize = iconSize)
+                        }
                     }
                     Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        if (selectedIsO == false) ResultIcon(
-                            isCorrect = isCorrect,
-                            inPreview = inPreview
-                        )
+                        if (submitted && selectedIsO == false) {
+                            ResultIcon(isCorrect = isCorrect, inPreview = inPreview, iconSize = iconSize)
+                        }
                     }
                 }
             }
@@ -275,19 +280,21 @@ private fun visualizeOxTile(
 }
 
 @Composable
-private fun ResultIcon(isCorrect: Boolean, inPreview: Boolean) {
+private fun ResultIcon(isCorrect: Boolean, inPreview: Boolean, iconSize: Dp = 20.dp) {
     if (inPreview) {
         Icon(
             imageVector = if (isCorrect) Icons.Filled.CheckCircle else Icons.Filled.Close,
             contentDescription = null,
-            tint = if (isCorrect) BrandBlue else WrongBorder
+            tint = if (isCorrect) BrandBlue else WrongBorder,
+            modifier = Modifier.size(iconSize)
         )
     } else {
         val resId = if (isCorrect) R.drawable.img_quiz_correct else R.drawable.img_quiz_incorrect
         Icon(
             painter = painterResource(id = resId),
             contentDescription = null,
-            tint = Color.Unspecified
+            tint = Color.Unspecified,
+            modifier = Modifier.size(iconSize)
         )
     }
 }

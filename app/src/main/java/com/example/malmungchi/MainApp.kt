@@ -1006,6 +1006,7 @@ fun MainApp() {
             // 6) 완료
             composable("quiz_complete") {
                 QuizCompleteScreen(
+                    vm = hiltViewModel<QuizFlowViewModel>(),
                     onNextClick = {
                         navController.navigate("quiz_home") {
                             popUpTo("quiz_graph") { inclusive = false }

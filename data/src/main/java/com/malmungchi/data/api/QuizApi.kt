@@ -28,4 +28,9 @@ interface QuizApi {
     suspend fun getDailySummary(
         @Query("date") date: String? = null
     ): BaseResponse<List<DailySummaryRowDto>>
+
+    @POST("/api/gpt/quiz/attempt/reward")
+    suspend fun rewardAttempt(
+        @Body body: RewardBody
+    ): BaseResponse<RewardResultDto>
 }
