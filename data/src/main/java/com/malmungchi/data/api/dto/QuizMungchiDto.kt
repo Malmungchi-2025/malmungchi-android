@@ -86,3 +86,17 @@ data class QuizOptionDto(
     val id: Int,
     val label: String
 )
+
+@JsonClass(generateAdapter = true)
+data class RewardBody(
+    val attemptId: Long
+)
+
+@JsonClass(generateAdapter = true)
+data class RewardResultDto(
+    val rewardPoint: Int,     // 이번 시도에 지급된 포인트 (15 또는 20)
+    val basePoint: Int,       // 15
+    val bonusAllCorrect: Int, // 0 또는 5
+    val allCorrect: Boolean,
+    val totalPoint: Int       // 지급 후 유저 총 포인트
+)

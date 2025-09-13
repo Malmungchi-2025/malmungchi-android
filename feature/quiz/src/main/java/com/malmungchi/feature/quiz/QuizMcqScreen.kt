@@ -252,6 +252,8 @@ private fun OptionItem(
     onClick: () -> Unit
 ) {
     val shape = RoundedCornerShape(12.dp)
+    val iconSize = 20.dp                    // ← 아이콘 고정 크기
+    val iconSlotWidth = 28.dp               // ← 슬롯 폭(여유 약간)
 
     val bg = when (state) {
         OptionVisualState.DEFAULT  -> Color.White
@@ -286,20 +288,31 @@ private fun OptionItem(
             modifier = Modifier.weight(1f)
         )
 
-        if (showResultIcon) {
-            if (inPreview) {
-                val icon = if (state == OptionVisualState.CORRECT) Icons.Filled.CheckCircle else Icons.Filled.Close
-                Icon(icon, contentDescription = null, tint = if (state == OptionVisualState.CORRECT) BrandBlue else WrongRed)
-            } else {
-                val resId = if (state == OptionVisualState.CORRECT)
-                    R.drawable.img_quiz_correct
-                else
-                    R.drawable.img_quiz_incorrect
-
-                Image(
-                    painter = painterResource(id = resId),
-                    contentDescription = null
-                )
+        // ▼ 항상 동일 폭의 아이콘 슬롯 유지 (보여줄 때만 아이콘 배치)
+        Box(
+            modifier = Modifier
+                .width(iconSlotWidth)
+                .height(iconSize),
+            contentAlignment = Alignment.Center
+        ) {
+            if (showResultIcon) {
+                if (inPreview) {
+                    val icon = if (state == OptionVisualState.CORRECT)
+                        Icons.Filled.CheckCircle else Icons.Filled.Close
+                    Icon(icon, contentDescription = null, tint =
+                        if (state == OptionVisualState.CORRECT) BrandBlue else WrongRed,
+                        modifier = Modifier.size(iconSize)
+                    )
+                } else {
+                    val resId = if (state == OptionVisualState.CORRECT)
+                        R.drawable.img_quiz_correct else R.drawable.img_quiz_incorrect
+                    Icon(
+                        painter = painterResource(id = resId),
+                        contentDescription = null,
+                        tint = Color.Unspecified,
+                        modifier = Modifier.size(iconSize)
+                    )
+                }
             }
         }
     }
