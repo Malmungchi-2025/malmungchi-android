@@ -53,7 +53,7 @@ fun NicknameTestIntroScreen(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(32.dp))
 
             // 상단 바 (뒤로가기)
             Row(

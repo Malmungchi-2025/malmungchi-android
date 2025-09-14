@@ -1,10 +1,11 @@
 package com.example.malmungchi
 
 
-import NicknameCardScreen
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -65,13 +66,19 @@ import com.malmungchi.feature.mypage.nickname.NicknameTestIntroScreen
 import com.malmungchi.feature.mypage.nickname.NicknameTestLoadingScreen
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.malmungchi.feature.mypage.MyPageViewModel
+import com.malmungchi.feature.mypage.nickname.NicknameCardScreen
 import com.malmungchi.feature.quiz.QuizCategoryRoute
 import com.malmungchi.feature.quiz.QuizCompleteScreen
 import com.malmungchi.feature.quiz.QuizFlowViewModel
@@ -80,6 +87,7 @@ import com.malmungchi.feature.quiz.QuizRetryAllResultScreen
 import com.malmungchi.feature.quiz.QuizRetryHost
 import com.malmungchi.feature.quiz.QuizRetryIntroScreen
 import com.malmungchi.feature.quiz.QuizSolveHost
+
 
 
 
@@ -127,8 +135,19 @@ private fun WithBottomBar(
     navController: NavHostController,
     content: @Composable (innerPadding: PaddingValues) -> Unit
 ) {
-    Scaffold(bottomBar = { BottomNavBar(navController = navController) }) { inner ->
-        Box(Modifier.padding(inner)) { content(inner) }
+    Scaffold(
+        containerColor = Color.White,                // ✅ 바탕 흰색
+        contentColor = Color.Black,                  // (텍스트 대비)
+        bottomBar = { BottomNavBar(navController = navController) }
+    ) { inner ->
+        Box(
+            Modifier
+                .padding(inner)
+                .fillMaxSize()
+                .background(Color.White)            // ✅ 컨텐츠 영역도 흰색
+        ) {
+            content(inner)
+        }
     }
 }
 
@@ -148,11 +167,23 @@ private fun StudyGraphBackHandler(navController: NavController) {
     }
 }
 
+@Composable
+fun WhiteSystemBars() {
+    val systemUi = rememberSystemUiController()
+    SideEffect {
+        systemUi.setStatusBarColor(color = Color.White, darkIcons = true)
+        systemUi.setNavigationBarColor(color = Color.White, darkIcons = true)
+    }
+}
+
+
 /* ────────────────────────────────────────────────────────────────────────────────
    MainApp (전체)
    ──────────────────────────────────────────────────────────────────────────────── */
 @Composable
 fun MainApp() {
+
+    WhiteSystemBars()
     val navController = rememberNavController()
     val appContext = LocalContext.current
 
@@ -520,12 +551,24 @@ fun MainApp() {
         composable("main") {
             // ✅ main에서 시스템 백은 무시 → 앱 종료 방지
             BackHandler(enabled = true) { /* no-op */ }
+            // 루트 컨트롤러만 쓰게 강제: MainScreen 사용 X
+            LaunchedEffect(Unit) {
+                navController.navigate("study_graph") {
+                    popUpTo("main") { inclusive = true }  // main 제거
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+            // 간단한 로더만 보여줌
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
 
-            MainScreen(
-                onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } },
-                onOpenSettings   = { navController.navigate("settings") },
-                onOpenWordCollection = { navController.navigate("word_collection") } // ★ 추가
-            )
+//            MainScreen(
+//                onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } },
+//                onOpenSettings   = { navController.navigate("settings") },
+//                onOpenWordCollection = { navController.navigate("word_collection") } // ★ 추가
+//            )
         }
 
         // 학습 그래프 (루트: 주간 허브)
@@ -1020,12 +1063,24 @@ fun MainApp() {
             }
         }
 
+        // 변경 (루트 NavController + 동일 BottomBar 사용)
         composable("ai") {
-            MainScreen(initialTab = "ai", onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } },onOpenSettings   = { navController.navigate("settings") })
+            WithBottomBar(navController as NavHostController) {
+                com.malmungchi.feature.ai.AiScreen()
+            }
         }
         composable("friend") {
-            MainScreen(initialTab = "friend", onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } },onOpenSettings   = { navController.navigate("settings") })
+            WithBottomBar(navController as NavHostController) {
+                com.malmungchi.feature.friend.FriendScreen()
+            }
         }
+
+//        composable("ai") {
+//            MainScreen(initialTab = "ai", onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } },onOpenSettings   = { navController.navigate("settings") })
+//        }
+//        composable("friend") {
+//            MainScreen(initialTab = "friend", onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } },onOpenSettings   = { navController.navigate("settings") })
+//        }
 //        composable("mypage") {
 //            MainScreen(initialTab = "mypage", onStartStudyFlow = { navController.navigate("study_graph") { launchSingleTop = true } },onOpenSettings   = { navController.navigate("settings") })
 //        }
@@ -1041,42 +1096,44 @@ fun MainApp() {
 //            )
 //        }
         composable("mypage") {
-            com.malmungchi.feature.mypage.MyPageRoute(
-                onClickSettings = { navController.navigate("settings") },
-                onClickViewAllWords = { navController.navigate("word_collection") },
-                onClickViewAllBadges = { /* TODO */ },
-                onClickViewNicknameTest = { // 말풍선 탭 → 인트로
-                    navController.navigate("nickname_test_intro") { launchSingleTop = true }
-                },
-                onClickViewNicknameCard = { // 별명 카드로 이동하는 콜백
-                    navController.navigate("nickname_card_screen") { launchSingleTop = true }
-                }
-            )
+            WithBottomBar(navController as NavHostController) {
+                com.malmungchi.feature.mypage.MyPageRoute(
+                    onClickSettings = { navController.navigate("settings") },
+                    onClickViewAllWords = { navController.navigate("word_collection") },
+                    onClickViewAllBadges = { /* TODO */ },
+                    onClickViewNicknameTest = {
+                        navController.navigate("nickname_test_intro") { launchSingleTop = true }
+                    },
+                    onClickViewNicknameCard = { nicknameTitle, userName ->
+                        val n = Uri.encode(nicknameTitle)
+                        val u = Uri.encode(userName)
+                        navController.navigate("nickname_card_screen?nickname=$n&userName=$u") {
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
         }
 
-        composable("nickname_card_screen") {
-            val viewModel: MyPageViewModel = hiltViewModel()
-            val ui by viewModel.ui.collectAsState()
+        // ★ 라우트 정의를 파라미터 포함으로
+        composable(
+            route = "nickname_card_screen?nickname={nickname}&userName={userName}",
+            arguments = listOf(
+                navArgument("nickname") { type = NavType.StringType; defaultValue = "" },
+                navArgument("userName") { type = NavType.StringType; defaultValue = "" }
+            )
+        ) { backStackEntry ->
+            val nicknameArg = backStackEntry.arguments?.getString("nickname").orEmpty()
+            val userNameArg = backStackEntry.arguments?.getString("userName").orEmpty()
 
-            // LocalContext를 통해 MainActivity에 접근
-            val context = LocalContext.current
-            val activity = context as? MainActivity
-
-            // 닉네임 카드 화면
+            // ✅ 여기서는 새 ViewModel 만들지 말고, 전달받은 값으로 바로 그린다
             NicknameCardScreen(
-                navController = navController,
-                userName = ui.userName,
-                nickname = ui.user?.nickname_title ?: "별명 없음",
-                onExit = {
-                    navController.popBackStack()  // 뒤로가기
-                },
-                onSaveImage = { nickname ->
-                    // MainActivity에서 전달한 onSaveImageClicked를 호출
-                    activity?.onSaveImageClicked(nickname)
-                }
+                userName = userNameArg,
+                nickname = nicknameArg,
+                onExit = { navController.popBackStack() },
+                onSaveImage = { /* 필요시 구현 */ }
             )
         }
-
         composable("nickname_test_intro") {
             NicknameTestIntroScreen(
                 onBackClick = {
