@@ -148,13 +148,13 @@ fun MainScreen(
                     )
 
                     // 4) 실제 바인딩
-                    MyPageScreen(
-                        userName = ui.userName,
-                        levelLabel = ui.levelLabel,
-                        levelProgress = ui.levelProgress,
-                        onClickSettings = onOpenSettings,
-                        onClickViewAllWords = { onOpenWordCollection() } // ✅ 루트 NavHost로 위임
-                    )
+//                    MyPageScreen(
+//                        userName = ui.userName,
+//                        levelLabel = ui.levelLabel,
+//                        levelProgress = ui.levelProgress,
+//                        onClickSettings = onOpenSettings,
+//                        onClickViewAllWords = { onOpenWordCollection() } // ✅ 루트 NavHost로 위임
+//                    )
                 }
             }
         }

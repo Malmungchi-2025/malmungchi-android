@@ -93,6 +93,8 @@ dependencies {
     implementation(project(":data"))
     //implementation(project(":feature"))
 
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.35.0-alpha")
+
 
     implementation("androidx.core:core-splashscreen:1.0.1")
     //다른 모듈 참조

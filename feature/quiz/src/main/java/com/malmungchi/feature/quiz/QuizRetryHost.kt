@@ -238,7 +238,7 @@ private fun BottomActionBar(
 
                     Button(
                         onClick = onNext,                    // 다음 문제 or 결과 보기
-                        modifier = Modifier.weight(1f).height(48.dp),
+                        modifier = Modifier.weight(1f).padding(start = 80.dp, end = 80.dp, bottom = 48.dp).height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White),
                         shape = MaterialTheme.shapes.extraLarge
                     ) {

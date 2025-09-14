@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
 data class MyPageUiState(
     val loading: Boolean = false,
     val error: String? = null,
@@ -31,8 +30,10 @@ data class MyPageUiState(
             else                            -> "사용자"
         }
 
-    /** 0->입문, 1->기초, 2->활용, 3->심화, else->고급 */
-    val levelLabel: String get() = when (user?.level) {
+    /** 0->입문, 1->기초, 2->활용, 3->심화, 4+->고급 */
+    val levelInt: Int get() = user?.level ?: 0
+
+    val levelLabel: String get() = when (levelInt) {
         0 -> "입문"
         1 -> "기초"
         2 -> "활용"
@@ -40,9 +41,78 @@ data class MyPageUiState(
         else -> "고급"
     }
 
-    /** 진행도는 0..4(이상)을 0..1 로 환산 (4 이상이면 1.0 고정) */
-    val levelProgress: Float get() = ((user?.level ?: 0).coerceAtLeast(0) / 4f).coerceIn(0f, 1f)
+    /** 진행도 바(0..1)는 '다음 단계 타깃' 대비 현재 포인트 비율로 계산 */
+    val point: Int get() = user?.point ?: 0
+
+    /** 다음 단계 라벨/타깃 포인트 계산 */
+    private fun nextStageLabelAndTarget(): Pair<String, Int>? = when (levelInt) {
+        0, 1 -> "활용" to 1350
+        2    -> "심화" to 2700
+        3    -> "고급" to 4050
+        else -> null
+    }
+
+    /** 다음 단계가 있으면 그 대비 진행률, 없으면 1f */
+    val nextProgress: Float get() {
+        val t = nextStageLabelAndTarget() ?: return 1f
+        val target = t.second.toFloat().coerceAtLeast(1f)
+        return (point / target).coerceIn(0f, 1f)
+    }
+
+    /** 다음 단계로 표기되는 텍스트용 데이터 */
+    val nextStageUi: NextStageUi? get() {
+        val pair = nextStageLabelAndTarget() ?: return null
+        val (label, target) = pair
+        val remain = (target - point).coerceAtLeast(0)
+        return NextStageUi(
+            currentLabel = levelLabel,
+            nextLabel = label,
+            target = target,
+            currentPoint = point,
+            remain = remain,
+            progress = nextProgress
+        )
+    }
 }
+
+data class NextStageUi(
+    val currentLabel: String,
+    val nextLabel: String,
+    val target: Int,
+    val currentPoint: Int,
+    val remain: Int,
+    val progress: Float
+)
+//data class MyPageUiState(
+//    val loading: Boolean = false,
+//    val error: String? = null,
+//    val user: UserDto? = null,
+//    val recentVocab: List<VocabularyDto> = emptyList(),
+//    val likedVocab: List<VocabularyDto> = emptyList(),
+//    val allVocab: List<VocabularyDto> = emptyList(),
+//    val allCursor: NextCursor? = null,
+//    val likedCursor: NextCursor? = null,
+//    val togglingId: Int? = null
+//) {
+//    val userName: String
+//        get() = when {
+//            !user?.nickname.isNullOrBlank() -> user!!.nickname!!.trim()
+//            !user?.name.isNullOrBlank()     -> user!!.name!!.trim()
+//            else                            -> "사용자"
+//        }
+//
+//    /** 0->입문, 1->기초, 2->활용, 3->심화, else->고급 */
+//    val levelLabel: String get() = when (user?.level) {
+//        0 -> "입문"
+//        1 -> "기초"
+//        2 -> "활용"
+//        3 -> "심화"
+//        else -> "고급"
+//    }
+//
+//    /** 진행도는 0..4(이상)을 0..1 로 환산 (4 이상이면 1.0 고정) */
+//    val levelProgress: Float get() = ((user?.level ?: 0).coerceAtLeast(0) / 4f).coerceIn(0f, 1f)
+//}
 
 @HiltViewModel
 class MyPageViewModel @Inject constructor(
