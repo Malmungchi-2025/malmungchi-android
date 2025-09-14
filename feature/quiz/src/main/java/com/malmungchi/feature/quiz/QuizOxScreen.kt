@@ -205,7 +205,7 @@ fun QuizOxScreen(
                 shape = MaterialTheme.shapes.extraLarge,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 80.dp)
+                    .padding(start = 80.dp, end = 80.dp, bottom = 48.dp)
                     .height(48.dp)
                     .align(Alignment.CenterHorizontally)
             ) {

@@ -1,5 +1,7 @@
 package com.malmungchi.core.model
 
+import com.google.gson.annotations.SerializedName
+
 data class BaseResponse<T>(
     val success: Boolean,
     val message: String?,
@@ -21,7 +23,11 @@ data class UserDto(
     val nickname: String?,
     val is_verified: Boolean,
     val level: Int ? = null,         // ✅ 서버가 내려주는 1~4
-    val nickname_title: String? = null // 추가된 nickname_title 필드
+    val point: Int? = null,           // 👈 추가
+    // 서버는 nicknameTitle 로 내려요!
+    @SerializedName("nicknameTitle")
+    val nickname_title: String? = null
+    //val nickname_title: String? = null // 추가된 nickname_title 필드
 )
 
 data class RegisterRequest(

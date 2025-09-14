@@ -19,8 +19,12 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.malmungchi.ui.theme.MalmungchiTheme
 import java.io.File
 import java.io.FileOutputStream
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+
 
     companion object {
         private const val PERMISSION_REQUEST_CODE = 100
@@ -34,7 +38,7 @@ class MainActivity : ComponentActivity() {
 
         // 권한 확인 후 요청
         if (!isPermissionGranted()) {
-            requestPermissions()
+            requestPermissionsIfNeeded()
         }
 
         setContent {
@@ -43,25 +47,31 @@ class MainActivity : ComponentActivity() {
     }
 
     // 권한 체크 함수
+    private fun isLegacyWritePermissionNeeded(): Boolean =
+        android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q
+
     private fun isPermissionGranted(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            this,
-            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-        ) == PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.READ_EXTERNAL_STORAGE
-                ) == PackageManager.PERMISSION_GRANTED
+        return if (isLegacyWritePermissionNeeded()) {
+            ContextCompat.checkSelfPermission(
+                this, Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true // Q(API 29)+는 MediaStore로 저장에 별도 WRITE 권한 불필요
+        }
     }
 
     // 권한 요청 함수
-    private fun requestPermissions() {
-        ActivityCompat.requestPermissions(
-            this,
-            arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE, android.Manifest.permission.READ_EXTERNAL_STORAGE),
-            PERMISSION_REQUEST_CODE
-        )
+    private fun requestPermissionsIfNeeded() {
+        if (!isPermissionGranted()) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                PERMISSION_REQUEST_CODE
+            )
+        }
     }
+
+
 
     // 권한 요청 결과 처리 함수
     override fun onRequestPermissionsResult(
@@ -71,12 +81,60 @@ class MainActivity : ComponentActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // 권한이 허용됨
-                Toast.makeText(this, "권한이 허용되었습니다.", Toast.LENGTH_SHORT).show()
+            val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+            Toast.makeText(this,
+                if (granted) "권한이 허용되었습니다." else "권한이 거부되었습니다.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun saveImageToGallery(
+        bitmap: Bitmap,
+        displayName: String = "nickname_card_${System.currentTimeMillis()}.png"
+    ) {
+        val mimeType = "image/png"
+        val resolver = contentResolver
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            // Q+ : 스코프드 스토리지 (갤러리에 바로 노출)
+            val values = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, displayName)
+                put(android.provider.MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Pictures/Malmungchi")
+                put(android.provider.MediaStore.Images.Media.IS_PENDING, 1)
+            }
+            val uri = resolver.insert(
+                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values
+            )
+            if (uri != null) {
+                resolver.openOutputStream(uri)?.use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                }
+                values.clear()
+                values.put(android.provider.MediaStore.Images.Media.IS_PENDING, 0)
+                resolver.update(uri, values, null, null)
+                Toast.makeText(this, "갤러리에 저장되었습니다.", Toast.LENGTH_SHORT).show()
             } else {
-                // 권한이 거부됨
-                Toast.makeText(this, "권한이 거부되었습니다.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "이미지 저장 실패.", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            // Pre-Q : 퍼블릭 Pictures 경로에 저장 + 미디어 스캔
+            @Suppress("DEPRECATION")
+            val pictures = android.os.Environment.getExternalStoragePublicDirectory(
+                android.os.Environment.DIRECTORY_PICTURES
+            )
+            val dir = java.io.File(pictures, "Malmungchi").apply { if (!exists()) mkdirs() }
+            val file = java.io.File(dir, displayName)
+            try {
+                java.io.FileOutputStream(file).use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                }
+                android.media.MediaScannerConnection.scanFile(
+                    this, arrayOf(file.absolutePath), arrayOf(mimeType), null
+                )
+                Toast.makeText(this, "갤러리에 저장되었습니다.", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(this, "이미지 저장 실패.", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -119,9 +177,9 @@ class MainActivity : ComponentActivity() {
 
     // 이미지 저장을 트리거하는 함수
     fun onSaveImageClicked(nickname: String) {
-        val imageResId = getNicknameCardImageRes(nickname) // 닉네임에 맞는 이미지 리소스 ID 가져오기
-        val bitmap = getBitmapFromDrawable(imageResId) // 이미지 리소스를 Bitmap으로 변환
-        saveImageToStorage(bitmap)  // 저장
+        val imageResId = getNicknameCardImageRes(nickname)
+        val bitmap = getBitmapFromDrawable(imageResId)
+        saveImageToGallery(bitmap) // ✅ 갤러리에 보이는 경로로 저장
     }
     // 별명에 맞는 이미지 리소스를 반환하는 함수
     private fun getNicknameCardImageRes(nickname: String): Int {
