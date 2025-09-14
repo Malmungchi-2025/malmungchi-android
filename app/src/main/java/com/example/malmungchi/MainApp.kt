@@ -1197,11 +1197,16 @@ fun MainApp() {
             )
         }
         composable("remind_settings") {
+            val scope = rememberCoroutineScope()
             RemindSettingsScreen(
                 onBack = { navController.popBackStack() },
                 onSave = { list ->
-                    // TODO: list(Ampm, hour, minute) 저장 로직 (서버/로컬)에 맞게 처리
-                    navController.popBackStack()  // 저장 후 뒤로
+                    Log.d("REMIND", "onSave called: $list")   // ✅ 꼭 보이게
+                    // 스낵바가 잠깐이라도 보이도록 살짝 지연
+                    scope.launch {
+                        kotlinx.coroutines.delay(600)
+                        navController.popBackStack()  // 저장 후 뒤로
+                    }
                 }
             )
         }
