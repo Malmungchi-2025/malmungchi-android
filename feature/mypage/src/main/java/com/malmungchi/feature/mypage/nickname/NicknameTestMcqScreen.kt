@@ -18,6 +18,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +34,8 @@ import com.malmungchi.feature.mypage.R as MyPageR
 private val BrandBlue = Color(0xFF195FCF)
 private val TrackGray = Color(0xFFFAFAFA)
 private val TextGray = Color(0xFF989898)
+private val BgSoft = Color(0xFFEFF4FB)   // ⬅️ 추가
+private val SelectedFill = Color(0xFFC4D6F2) // ⬅️ 추가 (선지 선택 채움색)
 
 @Composable
 fun NicknameTestMcqScreen(
@@ -64,6 +67,8 @@ fun NicknameTestMcqScreen(
     }
 
     val q = questions.getOrNull(index)
+
+    Box(Modifier.fillMaxSize().background(BgSoft)) {
 
     Column(Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, bottom = 48.dp)) {
         Spacer(Modifier.height(48.dp))
@@ -133,8 +138,8 @@ fun NicknameTestMcqScreen(
             },
             enabled = enabled,
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (enabled) Color(0xFF195FCF) else Color(0xFFFAFAFA),
-                contentColor = if (enabled) Color.White else Color(0xFF989898)
+                containerColor = if (enabled) BrandBlue else Color.White,  // 비활성=White
+                contentColor = if (enabled) Color.White else TextGray
             ),
             shape = MaterialTheme.shapes.extraLarge,
             modifier = Modifier.fillMaxWidth().padding(start = 80.dp, end = 80.dp, bottom = 48.dp).height(48.dp).align(Alignment.CenterHorizontally)
@@ -142,7 +147,7 @@ fun NicknameTestMcqScreen(
             Text("정답 제출", fontFamily = Pretendard, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
     }
-}
+}}
 
 
 //@Composable
@@ -333,9 +338,12 @@ private fun OptionItem(
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .shadow(elevation = 4.dp, shape = shape, clip = false)
             .clip(shape)
-            .background(bg)
-            .border(width = 2.dp, color = borderColor, shape = shape)
+            .background(bg) // ✅ 선택 시 C4D6F2, 기본 White
+            .border(width = 2.dp, color = borderColor, shape = shape) // ✅ 선택 시 195FCF
+            //.background(bg)
+            //.border(width = 2.dp, color = borderColor, shape = shape)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp)
     ) {
@@ -348,6 +356,36 @@ private fun OptionItem(
         )
     }
 }
+
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Composable
+private fun PreviewNicknameTestMcqScreen() {
+    val sample = List(9) { i ->
+        McqQuestion(
+            id = i + 1,
+            numberLabel = "Q${i + 1}",
+            text = "다른 사람의 감정을 이해 및 공감하는 능력을 뜻하는 단어는?",
+            options = listOf(
+                McqOption(1, "공감"),
+                McqOption(2, "직관"),
+                McqOption(3, "분석"),
+                McqOption(4, "판단")
+            ),
+            answerOptionId = 1
+        )
+    }
+    MaterialTheme {
+        Surface {
+            NicknameTestMcqScreen(
+                questions = sample,
+                answeredGlobalCount = 3,
+                onBackClick = {},
+                onFinishVocabulary = { _, _ -> }
+            )
+        }
+    }
+}
+
 
 // ==== Preview ====
 //@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)

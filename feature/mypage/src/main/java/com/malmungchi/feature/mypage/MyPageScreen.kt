@@ -33,6 +33,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import kotlinx.coroutines.launch
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.tooling.preview.Preview
+import com.malmungchi.feature.mypage.nickname.NicknameCardDialog
 
 // ===== Color & Dimens =====
 private val Blue_195FCF = Color(0xFF195FCF)
@@ -70,10 +71,11 @@ fun MyPageRoute(
             Text("에러: ${ui.error}")
         }
         else -> {
-            // ✅ 닉네임 결과(타이틀) 존재 여부
-            val hasNickname = !ui.user?.nickname_title.isNullOrBlank()   // UserDto에 nickname_title 있음
+            // ✅ 다이얼로그 열림 상태
+            var showNicknameCard by rememberSaveable { mutableStateOf(false) }
+            // ✅ 유저 닉네임 타이틀(없을 수 있음)
+            val nicknameTitle = ui.user?.nickname_title
 
-            // ✅ 항상 MyPageScreen을 보여주고, 클릭 시에만 분기
             MyPageScreen(
                 userName = ui.userName,
                 levelLabel = ui.levelLabel,
@@ -81,17 +83,34 @@ fun MyPageRoute(
                 onClickSettings = onClickSettings,
                 onClickViewAllWords = onClickViewAllWords,
                 onClickViewAllBadges = onClickViewAllBadges,
+
+                // ✅ 말풍선(치치의 어휘/문해력은?) 클릭 → 다이얼로그 오픈
                 onClickNickname = {
-                    if (hasNickname) {
-                        onClickViewNicknameCard(ui.user?.nickname_title.orEmpty(), ui.userName)
+                    // 닉네임이 있을 때만 카드 오픈, 없으면 테스트로
+                    if (!nicknameTitle.isNullOrBlank()) {
+                        showNicknameCard = true
                     } else {
                         onClickViewNicknameTest()
                     }
                 },
+
                 recentItems = ui.recentVocab,
                 currentRecentIndex = recentIndex,
                 onChangeRecentIndex = { recentIndex = it }
             )
+
+            // ✅ 다이얼로그 표시(마이페이지 위 오버레이)
+            if (showNicknameCard) {
+                NicknameCardDialog(
+                    nickname = nicknameTitle, // ex) "언어연금술사"
+                    onExit = { showNicknameCard = false }, // 닫기(스크림 탭/백 포함)
+                    onSaveImage = { nick ->
+                        // TODO: 저장 구현(원래 쓰던 로직 연결)
+                        // ex) viewModel.saveCardImage(nick)
+                        showNicknameCard = false
+                    }
+                )
+            }
         }
     }
 }

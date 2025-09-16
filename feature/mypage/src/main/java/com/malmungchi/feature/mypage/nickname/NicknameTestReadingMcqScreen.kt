@@ -21,6 +21,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +37,8 @@ import com.malmungchi.feature.mypage.R as MyPageR
 private val BrandBlue = Color(0xFF195FCF)
 private val TrackGray = Color(0xFFFAFAFA)
 private val TextGray = Color(0xFF989898)
+private val BgSoft       = Color(0xFFEFF4FB)
+private val SelectedFill = Color(0xFFC4D6F2)
 
 
 
@@ -74,6 +77,12 @@ fun NicknameTestReadingMcqScreen(
 
     val q = questions.getOrNull(index)
 
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(BgSoft)           // <- EFF4FB 전체 배경
+    ) {
     Column(Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, bottom = 48.dp)) {
         Spacer(Modifier.height(48.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -140,15 +149,65 @@ fun NicknameTestReadingMcqScreen(
             },
             enabled = enabled,
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (enabled) Color(0xFF195FCF) else Color(0xFFFAFAFA),
-                contentColor = if (enabled) Color.White else Color(0xFF989898)
+                containerColor = if (enabled) BrandBlue else Color.White,  // 비활성=White
+                contentColor = if (enabled) Color.White else TextGray
             ),
+//            colors = ButtonDefaults.buttonColors(
+//                containerColor = if (enabled) Color(0xFF195FCF) else Color(0xFFFAFAFA),
+//                contentColor = if (enabled) Color.White else Color(0xFF989898)
+//            ),
             shape = MaterialTheme.shapes.extraLarge,
             modifier = Modifier.fillMaxWidth().padding(start = 80.dp, end = 80.dp, bottom = 48.dp).height(48.dp).align(Alignment.CenterHorizontally)
         ) {
             Text(
                 text = if (isLast) "결과 보기" else "정답 제출",
                 fontFamily = Pretendard, fontSize = 16.sp, fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}}
+
+
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Composable
+private fun PreviewNicknameTestReadingMcqScreen() {
+    val sample = listOf(
+        ReadingMcqQuestion(
+            id = 201,
+            numberLabel = "Q10",
+            statement = "SNS의 확산은 정보 접근성을 높이지만 가짜 뉴스의 전파 또한 가속화시킨다. 따라서 정보의 신뢰성을 판단하는 능력이 요구된다.",
+            questionText = "글의 핵심 주제는?",
+            options = listOf(
+                McqOption(1, "공감"),
+                McqOption(2, "직관"),
+                McqOption(3, "분석"),
+                McqOption(4, "판단")
+            ),
+            answerOptionId = 4
+        ),
+        ReadingMcqQuestion(
+            id = 202,
+            numberLabel = "Q11",
+            statement = "지진은 1차 피해뿐 아니라 정전·가스 누출 등 2차 피해를 유발할 수 있다. 대피 요령과 더불어 화재 예방 훈련도 중요하다.",
+            questionText = "본문의 내용으로 알 수 있는 것은?",
+            options = listOf(
+                McqOption(1, "대피 요령만 익히면 충분하다"),
+                McqOption(2, "2차 피해는 무시해도 된다"),
+                McqOption(3, "화재 예방 교육이 필요하다"),
+                McqOption(4, "지진은 예측 가능하다")
+            ),
+            answerOptionId = 3
+        )
+    )
+
+    MaterialTheme {
+        Surface {
+            NicknameTestReadingMcqScreen(
+                questions = sample,
+                answeredGlobalCount = 9,
+                onBackClick = {},
+                onFinishReadingMcq = { _, _ -> },
+                initialIndex = 0
             )
         }
     }
@@ -334,13 +393,16 @@ private fun OptionItem(
 ) {
     val shape = RoundedCornerShape(12.dp)
     val borderColor = if (selected) BrandBlue else Color(0xFFE0E0E0)
-    val bg = if (selected) BrandBlue.copy(alpha = 0.2f) else Color.White
+    val bg = if (selected) SelectedFill else Color.White
+    //val bg = if (selected) BrandBlue.copy(alpha = 0.2f) else Color.White
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .shadow(4.dp, shape, clip = false)   // ✅ 그림자 추가
             .clip(shape)
             .background(bg)
-            .border(width = 2.dp, color = borderColor, shape = shape)
+            .border(width = 2.dp, color = borderColor, shape = shape) // ✅ 보더 195FCF
+            //.border(width = 2.dp, color = borderColor, shape = shape)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp)
     ) {
