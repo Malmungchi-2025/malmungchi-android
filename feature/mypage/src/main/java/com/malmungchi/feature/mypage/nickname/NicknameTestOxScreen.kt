@@ -69,7 +69,8 @@ fun NicknameTestOxScreen(
 
     Column(Modifier
         .fillMaxSize()
-        .background(Color.White)
+        .background(Color(0xFFEFF4FB))
+//        .background(Color.White)
         .padding(start = 20.dp, end = 20.dp, bottom = 48.dp)) {
         Spacer(Modifier.height(48.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -129,9 +130,13 @@ fun NicknameTestOxScreen(
             },
             enabled = enabled,
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (enabled) Color(0xFF195FCF) else Color(0xFFFAFAFA),
-                contentColor = if (enabled) Color.White else Color(0xFF989898)
+                containerColor = if (enabled) BrandBlue else Color.White,
+                contentColor = if (enabled) Color.White else TextGray
             ),
+//            colors = ButtonDefaults.buttonColors(
+//                containerColor = if (enabled) Color(0xFF195FCF) else Color(0xFFFAFAFA),
+//                contentColor = if (enabled) Color.White else Color(0xFF989898)
+//            ),
             shape = MaterialTheme.shapes.extraLarge,
             modifier = Modifier.fillMaxWidth().padding(start = 80.dp, end = 80.dp, bottom = 48.dp).height(48.dp).align(Alignment.CenterHorizontally)
         ) {
@@ -182,7 +187,9 @@ private fun OxOption(
 ) {
     val shape = RoundedCornerShape(12.dp)
     val borderColor = if (selected) BrandBlue else Color(0xFFE0E0E0)
-    val bg = if (selected) BrandBlue.copy(alpha = 0.2f) else Color.White
+    val bg = if (selected) Color(0xFFC4D6F2) else Color.White
+    //val borderColor = if (selected) BrandBlue else Color(0xFFE0E0E0)
+    //val bg = if (selected) BrandBlue.copy(alpha = 0.2f) else Color.White
 
     Box(
         modifier = modifier

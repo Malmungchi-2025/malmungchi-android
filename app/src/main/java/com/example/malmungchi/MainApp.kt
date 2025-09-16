@@ -78,7 +78,8 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.malmungchi.feature.mypage.MyPageViewModel
-import com.malmungchi.feature.mypage.nickname.NicknameCardScreen
+import com.malmungchi.feature.mypage.nickname.NicknameCardDialog
+//import com.malmungchi.feature.mypage.nickname.NicknameCardScreen
 import com.malmungchi.feature.quiz.QuizCategoryRoute
 import com.malmungchi.feature.quiz.QuizCompleteScreen
 import com.malmungchi.feature.quiz.QuizFlowViewModel
@@ -1120,20 +1121,40 @@ fun MainApp() {
             route = "nickname_card_screen?nickname={nickname}&userName={userName}",
             arguments = listOf(
                 navArgument("nickname") { type = NavType.StringType; defaultValue = "" },
-                navArgument("userName") { type = NavType.StringType; defaultValue = "" }
+                navArgument("userName") { type = NavType.StringType; defaultValue = "" } // 사용 안 함
             )
         ) { backStackEntry ->
             val nicknameArg = backStackEntry.arguments?.getString("nickname").orEmpty()
-            val userNameArg = backStackEntry.arguments?.getString("userName").orEmpty()
+            // val userNameArg = backStackEntry.arguments?.getString("userName").orEmpty() // 미사용
 
-            // ✅ 여기서는 새 ViewModel 만들지 말고, 전달받은 값으로 바로 그린다
-            NicknameCardScreen(
-                userName = userNameArg,
-                nickname = nicknameArg,
-                onExit = { navController.popBackStack() },
-                onSaveImage = { /* 필요시 구현 */ }
+            // ✅ 화면 대신 모달 다이얼로그를 바로 띄운다
+            NicknameCardDialog(
+                nickname = nicknameArg.ifBlank { null },     // 빈 문자열이면 null 처리 → 로딩 일러스트
+                onExit = { navController.popBackStack() },    // 닫기 = 기존 ic_back 역할
+                onSaveImage = { selectedNickname ->
+                    // TODO: 저장 로직 연결(필요 시)
+                    // ex) viewModel.saveCardImage(selectedNickname)
+                }
             )
         }
+//        composable(
+//            route = "nickname_card_screen?nickname={nickname}&userName={userName}",
+//            arguments = listOf(
+//                navArgument("nickname") { type = NavType.StringType; defaultValue = "" },
+//                navArgument("userName") { type = NavType.StringType; defaultValue = "" }
+//            )
+//        ) { backStackEntry ->
+//            val nicknameArg = backStackEntry.arguments?.getString("nickname").orEmpty()
+//            val userNameArg = backStackEntry.arguments?.getString("userName").orEmpty()
+//
+//            // ✅ 여기서는 새 ViewModel 만들지 말고, 전달받은 값으로 바로 그린다
+//            NicknameCardScreen(
+//                userName = userNameArg,
+//                nickname = nicknameArg,
+//                onExit = { navController.popBackStack() },
+//                onSaveImage = { /* 필요시 구현 */ }
+//            )
+//        }
         composable("nickname_test_intro") {
             NicknameTestIntroScreen(
                 onBackClick = {
@@ -1171,14 +1192,12 @@ fun MainApp() {
 // 핵심: Flow 내에서 1~9 → 10~11 → 12~18 → Finished(=결과) 까지 한 화면에서 오케스트레이션
         composable("nickname_test_flow") {
             NicknameTestFlowScreen(
-                // 결과 화면에서 “나가기” → 마이페이지
                 onExitToMyPage = {
                     navController.navigate("mypage") {
                         popUpTo("nickname_test_intro") { inclusive = true }
                         launchSingleTop = true
                     }
                 },
-                // 결과 화면에서 “다시하기” → 로딩부터 재시작
                 onRetryFromStart = {
                     navController.navigate("nickname_test_loading") {
                         popUpTo("nickname_test_flow") { inclusive = true }
@@ -1186,7 +1205,25 @@ fun MainApp() {
                     }
                 }
             )
+//            NicknameTestFlowScreen(
+//                // 결과 화면에서 “나가기” → 마이페이지
+//                onExitToMyPage = {
+//                    navController.navigate("mypage") {
+//                        popUpTo("nickname_test_intro") { inclusive = true }
+//                        launchSingleTop = true
+//                    }
+//                },
+//                // 결과 화면에서 “다시하기” → 로딩부터 재시작
+//                onRetryFromStart = {
+//                    navController.navigate("nickname_test_loading") {
+//                        popUpTo("nickname_test_flow") { inclusive = true }
+//                        launchSingleTop = true
+//                    }
+//                }
+//            )
         }
+
+
 
         composable("settings") {
             SettingsScreen(
