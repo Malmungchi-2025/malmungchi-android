@@ -93,7 +93,9 @@ dependencies {
     implementation(project(":data"))
     //implementation(project(":feature"))
 
-    implementation("com.google.accompanist:accompanist-systemuicontroller:0.35.0-alpha")
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.34.0")
+
+    //implementation("com.google.accompanist:accompanist-systemuicontroller:0.35.0-alpha")
 
 
     implementation("androidx.core:core-splashscreen:1.0.1")

@@ -141,6 +141,7 @@ fun ExplanationDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         // center + 60% width confirm button
+        containerColor = Color.White,
         confirmButton = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -219,16 +220,19 @@ private fun BottomActionBar(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 16.dp)
+                        .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 48.dp) // 공통 패딩
                         .navigationBarsPadding(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    val btnMod = Modifier.weight(1f).height(48.dp)
+
                     OutlinedButton(
-                        onClick = onShowExplanation,        // 다이얼로그 열기 (열려있으면 다시 눌러도 무방)
-                        modifier = Modifier.weight(1f).height(48.dp),
+                        onClick = onShowExplanation,
+                        modifier = btnMod,
                         border = BorderStroke(2.dp, BrandBlue),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color.Transparent, contentColor = BrandBlue
+                            containerColor = Color.Transparent,
+                            contentColor = BrandBlue
                         ),
                         shape = MaterialTheme.shapes.extraLarge
                     ) {
@@ -237,8 +241,8 @@ private fun BottomActionBar(
                     }
 
                     Button(
-                        onClick = onNext,                    // 다음 문제 or 결과 보기
-                        modifier = Modifier.weight(1f).padding(start = 80.dp, end = 80.dp, bottom = 48.dp).height(48.dp),
+                        onClick = onNext,
+                        modifier = btnMod, // ✅ 동일
                         colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White),
                         shape = MaterialTheme.shapes.extraLarge
                     ) {

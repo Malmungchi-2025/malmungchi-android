@@ -16,10 +16,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.malmungchi.core.designsystem.Pretendard
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import com.malmungchi.feature.mypage.R as MyPageR
-
+import androidx.compose.ui.platform.LocalContext
+import android.content.ContentValues
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.os.Build
+import android.provider.MediaStore
+import androidx.annotation.DrawableRes
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 
 @Composable
 fun NicknameTestResultScreen(
@@ -28,11 +39,43 @@ fun NicknameTestResultScreen(
     onRetry: () -> Unit,
     onExit: () -> Unit
 ) {
+
+    BackHandler { onExit() }
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(Color(0xFFEFF4FB))
+            //.background(Color.White)
     ) {
+
+        // ✅ Top Bar (ic_back + "별명 카드")
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 8.dp) // 좌우 20, 위 8
+                .height(48.dp)
+                .align(Alignment.TopCenter)
+        ) {
+            Icon(
+                painter = painterResource(id = MyPageR.drawable.ic_back),
+                contentDescription = "뒤로가기",
+                tint = Color.Unspecified,
+                modifier = Modifier
+                    .size(24.dp)
+                    .align(Alignment.CenterStart)
+                    .clickable { onExit() }     // ← 뒤로가기 동작
+            )
+            Text(
+                text = "별명 카드",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = Pretendard,
+                color = Color.Black,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.Center) // 가운데 정렬
+            )
+        }
 
         // 별명(=이미지 리소스)이 준비될 때만 카드 렌더링
         val imgRes = getNicknameCardImageResOrNull(nickname)
@@ -41,7 +84,7 @@ fun NicknameTestResultScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp)
-                    .padding(top = 80.dp)
+                    .padding(top = 100.dp)
                     .height(600.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .align(Alignment.TopCenter)
@@ -86,26 +129,55 @@ fun NicknameTestResultScreen(
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .navigationBarsPadding()               // ← 시스템바 피하기
-                .padding(start = 20.dp, end = 20.dp, bottom = 48.dp) // ← 아래로 48
+                .navigationBarsPadding()
+                .padding(start = 20.dp, end = 20.dp, bottom = 48.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            val context = LocalContext.current
+            val blue = Color(0xFF195FCF)
+            val resIdForSave = getNicknameCardImageResOrNull(nickname)
+
+            // ✅ "카드 이미지 저장" (흰색 Outlined 버튼)
             OutlinedButton(
-                onClick = onRetry,
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF195FCF)),
-                border = ButtonDefaults.outlinedButtonBorder.copy(
-                    brush = androidx.compose.ui.graphics.SolidColor(Color(0xFF195FCF))
-                ),
+                onClick = {
+                    val resId = resIdForSave
+                    if (resId == null) {
+                        Toast.makeText(context, "이미지가 아직 준비되지 않았어요.", Toast.LENGTH_SHORT).show()
+                        return@OutlinedButton
+                    }
+                    val name = "nickname_${nickname ?: "card"}_${System.currentTimeMillis()}.png"
+                    val ok = saveDrawableToPictures(context, resId, name)
+                    if (ok) {
+                        // 필요하면 콜백을 나중에 쓸 수 있도록 남겨둠
+                        // onSaveImage 같은 게 없다면 토스트만으로 충분
+                    }
+                },
                 modifier = Modifier
                     .height(42.dp)
-                    .weight(1f)
-            ) { Text("다시하기", fontSize = 16.sp, fontFamily = Pretendard) }
+                    .weight(1f),
+                shape = RoundedCornerShape(50),
+                border = ButtonDefaults.outlinedButtonBorder.copy(
+                    brush = androidx.compose.ui.graphics.SolidColor(blue)
+                ),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color.White,   // ⬅️ 흰색 배경
+                    contentColor = blue             // ⬅️ 파란색 텍스트/아이콘
+                ),
+                enabled = resIdForSave != null
+            ) {
+                Text(
+                    "카드 이미지 저장",
+                    fontSize = 16.sp,
+                    fontFamily = Pretendard,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
 
+            // "나가기" (기존 유지)
             Button(
                 onClick = onExit,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
+                colors = ButtonDefaults.buttonColors(containerColor = blue),
                 shape = RoundedCornerShape(50),
                 modifier = Modifier
                     .height(42.dp)
@@ -136,6 +208,48 @@ private fun getNicknameCardImageResOrNull(nickname: String?): Int? = when (nickn
     "의미해석가"  -> MyPageR.drawable.img_context2
     "언어모험가"  -> MyPageR.drawable.img_language2
     else -> MyPageR.drawable.img_nickname_loading        // ← ★ 기본(프리뷰용) 이미지 리턴 금지
+}
+private fun saveDrawableToPictures(
+    context: Context,
+    @DrawableRes resId: Int,
+    displayName: String = "nickname_card_${System.currentTimeMillis()}.png"
+): Boolean {
+    return try {
+        val resolver = context.contentResolver
+        val bitmap = BitmapFactory.decodeResource(context.resources, resId)
+
+        val collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/NicknameCards")
+                put(MediaStore.Images.Media.IS_PENDING, 1)
+            }
+        }
+
+        val uri = resolver.insert(collection, values) ?: return false
+        resolver.openOutputStream(uri)?.use { out ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            values.clear()
+            values.put(MediaStore.Images.Media.IS_PENDING, 0)
+            resolver.update(uri, values, null, null)
+        }
+
+        Toast.makeText(
+            context,
+            "갤러리에 저장했어요.\n(Pictures/NicknameCards)",
+            Toast.LENGTH_SHORT
+        ).show()
+        true
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "이미지 저장에 실패했어요.", Toast.LENGTH_SHORT).show()
+        false
+    }
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)

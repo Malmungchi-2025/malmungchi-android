@@ -14,169 +14,294 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.malmungchi.core.designsystem.Pretendard
 import com.malmungchi.feature.mypage.R as MyPageR
+import android.content.ContentValues
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.os.Build
+import android.provider.MediaStore
+import androidx.annotation.DrawableRes
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 
+/**
+ * 마이페이지 위에 떠 있는 커스텀 모달(투명 스크림)
+ * - 카드 이미지 600dp + 저장 버튼만 노출
+ * - 우상단 닫기(ic_card_end) = onExit
+ */
 @Composable
-fun NicknameCardScreen(
-    userName: String?,                 // 네비게이션 인자로 전달 권장
-    nickname: String?,                 // 네비게이션 인자로 전달 권장
+fun NicknameCardDialog(
+    nickname: String?,
     onExit: () -> Unit = {},
-    onSaveImage: (String) -> Unit = {} // 실제 저장 구현은 외부(MainActivity 등)에서
+    onSaveImage: (String) -> Unit = {}
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
+    Dialog(
+        onDismissRequest = onExit,
+        properties = DialogProperties(usePlatformDefaultWidth = false) // 전체 뷰를 덮는 오버레이
     ) {
-        Column(
+        // 스크림(반투명) → 마이페이지가 살짝 비쳐 보임
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 48.dp) // 상단 48 유지(요구사항)
+                .background(Color(0x66000000)) // 40% 블랙
         ) {
-            // 헤더
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            // 다이얼로그 본문(가운데 정렬)
+            NicknameCardDialogBody(
+                nickname = nickname,
+                onExit = onExit,
+                onSaveImage = onSaveImage,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 20.dp) // 피그마 여백
+            )
+        }
+    }
+}
+@Composable
+private fun NicknameCardDialogBody(
+    nickname: String?,
+    onExit: () -> Unit,
+    onSaveImage: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val imgRes = getNicknameCardImageResOrNull(nickname)
+    val context = LocalContext.current
+
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        // 버튼영역(48dp) + 간격(16dp) = 64dp 만큼은 카드 아래 공간으로 비워둠
+        val reservedForButton = 64.dp
+        // 사용 가능한 최대 카드 높이(= 다이얼로그 영역 - 버튼영역)
+        val availableCardHeight = (maxHeight - reservedForButton)
+        // 카드 높이: 가용 높이를 넘지 않되, 최대 600dp 유지
+        val cardHeight = availableCardHeight.coerceAtMost(450.dp)
+
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // ── 카드 이미지 ──
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 20.dp, end = 20.dp, bottom = 20.dp)
+                    .height(450.dp) // ✅ 고정 높이 450dp
+                    .clip(RoundedCornerShape(16.dp))
             ) {
-                IconButton(onClick = onExit) {
-                    Icon(
-                        painter = painterResource(id = MyPageR.drawable.ic_back),
-                        contentDescription = "뒤로가기"
-                    )
-                }
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "별명 카드",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center,
-                    fontFamily = Pretendard,
-                    color = Color.Black,
-                    modifier = Modifier.padding(start = 80.dp)
-                )
-            }
-
-            // ===== 본문: 카드 이미지 or 로딩 =====
-            val imgRes = getNicknameCardImageResOrNull(nickname)
-            if (imgRes != null) {
-                // 별명 카드 렌더
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .height(600.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                ) {
+                if (imgRes != null) {
                     Image(
                         painter = painterResource(id = imgRes),
                         contentDescription = "별명 카드 이미지",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.matchParentSize()
+                        contentScale = ContentScale.Fit,   // ⬅️ Crop → Fit
+                        modifier = Modifier
+                            .fillMaxSize()                 // Box 크기에 맞추되
                     )
-                    if (!userName.isNullOrBlank()) {
-                        Text(
-                            text = "$userName 님의 별명은",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = Pretendard,
-                            color = Color.Black,
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(Color(0xFFF5F6F9)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = MyPageR.drawable.img_nickname_loading),
+                            contentDescription = "닉네임 카드 로딩",
+                            contentScale = ContentScale.Fit,
                             modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .padding(top = 24.dp)
+                                .fillMaxWidth(0.6f)
+                                .aspectRatio(1f)
                         )
                     }
                 }
-            } else {
-                // 로딩 상태: 지정한 로딩 일러스트 표시
-                Box(
+
+                // 닫기 버튼
+                IconButton(
+                    onClick = onExit,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .height(600.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFFF5F6F9)),
-                    contentAlignment = Alignment.Center
+                        .align(Alignment.TopEnd)
+                        .padding(top = 8.dp, end = 40.dp)
                 ) {
-                    Image(
-                        painter = painterResource(id = MyPageR.drawable.img_nickname_loading),
-                        contentDescription = "닉네임 카드 로딩",
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            .fillMaxWidth(0.6f) // 적당히
-                            .aspectRatio(1f)
+                    Icon(
+                        painter = painterResource(id = MyPageR.drawable.ic_card_end),
+                        contentDescription = "닫기",
+                        modifier = Modifier.size(24.dp)
+
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(Modifier.height(16.dp))
 
-            // ===== 버튼 바: 하단에서 48dp 띄우고 시스템 내비게이션도 회피 =====
-            Row(
+            // ── 저장 버튼(가운데 56~60%) ──
+            OutlinedButton(
+                onClick = {
+                    val resId = imgRes
+                    if (resId != null) {
+                        // 갤러리에 저장
+                        val name =
+                            "nickname_${nickname ?: "card"}_${System.currentTimeMillis()}.png"
+                        val ok = saveDrawableToPictures(context, resId, name)
+                        if (ok) {
+                            // 필요 시 콜백도 실행
+                            nickname?.let(onSaveImage)
+                        }
+                    }
+                },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()                 // 시스템바 피하기
-                    .padding(start = 20.dp, end = 20.dp, bottom = 48.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxWidth(0.56f)
+                    .height(48.dp),
+                shape = MaterialTheme.shapes.extraLarge,
+                border = ButtonDefaults.outlinedButtonBorder.copy(
+                    brush = androidx.compose.ui.graphics.SolidColor(Color(0xFF195FCF))
+                ),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color.White,
+                    contentColor = Color(0xFF195FCF)
+                )
             ) {
-                OutlinedButton(
-                    onClick = {
-                        // nickname이 있을 때만 저장 콜백 호출
-                        nickname?.let { onSaveImage(it) }
-                    },
-                    shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color.White,
-                        contentColor = Color(0xFF195FCF)
-                    ),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(
-                        brush = androidx.compose.ui.graphics.SolidColor(Color(0xFF195FCF))
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp)
-                ) {
-                    Text(
-                        text = "카드 이미지 저장",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = Pretendard,
-                        color = Color(0xFF195FCF),
-                        textAlign = TextAlign.Center
-                    )
-                }
-
-                Button(
-                    onClick = onExit,
-                    shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF195FCF),
-                        contentColor = Color.White
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp)
-                ) {
-                    Text(
-                        text = "나가기",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = Pretendard,
-                        textAlign = TextAlign.Center
-                    )
-                }
+                Text(
+                    "카드 이미지 저장",
+                    fontFamily = Pretendard,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }
 }
 
-/** 별명 → 이미지 리소스 매핑 (기본값 반환 금지) */
+private fun saveDrawableToPictures(
+    context: Context,
+    @DrawableRes resId: Int,
+    displayName: String = "nickname_card_${System.currentTimeMillis()}.png"
+): Boolean {
+    return try {
+        val resolver = context.contentResolver
+        val bitmap = BitmapFactory.decodeResource(context.resources, resId)
+
+        val collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/NicknameCards")
+                put(MediaStore.Images.Media.IS_PENDING, 1)
+            }
+        }
+
+        val uri = resolver.insert(collection, values) ?: return false
+        resolver.openOutputStream(uri)?.use { out ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            values.clear()
+            values.put(MediaStore.Images.Media.IS_PENDING, 0)
+            resolver.update(uri, values, null, null)
+        }
+
+        Toast.makeText(context, "갤러리에 저장했어요.\n(Pictures/NicknameCards)", Toast.LENGTH_SHORT).show()
+        true
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "이미지 저장에 실패했어요.", Toast.LENGTH_SHORT).show()
+        false
+    }
+}
+
+//@Composable
+//private fun NicknameCardDialogBody(
+//    nickname: String?,
+//    onExit: () -> Unit,
+//    onSaveImage: (String) -> Unit,
+//    modifier: Modifier = Modifier
+//) {
+//    val imgRes = getNicknameCardImageResOrNull(nickname)
+//
+//    Column(
+//        modifier = modifier,
+//        horizontalAlignment = Alignment.CenterHorizontally
+//    ) {
+//        // 카드 이미지(600dp)
+//        Box(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .height(480.dp) // ✅ 고정: 600dp
+//                .clip(RoundedCornerShape(16.dp))
+//        ) {
+//            if (imgRes != null) {
+//                Image(
+//                    painter = painterResource(id = imgRes),
+//                    contentDescription = "별명 카드 이미지",
+//                    contentScale = ContentScale.Crop,
+//                    modifier = Modifier.matchParentSize()
+//                )
+//            } else {
+//                // 로딩/대체
+//                Box(
+//                    modifier = Modifier
+//                        .matchParentSize()
+//                        .background(Color(0xFFF5F6F9)),
+//                    contentAlignment = Alignment.Center
+//                ) {
+//                    Image(
+//                        painter = painterResource(id = MyPageR.drawable.img_nickname_loading),
+//                        contentDescription = "닉네임 카드 로딩",
+//                        contentScale = ContentScale.Fit,
+//                        modifier = Modifier
+//                            .fillMaxWidth(0.6f)
+//                            .aspectRatio(1f)
+//                    )
+//                }
+//            }
+//
+//            // 우상단 닫기 버튼
+//            IconButton(
+//                onClick = onExit,
+//                modifier = Modifier
+//                    .align(Alignment.TopEnd)
+//                    .padding(top = 8.dp, end = 36.dp) // ← end 값 늘리면 왼쪽으로 이동
+//            ) {
+//                Icon(
+//                    painter = painterResource(id = MyPageR.drawable.ic_card_end),
+//                    contentDescription = "닫기"
+//                )
+//            }
+//        }
+//
+//        Spacer(Modifier.height(8.dp))
+//
+//        // 저장 버튼(가운데 60%)
+//        // 저장 버튼(가운데 60%)
+//        OutlinedButton(
+//            onClick = { nickname?.let(onSaveImage) },
+//            modifier = Modifier
+//                .fillMaxWidth(0.56f)
+//                .height(48.dp),
+//            shape = MaterialTheme.shapes.extraLarge,
+//            border = ButtonDefaults.outlinedButtonBorder.copy(
+//                brush = androidx.compose.ui.graphics.SolidColor(Color(0xFF195FCF)) // 기존 파란색을 테두리로
+//            ),
+//            colors = ButtonDefaults.outlinedButtonColors(
+//                containerColor = Color.White,          // 배경 → 글자색(원래 흰색)
+//                contentColor = Color(0xFF195FCF)       // 글자 → 원래 버튼 배경색(파란색)
+//            )
+//        ) {
+//            Text(
+//                "카드 이미지 저장",
+//                fontFamily = Pretendard,
+//                fontSize = 16.sp,
+//                fontWeight = FontWeight.SemiBold,
+//                textAlign = TextAlign.Center
+//            )
+//        }
+//    }
+//}
+
+/** nickname → 이미지 리소스 (기본값 반환 없음) */
 private fun getNicknameCardImageResOrNull(nickname: String?): Int? = when (nickname) {
     "언어연금술사" -> MyPageR.drawable.img_word_magician
     "눈치번역가"  -> MyPageR.drawable.img_sense
@@ -190,203 +315,57 @@ private fun getNicknameCardImageResOrNull(nickname: String?): Int? = when (nickn
     else -> null
 }
 
+/* ----------------------------- Previews ----------------------------- */
+/* Dialog는 미리보기 제약이 있어, 페이크 호스트로 스크림+본문을 그려줍니다. */
+@Preview(showBackground = true, backgroundColor = 0xFFEFEFEF, showSystemUi = true)
+@Composable
+private fun NicknameCardDialogPreview() {
+    MaterialTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFEFEFEF))
+        ) {
+            // 스크림
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color(0x66000000))
+            )
+            NicknameCardDialogBody(
+                nickname = "언어연금술사",
+                onExit = {},
+                onSaveImage = {},
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 20.dp, vertical = 24.dp)
+            )
+        }
+    }
+}
 
-
-
-//import androidx.compose.foundation.BorderStroke
-//import androidx.compose.foundation.Image
-//import androidx.compose.foundation.background
-//import androidx.compose.foundation.layout.*
-//import androidx.compose.foundation.shape.RoundedCornerShape
-//import androidx.compose.material3.*
-//import androidx.compose.runtime.*
-//import androidx.compose.ui.Alignment
-//import androidx.compose.ui.Modifier
-//import androidx.compose.ui.draw.clip
-//import androidx.compose.ui.graphics.Color
-//import androidx.compose.ui.layout.ContentScale
-//import androidx.compose.ui.res.painterResource
-//import androidx.compose.ui.text.font.FontWeight
-//import androidx.compose.ui.text.style.TextAlign
-//import androidx.compose.ui.tooling.preview.Preview
-//import androidx.compose.ui.unit.dp
-//import androidx.compose.ui.unit.sp
-//import androidx.hilt.navigation.compose.hiltViewModel
-//import androidx.navigation.NavController
-//import androidx.navigation.NavHostController
-//import com.malmungchi.feature.mypage.R as MyPageR
-//import com.malmungchi.core.designsystem.Pretendard
-//import com.malmungchi.feature.mypage.MyPageViewModel
-//
-//@Composable
-//fun NicknameCardScreen(
-//    navController: NavController? = null,   // 선택값으로
-//    userName: String,
-//    nickname: String,
-//    onExit: () -> Unit = {},
-//    onSaveImage: (String) -> Unit = {}
-//) {
-//    // ViewModel 초기화 (MyPageViewModel 또는 별명에 관련된 ViewModel을 사용)
-//    val viewModel: MyPageViewModel = hiltViewModel()
-//
-//    val ui by viewModel.ui.collectAsState()
-//
-//    Box(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .background(Color.White)
-//    ) {
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(top = 48.dp)
-//                .align(Alignment.Center) // 화면 중앙 정렬
-//        ) {
-//            // 헤더
-//            Row(
-//                verticalAlignment = Alignment.CenterVertically,
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(start = 20.dp, end = 20.dp, bottom = 20.dp)
-//            ) {
-//                IconButton(onClick = onExit) {
-//                    Icon(
-//                        painter = painterResource(id = MyPageR.drawable.ic_back),
-//                        contentDescription = "뒤로가기"
-//                    )
-//                }
-//                Spacer(Modifier.width(8.dp))
-//                Text(
-//                    text = "별명 카드",
-//                    fontSize = 24.sp,
-//                    fontWeight = FontWeight.SemiBold,
-//                    textAlign = TextAlign.Center,
-//                    fontFamily = Pretendard,
-//                    color = Color.Black,
-//                    modifier = Modifier
-//                        .padding(start = 80.dp) // 왼쪽 여백 추가하여 텍스트 위치 조정
-//                )
-//            }
-//
-//            // 별명 이미지 (카드 X, 이미지만 좌우 20dp 여백)
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxWidth() // Box의 가로를 꽉 채움
-//                    .padding(horizontal = 20.dp) // 좌우 여백 추가
-//            ) {
-//                Image(
-//                    painter = painterResource(id = getNicknameCardImageRes(nickname)),
-//                    contentDescription = "별명 카드 이미지",
-//                    contentScale = ContentScale.Crop, // 이미지를 꽉 채움
-//                    modifier = Modifier
-//                        .fillMaxWidth() // Box의 가로를 꽉 채움
-//                        .height(600.dp) // 이미지의 높이를 더 키움
-//                        .clip(RoundedCornerShape(16.dp)) // 모서리 둥글게 처리
-//                        .padding(top = 0.dp) // 이미지 위치를 조정하려면 여백 조정
-//                )
-//                // 카드 이미지 위에 사용자 텍스트
-//                Text(
-//                    text = "$userName 님의 별명은",
-//                    fontSize = 20.sp,
-//                    fontWeight = FontWeight.SemiBold,
-//                    fontFamily = Pretendard,
-//                    color = Color.Black,
-//                    modifier = Modifier
-//                        .align(Alignment.TopCenter)
-//                        .padding(top = 24.dp) // 텍스트 위치를 조금 더 아래로 내릴 수도 있음
-//                )
-//            }
-//            Spacer(modifier = Modifier.weight(1f))
-//
-//            // 버튼 영역
-//            Row(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(horizontal = 20.dp)
-//                    .padding(bottom = 48.dp),
-//                horizontalArrangement = Arrangement.spacedBy(12.dp),
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//                OutlinedButton(
-//                    onClick = { onSaveImage(nickname) }, // 닉네임에 맞는 이미지 저장
-//                    shape = RoundedCornerShape(50),
-//                    colors = ButtonDefaults.outlinedButtonColors(
-//                        containerColor = Color.White,
-//                        contentColor = Color(0xFF195FCF)
-//                    ),
-//                    border = BorderStroke(2.dp, Color(0xFF195FCF)),
-//                    modifier = Modifier
-//                        .weight(1f)
-//                        .height(44.dp)
-//                ) {
-//                    Text(
-//                        text = "카드 이미지 저장",
-//                        fontSize = 16.sp,
-//                        fontWeight = FontWeight.SemiBold,
-//                        fontFamily = Pretendard,
-//                        color = Color(0xFF195FCF),
-//                        textAlign = TextAlign.Center
-//                    )
-//                }
-//                Button(
-//                    onClick = onExit,
-//                    shape = RoundedCornerShape(50),
-//                    colors = ButtonDefaults.buttonColors(
-//                        containerColor = Color(0xFF195FCF),
-//                        contentColor = Color.White
-//                    ),
-//                    modifier = Modifier
-//                        .weight(1f)
-//                        .height(44.dp)
-//                ) {
-//                    Text(
-//                        text = "나가기",
-//                        fontSize = 16.sp,
-//                        fontWeight = FontWeight.SemiBold,
-//                        fontFamily = Pretendard,
-//                        textAlign = TextAlign.Center
-//                    )
-//                }
-//            }
-//        }
-//    }
-//}
-//// 이미지 매핑 함수 (기존 유지)
-//private fun getNicknameCardImageRes(nickname: String): Int {
-//    return when (nickname) {
-//        "언어연금술사" -> MyPageR.drawable.img_word_magician
-//        "눈치번역가" -> MyPageR.drawable.img_sense
-//        "감각해석가" -> MyPageR.drawable.img_sense2
-//        "맥락추리자" -> MyPageR.drawable.img_context
-//        "언어균형술사" -> MyPageR.drawable.img_language
-//        "낱말여행자" -> MyPageR.drawable.img_word2
-//        "단어수집가" -> MyPageR.drawable.img_word3
-//        "의미해석가" -> MyPageR.drawable.img_context2
-//        "언어모험가" -> MyPageR.drawable.img_language2
-//        else -> MyPageR.drawable.img_word_magician
-//    }
-//}
-//
-//private fun getNicknameCardImageResOrNull(nickname: String?): Int? = when (nickname) {
-//    "언어연금술사" -> MyPageR.drawable.img_word_magician
-//    "눈치번역가"  -> MyPageR.drawable.img_sense
-//    "감각해석가"  -> MyPageR.drawable.img_sense2
-//    "맥락추리자"  -> MyPageR.drawable.img_context
-//    "언어균형술사"-> MyPageR.drawable.img_language
-//    "낱말여행자"  -> MyPageR.drawable.img_word2
-//    "단어수집가"  -> MyPageR.drawable.img_word3
-//    "의미해석가"  -> MyPageR.drawable.img_context2
-//    "언어모험가"  -> MyPageR.drawable.img_language2
-//    else -> null      // ★ 기본 이미지 절대 리턴하지 않기
-//}
-//
-////@Preview(showBackground = true)
-////@Composable
-////fun NicknameCardScreenPreview() {
-////    NicknameCardScreen(
-////        userName = "김뭉치",
-////        nickname = "언어연금술사",
-////        onExit = {},
-////        onSaveImage = {}
-////    )
-////}
+@Preview(showBackground = true, backgroundColor = 0xFFEFEFEF, showSystemUi = true)
+@Composable
+private fun NicknameCardDialogLoadingPreview() {
+    MaterialTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFEFEFEF))
+        ) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color(0x66000000))
+            )
+            NicknameCardDialogBody(
+                nickname = null, // 로딩 예시
+                onExit = {},
+                onSaveImage = {},
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 20.dp)
+            )
+        }
+    }
+}
