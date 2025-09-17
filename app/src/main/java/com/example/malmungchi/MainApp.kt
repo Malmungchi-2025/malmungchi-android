@@ -77,6 +77,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.malmungchi.feature.ai.ChatScreen
+import com.malmungchi.feature.ai.ChatViewModel
 import com.malmungchi.feature.mypage.MyPageViewModel
 import com.malmungchi.feature.mypage.nickname.NicknameCardDialog
 //import com.malmungchi.feature.mypage.nickname.NicknameCardScreen
@@ -1064,12 +1066,85 @@ fun MainApp() {
             }
         }
 
-        // 변경 (루트 NavController + 동일 BottomBar 사용)
-        composable("ai") {
-            WithBottomBar(navController as NavHostController) {
-                com.malmungchi.feature.ai.AiScreen()
+
+        navigation(
+            route = "ai_graph",
+            startDestination = "ai"
+        ) {
+            composable("ai") {
+                WithBottomBar(navController as NavHostController) {
+                    com.malmungchi.feature.ai.AiScreen(
+                        onStartAiChat = { navController.navigate("ai_chat") },
+                        onFreeChat = { /* 자유대화 화면 이동 시 여기 */ }
+                    )
+                }
+            }
+
+            composable("ai_chat") {
+                // ✅ ViewModel 주입 (ChatScreen에 넘겨주기)
+                val vm: ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+
+                ChatScreen(
+                    vm = vm,
+                    onBack = {
+                        if (!navController.popBackStack()) {
+                            navController.navigate("ai") {
+                                popUpTo("ai_graph") { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        }
+                    },
+                    onExit = {
+                        // ✅ "대화 종료하기" → AiScreen으로 이동
+                        navController.navigate("ai") {
+                            popUpTo("ai_graph") { inclusive = false } // 그래프 루트 유지
+                            launchSingleTop = true
+                        }
+                    },
+                    onContinue = {
+                        // ✅ "대화 이어가기" → 같은 화면에서 즉시 음성 녹음 재시작
+                        val state = vm.ui.value
+                        if (!state.isRecording && !state.isLoading) {
+                            vm.startRecording()
+                        }
+                        // 이미 녹음/전송 중이면 아무 것도 하지 않음
+                    }
+                )
             }
         }
+
+//        navigation(
+//            route = "ai_graph",
+//            startDestination = "ai"
+//        ) {
+//            composable("ai") {
+//                WithBottomBar(navController as NavHostController) {
+//                    com.malmungchi.feature.ai.AiScreen(
+//                        onStartAiChat = { navController.navigate("ai_chat") },
+//                        onFreeChat = { /* 자유대화 화면 이동 시 여기 */ }
+//                    )
+//                }
+//            }
+//            composable("ai_chat") {
+//                ChatScreen(
+//                    onBack = {
+//                        if (!navController.popBackStack()) {
+//                            navController.navigate("ai") {
+//                                popUpTo("ai_graph") { inclusive = false }
+//                                launchSingleTop = true
+//                            }
+//                        }
+//                    }
+//                )
+//            }
+//        }
+
+//        // 변경 (루트 NavController + 동일 BottomBar 사용)
+//        composable("ai") {
+//            WithBottomBar(navController as NavHostController) {
+//                com.malmungchi.feature.ai.AiScreen()
+//            }
+//        }
         composable("friend") {
             WithBottomBar(navController as NavHostController) {
                 com.malmungchi.feature.friend.FriendScreen()
