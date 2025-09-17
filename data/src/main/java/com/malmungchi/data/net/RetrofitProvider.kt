@@ -7,6 +7,7 @@ import com.malmungchi.data.api.AuthService
 import com.malmungchi.data.BuildConfig              // ★ 라이브러리 모듈 BuildConfig 경로
 import com.malmungchi.data.api.LevelTestApi
 import com.malmungchi.data.api.QuizApi
+import com.malmungchi.data.api.VoiceApi
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -78,7 +79,11 @@ object RetrofitProvider {
         onUnauthorized: () -> Unit = {}
     ): QuizApi = getRetrofit(context, onUnauthorized).create(QuizApi::class.java)
 
-
+    /** Voice API */
+    fun getVoiceApi(
+        context: Context,
+        onUnauthorized: () -> Unit = {}
+    ): VoiceApi = getRetrofit(context, onUnauthorized).create(VoiceApi::class.java)
 
     // RetrofitProvider.kt
 
