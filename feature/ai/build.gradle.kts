@@ -51,6 +51,7 @@ dependencies {
 
     // ✅ Hilt (플러그인 없이 라이브러리만)
     implementation(libs.hilt.android)
+    implementation(project(":data"))
     ksp(libs.hilt.compiler)
     ksp(libs.androidx.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
@@ -61,4 +62,8 @@ dependencies {
     // Core & Design 모듈 참조
     implementation(project(":core"))
     implementation(project(":design"))
+
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
+    implementation("com.squareup.okhttp3:okhttp")
+    implementation("com.squareup.okhttp3:logging-interceptor")
 }
