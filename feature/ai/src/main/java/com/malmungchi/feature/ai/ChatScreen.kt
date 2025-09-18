@@ -244,20 +244,21 @@ fun ChatScreen(
         val isBusy = state.isRecording || state.isLoading
 
         Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp)) {
-            Image(
-                painter = painterResource(
-                    id = if (isBusy) R.drawable.ic_chat_mike_ing else R.drawable.ic_chat_mike
-                ),
-                contentDescription = "Mic",
-                modifier = Modifier
-                    .size(56.dp)
-                    .clickable {
-                        when {
-                            !state.isRecording && !state.isLoading -> vm.startRecording()
-                            state.isRecording -> vm.stopAndSend()
-                        }
-                    }
-            )
+//            Image(
+//                painter = painterResource(
+//                    id = if (isBusy) R.drawable.ic_chat_mike_ing else R.drawable.ic_chat_mike
+//                ),
+//                contentDescription = "Mic",
+//                modifier = Modifier
+//                    .size(56.dp)
+//                    .clickable {
+//                        when {
+//                            !state.isRecording && !state.isLoading -> vm.startRecording()
+//                            state.isRecording -> vm.stopAndSend()
+//                        }
+//                    }
+//            )
+            MicButton(vm)   // ✅ 교체
         }
     }
 }
