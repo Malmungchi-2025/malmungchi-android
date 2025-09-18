@@ -111,7 +111,8 @@ fun ChatScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .padding(top = 48.dp, start = 20.dp, end = 20.dp, bottom = 16.dp)
+                //.padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
             // 헤더
             Box(
@@ -155,7 +156,8 @@ fun ChatScreen(
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 state = listState,
-                reverseLayout = true,
+                reverseLayout = false,
+                //reverseLayout = true,
                 contentPadding = PaddingValues(bottom = 0.dp)
             ) {
                 itemsIndexed(state.messages) { index, msg ->
@@ -240,16 +242,19 @@ fun ChatScreen(
 
         // 하단 마이크: 녹음/업로드 중이면 ING 아이콘
         val isBusy = state.isRecording || state.isLoading
+
         Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp)) {
-            Icon(
-                painter = painterResource(id = if (isBusy) R.drawable.ic_chat_mike_ing else R.drawable.ic_chat_mike),
+            Image(
+                painter = painterResource(
+                    id = if (isBusy) R.drawable.ic_chat_mike_ing else R.drawable.ic_chat_mike
+                ),
                 contentDescription = "Mic",
                 modifier = Modifier
                     .size(56.dp)
                     .clickable {
                         when {
-                            !state.isRecording && !state.isLoading -> vm.startRecording() // 시작
-                            state.isRecording -> vm.stopAndSend()  // 종료 + 서버 업로드
+                            !state.isRecording && !state.isLoading -> vm.startRecording()
+                            state.isRecording -> vm.stopAndSend()
                         }
                     }
             )
@@ -263,11 +268,201 @@ fun ChatScreen(
 @Preview(showBackground = true, widthDp = 360, heightDp = 760)
 @Composable
 fun ChatScreenPreview_After3Replies() {
-    ChatScreen(
-        onBack = {},
-        onExit = {},
-        onContinue = {}
+    val previewState = ChatUiState(
+        messages = listOf(
+            ChatMessage(Role.Bot, "[면접 상황]\n: 본인의 장단점이 무엇인가요?"),
+            ChatMessage(Role.User, "저의 장점은 실행력이 빠르고, 단점은 가끔 과속합니다."),
+            ChatMessage(Role.Bot, "좋아요. 과속을 조절했던 경험을 STAR로 말해볼까요?\nTIP: 결과(RESULT)를 명확히."),
+            ChatMessage(Role.User, "OK, S/T/A/R로 정리해서 다시 말해볼게요."),
+            ChatMessage(Role.Bot, "좋습니다. 핵심 수치와 배운 점을 1문장으로 덧붙여주세요.\nTIP: 숫자 1개 이상.")
+        ),
+        isRecording = false,
+        isLoading = false,
+        botReplyCount = 3,
+        mode = "job"
     )
+    // ★ ViewModel 없이 프리뷰 하네스로 렌더
+    ChatScreenPreviewHost(state = previewState)
+}
+
+@Composable
+private fun ChatScreenPreviewHost(state: ChatUiState) {
+    // 리스트 스크롤은 실제 화면과 동일하게
+    val listState = rememberLazyListState()
+    LaunchedEffect(state.messages.size) {
+        if (state.messages.isNotEmpty()) listState.animateScrollToItem(0)
+    }
+
+    val normalItemSpacing = 8.dp
+    val crossRoleExtraSpacing = 16.dp
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFE3E9F3))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 48.dp, start = 20.dp, end = 12.dp, bottom = 4.dp)
+        ) {
+            // 헤더
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                IconButton(
+                    onClick = { /* no-op */ },
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .size(48.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_back),
+                        contentDescription = "Back",
+                        tint = Color.Unspecified
+                    )
+                }
+                Text(
+                    text = "취준생 맞춤 상황",
+                    fontFamily = Pretendard,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 20.sp,
+                    color = Color(0xFF222222),
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+
+            Spacer(Modifier.height(2.dp)) //날짜와 처음 메시지 채팅이랑 간격을 조절함.
+
+            // 날짜 배지
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .background(Color.White, shape = RoundedCornerShape(999.dp))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text("2025.04.05", fontFamily = Pretendard, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color.Black)
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // 메시지 리스트
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f, fill = false)   // ✅ 내용만큼만 차지, 많아지면 스크롤
+                    .fillMaxWidth(),
+                    //.weight(1f),
+                state = listState,
+                reverseLayout = false,
+                contentPadding = PaddingValues(bottom = 0.dp)
+            ) {
+                itemsIndexed(state.messages) { index, msg ->
+                    val nextRole = state.messages.getOrNull(index + 1)?.role
+                    val topPad = if (nextRole != null && nextRole != msg.role) crossRoleExtraSpacing else normalItemSpacing
+                    Spacer(Modifier.height(topPad))
+
+                    if (msg.role == Role.Bot) {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                            Image(
+                                painter = painterResource(id = R.drawable.img_chatbot_malchi),
+                                contentDescription = "Bot",
+                                modifier = Modifier.size(48.dp).offset(y = (-2).dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            ChatBubbleRectTopLeftSharp(
+                                text = msg.text,
+                                modifier = Modifier.weight(1f).padding(end = 24.dp),
+                                bgColor = Color(0xFFF7F7F7),
+                                showTipInside = true
+                            )
+                        }
+                    } else {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            ChatBubbleRectTopLeftSharp(
+                                text = msg.text,
+                                modifier = Modifier.widthIn(max = 280.dp),
+                                bgColor = Color.White,
+                                userShape = true
+                            )
+                        }
+                    }
+                }
+            }
+
+            // XP 영역
+            Spacer(Modifier.height(4.dp))
+            if (state.botReplyCount >= 3) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Divider(Modifier.weight(1f), color = Color(0xFFCDD2DB), thickness = 1.dp)
+                    Text(
+                        text = "XP를 지급합니다",
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        fontFamily = Pretendard,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 12.sp,
+                        color = Color(0xFF616161)
+                    )
+                    Divider(Modifier.weight(1f), color = Color(0xFFCDD2DB), thickness = 1.dp)
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    Box(
+                        modifier = Modifier
+                            .background(Color(0xFFC9CAD4), RoundedCornerShape(20.dp))
+                            .clickable { /* no-op */ }
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) { Text("대화 종료하기", fontFamily = Pretendard, fontWeight = FontWeight.Medium, fontSize = 12.sp, color = Color.White) }
+
+                    Spacer(Modifier.width(12.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .background(Color(0xFF195FCF), RoundedCornerShape(20.dp))
+                            .clickable { /* no-op */ }
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) { Text("대화 이어가기", fontFamily = Pretendard, fontWeight = FontWeight.Medium, fontSize = 12.sp, color = Color.White) }
+                }
+            }
+        }
+
+        // 하단 마이크 - 프리뷰에서는 img_chat_mike 강제 표시
+        Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp)) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_chat_mike), // ★ 프리뷰 전용
+                contentDescription = "Mic",
+                modifier = Modifier.size(56.dp)
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360, heightDp = 760)
+@Composable
+fun ChatScreenPreview_XPVisible() {
+    val previewState = ChatUiState(
+        messages = listOf(
+            ChatMessage(Role.Bot, "[면접 상황]\n: 본인의 장단점이 무엇인가요?"),
+            ChatMessage(Role.User, "저의 장점은 실행력이 빠르고, 단점은 가끔 과속합니다."),
+            ChatMessage(Role.Bot, "좋아요. 과속을 조절했던 경험을 STAR로 말해볼까요?\nTIP: 결과(RESULT)를 명확히."),
+            ChatMessage(Role.User, "OK, S/T/A/R로 정리해서 다시 말해볼게요."),
+            ChatMessage(Role.Bot, "좋습니다. 핵심 수치와 배운 점을 1문장으로 덧붙여주세요.\nTIP: 숫자 1개 이상.")
+        ),
+        isRecording = false,
+        isLoading = false,
+        botReplyCount = 3, // ★ 이 값이 3 이상이면 XP 영역이 노출됨
+        mode = "job"
+    )
+    ChatScreenPreviewHost(state = previewState)
 }
 
 
