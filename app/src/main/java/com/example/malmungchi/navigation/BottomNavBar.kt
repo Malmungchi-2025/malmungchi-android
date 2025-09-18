@@ -83,7 +83,8 @@ fun BottomNavBar(
     // ★ 루트 라우트로 고정 (BottomNavItem.*.route 도 이 값들로 맞춰두면 베스트)
     val StudyRoot  = "study_graph"
     val QuizRoot   = "quiz_graph"
-    val AiRoot     = "ai"
+    val AiRoot     = "ai_graph"
+//    val AiRoot     = "ai"
     val FriendRoot = "friend"
     val MyPageRoot = "mypage"
 
@@ -103,7 +104,9 @@ fun BottomNavBar(
                     route.startsWith("study_") || route.startsWith("past_study")
             QuizRoot   -> dest.hierarchy.any { it.route == "quiz_graph" } ||
                     route.startsWith("quiz_")
-            AiRoot     -> route == "ai"
+//            AiRoot     -> route == "ai"
+            AiRoot     -> dest.hierarchy.any { it.route == "ai_graph" } || // ← 추가
+                    route == "ai" || route.startsWith("ai_")          // (안전망)
             FriendRoot -> route == "friend"
             MyPageRoot -> route == "mypage" ||
                     route.startsWith("nickname_") ||

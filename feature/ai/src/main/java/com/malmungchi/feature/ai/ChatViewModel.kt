@@ -18,10 +18,11 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 
 data class ChatUiState(
-    val messages: List<ChatMessage> = listOf(ChatMessage(Role.Bot, "[면접 상황]\n: 본인의 장단점이 무엇인가요?")),
+    val messages: List<ChatMessage> = emptyList(),   // ★ 초기 비움
+    //val messages: List<ChatMessage> = listOf(ChatMessage(Role.Bot, "[면접 상황]\n: 본인의 장단점이 무엇인가요?")),
     val isRecording: Boolean = false,
     val isLoading: Boolean = false,       // 서버 왕복 중 마이크 아이콘 바꾸기 용
-    val botReplyCount: Int = 1,           // 초기 Bot 1개
+    val botReplyCount: Int = 0,           // 초기 Bot 1개
     val mode: String = "job"
 )
 
@@ -63,9 +64,11 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     // ─────────────────────────────────────────────
     fun stopAndSend() {
         if (!ui.value.isRecording) return
-        try {
-            recorder?.run { stop(); reset(); release() }
-        } catch (_: Throwable) { /* ignore */ }
+
+        // 녹음 정지는 예외와 상태를 분리해 안전하게
+        try { recorder?.stop() } catch (_: Throwable) { /* ignore */ }
+        try { recorder?.reset() } catch (_: Throwable) { /* ignore */ }
+        try { recorder?.release() } catch (_: Throwable) { /* ignore */ }
         recorder = null
         ui.value = ui.value.copy(isRecording = false)
 
@@ -73,36 +76,78 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         ui.value = ui.value.copy(isLoading = true)
 
         viewModelScope.launch {
-            val resp = withContext(Dispatchers.IO) {
-                // 멀티파트 구성
-                val audioBody = file.asRequestBody("audio/mp4".toMediaType())
-                val part = MultipartBody.Part.createFormData("audio", file.name, audioBody)
-                val modeBody: RequestBody = ui.value.mode.toRequestBody("text/plain".toMediaType())
-                runCatching { repo.voiceChat(part, modeBody) }.getOrElse { throw it }
+            try {
+                val resp = withContext(Dispatchers.IO) {
+                    // NOTE: 서버가 m4a를 명시 요구하면 "audio/m4a"로 바꾸세요.
+                    val audioBody = file.asRequestBody("audio/mp4".toMediaType())
+                    val part = MultipartBody.Part.createFormData("audio", file.name, audioBody)
+                    val modeBody: RequestBody = ui.value.mode.toRequestBody("text/plain".toMediaType())
+                    repo.voiceChat(part, modeBody)
+                }
+
+                val newMsgs = buildList {
+                    addAll(ui.value.messages)
+                    if (resp.userText.isNotBlank()) add(ChatMessage(Role.User, resp.userText))
+                    val botText = if (resp.hint.isNullOrBlank()) resp.text else resp.text + "\nTIP: " + resp.hint
+                    add(ChatMessage(Role.Bot, botText))
+                }
+
+                ui.value = ui.value.copy(
+                    messages = newMsgs,
+                    isLoading = false,
+                    botReplyCount = newMsgs.count { it.role == Role.Bot }
+                )
+            } catch (e: Throwable) {
+                // TODO: 필요하면 이벤트/콜백으로 UI에 에러 알림
+                ui.value = ui.value.copy(isLoading = false)
+            } finally {
+                withContext(Dispatchers.IO) { runCatching { file.delete() } }
+                recordFile = null
             }
-
-            // 서버 응답을 UI 메시지로 반영
-            val newMsgs = buildList {
-                addAll(ui.value.messages)
-                // 사용자 음성 → STT 결과를 user 말풍선(흰색)으로
-                if (resp.userText.isNotBlank()) add(ChatMessage(Role.User, resp.userText))
-                // Bot 답변 + TIP(있으면 말풍선 내부에 들어가도록 "TIP: ..."을 본문 뒤에 붙임)
-                val botText = if (resp.hint.isNullOrBlank()) resp.text
-                else resp.text + "\nTIP: " + resp.hint
-                add(ChatMessage(Role.Bot, botText))
-            }
-
-            ui.value = ui.value.copy(
-                messages = newMsgs,
-                isLoading = false,
-                botReplyCount = newMsgs.count { it.role == Role.Bot }
-            )
-
-            // 임시 파일 정리
-            withContext(Dispatchers.IO) { runCatching { file.delete() } }
-            recordFile = null
         }
     }
+//    fun stopAndSend() {
+//        if (!ui.value.isRecording) return
+//        try {
+//            recorder?.run { stop(); reset(); release() }
+//        } catch (_: Throwable) { /* ignore */ }
+//        recorder = null
+//        ui.value = ui.value.copy(isRecording = false)
+//
+//        val file = recordFile ?: return
+//        ui.value = ui.value.copy(isLoading = true)
+//
+//        viewModelScope.launch {
+//            val resp = withContext(Dispatchers.IO) {
+//                // 멀티파트 구성
+//                val audioBody = file.asRequestBody("audio/mp4".toMediaType())
+//                val part = MultipartBody.Part.createFormData("audio", file.name, audioBody)
+//                val modeBody: RequestBody = ui.value.mode.toRequestBody("text/plain".toMediaType())
+//                runCatching { repo.voiceChat(part, modeBody) }.getOrElse { throw it }
+//            }
+//
+//            // 서버 응답을 UI 메시지로 반영
+//            val newMsgs = buildList {
+//                addAll(ui.value.messages)
+//                // 사용자 음성 → STT 결과를 user 말풍선(흰색)으로
+//                if (resp.userText.isNotBlank()) add(ChatMessage(Role.User, resp.userText))
+//                // Bot 답변 + TIP(있으면 말풍선 내부에 들어가도록 "TIP: ..."을 본문 뒤에 붙임)
+//                val botText = if (resp.hint.isNullOrBlank()) resp.text
+//                else resp.text + "\nTIP: " + resp.hint
+//                add(ChatMessage(Role.Bot, botText))
+//            }
+//
+//            ui.value = ui.value.copy(
+//                messages = newMsgs,
+//                isLoading = false,
+//                botReplyCount = newMsgs.count { it.role == Role.Bot }
+//            )
+//
+//            // 임시 파일 정리
+//            withContext(Dispatchers.IO) { runCatching { file.delete() } }
+//            recordFile = null
+//        }
+//    }
 
     fun setMode(newMode: String) {
         ui.value = ui.value.copy(mode = newMode)
