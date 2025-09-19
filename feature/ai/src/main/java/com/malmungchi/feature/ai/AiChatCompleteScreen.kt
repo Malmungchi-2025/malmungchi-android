@@ -3,6 +3,8 @@ package com.malmungchi.feature.ai
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,22 +15,26 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.malmungchi.core.designsystem.Pretendard
 import com.malmungchi.feature.ai.R
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+/* ─────────────────────────────────────────────
+ * 1) VM 래퍼: 상태만 뽑아서 Content에 전달
+ * ───────────────────────────────────────────── */
 @Composable
 fun AiChatCompleteScreen(
-    viewModel: ChatViewModel,            // ✅ ViewModel 주입 (DI/Hilt/Koin/호출측 전달)
-    onFinishNavigate: () -> Unit = {},   // 보상 처리 후 이동 (AiScreen 등)
-    snackbarHostState: SnackbarHostState? = null // 선택: 스낵바 출력용
+    viewModel: ChatViewModel,
+    onFinishNavigate: () -> Unit = {},
+    snackbarHostState: SnackbarHostState? = null
 ) {
     val loading by viewModel.rewardLoading.collectAsStateWithLifecycle()
     val toastMsg by viewModel.rewardToast.collectAsStateWithLifecycle()
 
-    // 스낵바/토스트 메시지 처리
+    // 스낵바 표시
     LaunchedEffect(toastMsg) {
         toastMsg?.let { msg ->
             snackbarHostState?.showSnackbar(message = msg)
@@ -36,34 +42,53 @@ fun AiChatCompleteScreen(
         }
     }
 
-    Column(
+    AiChatCompleteContent(
+        loading = loading,
+        onClickFinish = { viewModel.giveAiChatRewardAndFinish(onNavigateFinish = onFinishNavigate) }
+    )
+}
+
+/* ─────────────────────────────────────────────
+ * 2) 실제 UI (프리뷰에서 이 함수만 호출)
+ *    버튼은 바닥에서 48dp 위에 고정
+ * ───────────────────────────────────────────── */
+@Composable
+private fun AiChatCompleteContent(
+    loading: Boolean,
+    onClickFinish: () -> Unit
+) {
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(horizontal = 16.dp, vertical = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+            .padding(horizontal = 16.dp)
     ) {
-        Spacer(Modifier.height(64.dp))
-
-        Text(
-            text = "AI 대화 완료!",
-            fontSize = 24.sp,
-            fontFamily = Pretendard,
-            fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF195FCF),
-            textAlign = TextAlign.Center
-        )
-
+        // 본문(스크롤)
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(top = 48.dp, bottom = 120.dp), // 버튼 자리 확보
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Text(
+                text = "AI 대화 완료!",
+                fontSize = 24.sp,
+                fontFamily = Pretendard,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF195FCF),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(32.dp))
+
             Image(
                 painter = painterResource(id = R.drawable.ic_complete_character),
                 contentDescription = null,
-                modifier = Modifier.size(300.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 180.dp, max = 300.dp)
+                    .aspectRatio(1f, matchHeightConstraintsFirst = true),
                 contentScale = ContentScale.Fit
             )
 
@@ -79,19 +104,17 @@ fun AiChatCompleteScreen(
             )
         }
 
-        // ✅ 항상 클릭 가능 (이미 지급됨/거절이어도 시도 가능)
+        // 하단 버튼: 바닥에서 48dp 위 고정
         Button(
-            onClick = {
-                // 서버에서 이미 지급한 날이면 거절(중복)일 수 있지만, 버튼은 항상 동작
-                viewModel.giveAiChatRewardAndFinish(onNavigateFinish = onFinishNavigate)
-            },
-            enabled = true, // ★ 항상 true
+            onClick = onClickFinish,
+            enabled = true,
             shape = RoundedCornerShape(50),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
             modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 48.dp)
                 .fillMaxWidth(0.5f)
                 .height(48.dp)
-                .padding(bottom = 48.dp)
         ) {
             Text(
                 text = if (loading) "지급 중..." else "종료하기",
@@ -101,6 +124,18 @@ fun AiChatCompleteScreen(
             )
         }
     }
+}
+
+/* ─────────────────────────────────────────────
+ * 3) Preview: VM 없이 Content만 호출
+ * ───────────────────────────────────────────── */
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 360, heightDp = 760)
+@Composable
+fun Preview_AiChatCompleteScreen() {
+    AiChatCompleteContent(
+        loading = false,
+        onClickFinish = { /* no-op in preview */ }
+    )
 }
 
 //package com.malmungchi.feature.ai
