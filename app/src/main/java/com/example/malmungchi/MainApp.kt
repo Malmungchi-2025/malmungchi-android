@@ -77,8 +77,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.malmungchi.feature.ai.AiChatCompleteScreen
 import com.malmungchi.feature.ai.ChatScreen
 import com.malmungchi.feature.ai.ChatViewModel
+import com.malmungchi.feature.ai.FreeChatScreen
 import com.malmungchi.feature.mypage.MyPageViewModel
 import com.malmungchi.feature.mypage.nickname.NicknameCardDialog
 //import com.malmungchi.feature.mypage.nickname.NicknameCardScreen
@@ -1066,7 +1068,6 @@ fun MainApp() {
             }
         }
 
-
         navigation(
             route = "ai_graph",
             startDestination = "ai"
@@ -1075,13 +1076,13 @@ fun MainApp() {
                 WithBottomBar(navController as NavHostController) {
                     com.malmungchi.feature.ai.AiScreen(
                         onStartAiChat = { navController.navigate("ai_chat") },
-                        onFreeChat = { /* 자유대화 화면 이동 시 여기 */ }
+                        onFreeChat = { navController.navigate("free_chat") } // ✅ 자유대화 이동
                     )
                 }
             }
 
+            // ===== 대화연습(취준생 맞춤 상황) =====
             composable("ai_chat") {
-                // ✅ ViewModel 주입 (ChatScreen에 넘겨주기)
                 val vm: ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 
                 ChatScreen(
@@ -1095,23 +1096,171 @@ fun MainApp() {
                         }
                     },
                     onExit = {
-                        // ✅ "대화 종료하기" → AiScreen으로 이동
-                        navController.navigate("ai") {
-                            popUpTo("ai_graph") { inclusive = false } // 그래프 루트 유지
+                        navController.navigate("ai_chat_complete") {
                             launchSingleTop = true
                         }
                     },
                     onContinue = {
-                        // ✅ "대화 이어가기" → 같은 화면에서 즉시 음성 녹음 재시작
                         val state = vm.ui.value
-                        if (!state.isRecording && !state.isLoading) {
-                            vm.startRecording()
+                        if (!state.isRecording && !state.isLoading) vm.startRecording()
+                    }
+                )
+            }
+
+            // ===== 자유 대화 =====
+            composable("free_chat") {
+                val vm: ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+
+                FreeChatScreen( // ← 제목만 "자유 대화"인 동일 UI/로직 화면
+                    vm = vm,
+                    onBack = {
+                        if (!navController.popBackStack()) {
+                            navController.navigate("ai") {
+                                popUpTo("ai_graph") { inclusive = false }
+                                launchSingleTop = true
+                            }
                         }
-                        // 이미 녹음/전송 중이면 아무 것도 하지 않음
+                    },
+                    onExit = {
+                        // ✅ 흐름 동일: 완료화면으로 이동
+                        navController.navigate("ai_chat_complete") {
+                            launchSingleTop = true
+                        }
+                    },
+                    onContinue = {
+                        val state = vm.ui.value
+                        if (!state.isRecording && !state.isLoading) vm.startRecording()
+                    }
+                )
+            }
+
+            // ===== 완료 화면 (공용) =====
+            composable("ai_chat_complete") { backStackEntry ->
+                // 그래프 스코프 VM 공유 (완료화면에서 포인트/이력 표시 등 필요 시)
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("ai_graph")
+                }
+                val vm: ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel(parentEntry)
+
+                AiChatCompleteScreen(
+                    viewModel = vm,
+                    onFinishNavigate = {
+                        navController.navigate("ai") {
+                            popUpTo("ai_graph") { inclusive = false }
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
         }
+
+//        navigation(
+//            route = "ai_graph",
+//            startDestination = "ai"
+//        ) {
+//            composable("ai") {
+//                WithBottomBar(navController as NavHostController) {
+//                    com.malmungchi.feature.ai.AiScreen(
+//                        onStartAiChat = { navController.navigate("ai_chat") },
+//                        onFreeChat = { /* 자유대화 */ }
+//                    )
+//                }
+//            }
+//
+//            composable("ai_chat") {
+//                val vm: ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+//
+//                ChatScreen(
+//                    vm = vm,
+//                    // ← 뒤로가기: 기존 그대로 (3회 미만이면 다이얼로그는 ChatScreen 내부에서 처리됨)
+//                    onBack = {
+//                        if (!navController.popBackStack()) {
+//                            navController.navigate("ai") {
+//                                popUpTo("ai_graph") { inclusive = false }
+//                                launchSingleTop = true
+//                            }
+//                        }
+//                    },
+//                    // ✅ “대화 종료하기” → 완료 화면으로
+//                    onExit = {
+//                        navController.navigate("ai_chat_complete") {
+//                            launchSingleTop = true
+//                        }
+//                    },
+//                    onContinue = {
+//                        val state = vm.ui.value
+//                        if (!state.isRecording && !state.isLoading) vm.startRecording()
+//                    }
+//                )
+//            }
+//
+//            // ✅ 완료 화면: 같은 그래프("ai_graph")에 스코프된 ChatViewModel 주입
+//            composable("ai_chat_complete") {
+//                val parentEntry = remember(navController) {
+//                    navController.getBackStackEntry("ai_graph")
+//                }
+//                val vm: ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel(parentEntry)
+//
+//                AiChatCompleteScreen(
+//                    viewModel = vm,
+//                    onFinishNavigate = {
+//                        // “종료하기” → AiScreen 으로 이동(스택 정리)
+//                        navController.navigate("ai") {
+//                            popUpTo("ai_graph") { inclusive = false }
+//                            launchSingleTop = true
+//                        }
+//                    }
+//                    // snackbarHostState는 옵션이니 필요하면 넘겨줘도 됩니다.
+//                )
+//            }
+//        }
+
+
+//        navigation(
+//            route = "ai_graph",
+//            startDestination = "ai"
+//        ) {
+//            composable("ai") {
+//                WithBottomBar(navController as NavHostController) {
+//                    com.malmungchi.feature.ai.AiScreen(
+//                        onStartAiChat = { navController.navigate("ai_chat") },
+//                        onFreeChat = { /* 자유대화 화면 이동 시 여기 */ }
+//                    )
+//                }
+//            }
+//
+//            composable("ai_chat") {
+//                // ✅ ViewModel 주입 (ChatScreen에 넘겨주기)
+//                val vm: ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+//
+//                ChatScreen(
+//                    vm = vm,
+//                    onBack = {
+//                        if (!navController.popBackStack()) {
+//                            navController.navigate("ai") {
+//                                popUpTo("ai_graph") { inclusive = false }
+//                                launchSingleTop = true
+//                            }
+//                        }
+//                    },
+//                    onExit = {
+//                        // ✅ "대화 종료하기" → AiScreen으로 이동
+//                        navController.navigate("ai") {
+//                            popUpTo("ai_graph") { inclusive = false } // 그래프 루트 유지
+//                            launchSingleTop = true
+//                        }
+//                    },
+//                    onContinue = {
+//                        // ✅ "대화 이어가기" → 같은 화면에서 즉시 음성 녹음 재시작
+//                        val state = vm.ui.value
+//                        if (!state.isRecording && !state.isLoading) {
+//                            vm.startRecording()
+//                        }
+//                        // 이미 녹음/전송 중이면 아무 것도 하지 않음
+//                    }
+//                )
+//            }
+//        }
 
 //        navigation(
 //            route = "ai_graph",
@@ -1298,16 +1447,31 @@ fun MainApp() {
 //            )
         }
 
-
-
         composable("settings") {
             SettingsScreen(
                 onClickBack = { navController.popBackStack() },
                 onClickRemind = { navController.navigate("remind_settings") },
-                onClickLogout = { /* TODO */ },
-                onClickWithdraw = { /* TODO */ }
+                onClickWithdraw = { navController.navigate("withdraw") }, // 회원 탈퇴 화면 이동 예시
+                navigateToLogin = {
+                    navController.navigate("login") {
+                        // 백스택 전부 제거 → 로그인 화면만 남음
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
+
+
+
+//        composable("settings") {
+//            SettingsScreen(
+//                onClickBack = { navController.popBackStack() },
+//                onClickRemind = { navController.navigate("remind_settings") },
+//                onClickLogout = { /* TODO */ },
+//                onClickWithdraw = { /* TODO */ }
+//            )
+//        }
         composable("remind_settings") {
             val scope = rememberCoroutineScope()
             RemindSettingsScreen(

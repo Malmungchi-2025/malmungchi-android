@@ -35,7 +35,8 @@ private val BrandBlue = Color(0xFF195FCF)
 private val TrackGray = Color(0xFFFAFAFA)
 private val TextGray = Color(0xFF989898)
 private val BgSoft = Color(0xFFEFF4FB)   // ⬅️ 추가
-private val SelectedFill = Color(0xFFC4D6F2) // ⬅️ 추가 (선지 선택 채움색)
+private val SelectedFill = Color(0xFFD1DFF5)
+//private val SelectedFill = Color(0xFFC4D6F2) // ⬅️ 추가 (선지 선택 채움색)
 
 @Composable
 fun NicknameTestMcqScreen(

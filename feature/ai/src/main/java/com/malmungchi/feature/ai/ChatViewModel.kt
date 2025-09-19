@@ -1,57 +1,282 @@
+//package com.malmungchi.feature.ai
+//
+//import android.app.Application
+//import android.media.MediaRecorder
+//import retrofit2.HttpException as RetrofitHttpException
+//import org.json.JSONObject
+//import java.io.IOException
+//import kotlinx.coroutines.flow.MutableStateFlow
+//import kotlinx.coroutines.flow.asStateFlow
+//import androidx.lifecycle.AndroidViewModel
+//import androidx.lifecycle.viewModelScope
+//import com.malmungchi.core.repository.VoiceRepository
+//import com.malmungchi.data.implementation.repository.VoiceRepositoryImpl
+//
+//// ▼▼▼ 와일드카드 대신 alias 임포트로 'model' 타입만 쓰게 고정 ▼▼▼
+//import com.malmungchi.feature.ai.model.ChatMessage as MChatMessage
+//import com.malmungchi.feature.ai.model.ChatUiState as MChatUiState
+//import com.malmungchi.feature.ai.model.Role as MRole
+//import com.malmungchi.feature.ai.model.BubbleStyle as MBubbleStyle
+//// ▲▲▲
+//
+//import kotlinx.coroutines.Dispatchers
+//import kotlinx.coroutines.launch
+//import kotlinx.coroutines.withContext
+//import okhttp3.MediaType.Companion.toMediaType
+//import okhttp3.MultipartBody
+//import okhttp3.RequestBody.Companion.asRequestBody
+//import java.io.File
+//
+//
+//
+//private const val LISTENING_PLACEHOLDER = "음성 인식 중..."
+//
+//class ChatViewModel(app: Application) : AndroidViewModel(app) {
+//
+//    private val repo: VoiceRepository = VoiceRepositoryImpl(app)
+//    private var recorder: MediaRecorder? = null
+//    private var recordFile: File? = null
+//
+//    // ▼ 'model'쪽 UI State를 명시적으로 사용
+//    var ui = androidx.compose.runtime.mutableStateOf(MChatUiState())
+//        private set
+//
+//    override fun onCleared() {
+//        super.onCleared()
+//        safelyReleaseRecorder()
+//    }
+//
+//    private fun safelyReleaseRecorder() {
+//        runCatching { recorder?.stop() }
+//        runCatching { recorder?.reset() }
+//        runCatching { recorder?.release() }
+//        recorder = null
+//    }
+//
+//    fun loadHello() {
+//        viewModelScope.launch {
+//            runCatching { repo.voiceHello() }
+//                .onSuccess { resp ->
+//                    // 상황 + 질문을 하나의 말풍선으로 합침
+//                    val full = resp.text ?: "[${resp.situation}]\n: ${resp.question}"
+//
+//                    val msgs = ui.value.messages + MChatMessage(
+//                        role = MRole.Bot,
+//                        text = full,
+//                        style = MBubbleStyle.Normal   // 초기 스타터: 테두리 없음
+//                    )
+//
+//                    ui.value = ui.value.copy(
+//                        messages = msgs,
+//                        botReplyCount = msgs.count { it.role == MRole.Bot }
+//                    )
+//                }
+//        }
+//    }
+//
+//    fun startRecording() {
+//        if (ui.value.isRecording || ui.value.isLoading) return
+//        val ctx = getApplication<Application>()
+//
+//        safelyReleaseRecorder()
+//        val file = File.createTempFile("malm_voice_", ".m4a", ctx.cacheDir)
+//        recordFile = file
+//
+//        try {
+//            val rec = MediaRecorder().apply {
+//                setAudioSource(MediaRecorder.AudioSource.MIC)
+//                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+//                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+//                setAudioEncodingBitRate(128_000)
+//                setAudioSamplingRate(44_100)
+//                setOutputFile(file.absolutePath)
+//                prepare()
+//                start()
+//            }
+//            recorder = rec
+//            ui.value = ui.value.copy(isRecording = true)
+//        } catch (e: Exception) {
+//            safelyReleaseRecorder()
+//            ui.value = ui.value.copy(isRecording = false)
+//        }
+//    }
+//
+//    fun stopAndSend() {
+//        if (!ui.value.isRecording) return
+//        safelyReleaseRecorder()
+//
+//        // 1) 플레이스홀더 표시 (model 타입 고정)
+//        val withPlaceholder = ui.value.messages + MChatMessage(
+//            role = MRole.User,
+//            text = LISTENING_PLACEHOLDER,
+//            style = MBubbleStyle.Normal
+//        )
+//        ui.value = ui.value.copy(isRecording = false, isLoading = true, messages = withPlaceholder)
+//
+//        val file = recordFile ?: run {
+//            removePlaceholderAndStopLoading()
+//            return
+//        }
+//
+//        viewModelScope.launch {
+//            try {
+//                val resp = withContext(Dispatchers.IO) {
+//                    val audioBody = file.asRequestBody("audio/mp4".toMediaType())
+//                    val part = MultipartBody.Part.createFormData("audio", file.name, audioBody)
+//                    repo.voiceChat(part)
+//                }
+//
+//                // 2) 플레이스홀더 제거
+//                val filtered = ui.value.messages.filterNot { it.text == LISTENING_PLACEHOLDER }
+//
+//                // 3) 실제 메시지 삽입 (needRetry → 사용자 빨간 테두리)
+//                val newMsgs = buildList {
+//                    addAll(filtered)
+//
+//                    if (resp.userText.isNotBlank()) {
+//                        val style = if (resp.needRetry == true)
+//                            MBubbleStyle.UserRetryNeeded else MBubbleStyle.Normal
+//                        add(MChatMessage(MRole.User, resp.userText, style))
+//                    }
+//
+//                    val botText = buildString {
+//                        append(resp.text)
+//                        resp.hint?.takeIf { it.isNotBlank() }?.let { append("\nTIP: ").append(it) }
+//                        resp.critique?.takeIf { it.isNotBlank() }?.let { append("\n피드백: ").append(it) }
+//                    }
+//                    add(MChatMessage(MRole.Bot, botText, MBubbleStyle.BotFeedback))
+//                }
+//
+//                ui.value = ui.value.copy(
+//                    messages = newMsgs,
+//                    isLoading = false,
+//                    botReplyCount = newMsgs.count { it.role == MRole.Bot }
+//                )
+//            } catch (_: Throwable) {
+//                removePlaceholderAndStopLoading()
+//            } finally {
+//                withContext(Dispatchers.IO) { runCatching { file.delete() } }
+//                recordFile = null
+//            }
+//        }
+//    }
+//
+//    private fun removePlaceholderAndStopLoading() {
+//        val cleaned = ui.value.messages.filterNot { it.text == LISTENING_PLACEHOLDER }
+//        ui.value = ui.value.copy(messages = cleaned, isLoading = false)
+//    }
+//
+//    private val _rewardLoading = MutableStateFlow(false)
+//    val rewardLoading = _rewardLoading.asStateFlow()
+//
+//    private val _rewardToast = MutableStateFlow<String?>(null)
+//    val rewardToast = _rewardToast.asStateFlow() // UI에서 한번 보여주고 null로 초기화
+//
+//    /**
+//     * 종료하기 클릭 시 호출: ai 채팅 보상 지급
+//     * - autoTouch=1 로 안전하게 호출 (today_ai_chat 미리 터치 안 해도 OK)
+//     * - 이미 지급(400)이어도 완료 플로우는 진행
+//     */
+//    fun giveAiChatRewardAndFinish(
+//        onNavigateFinish: () -> Unit
+//    ) {
+//        if (_rewardLoading.value) return
+//        viewModelScope.launch {
+//            _rewardLoading.value = true
+//            try {
+//                val resp = repo.completeAiChatReward(autoTouch = 1)
+//                _rewardToast.value = resp.message.ifBlank { "포인트가 지급되었습니다." }
+//                onNavigateFinish()
+//
+//            } catch (e: retrofit2.HttpException) {   // ✅ FQCN 사용
+//                val msg = e.serverMsg() ?: "보상 지급 요청 실패"
+//                when (e.code()) {
+//                    400 -> { _rewardToast.value = msg; onNavigateFinish() } // 이미 지급됨 등
+//                    401 -> _rewardToast.value = "로그인이 필요합니다."
+//                    else -> _rewardToast.value = msg
+//                }
+//
+//            } catch (e: IOException) {
+//                _rewardToast.value = "네트워크 오류가 발생했어요."
+//
+//            } catch (_: Throwable) {
+//                _rewardToast.value = "알 수 없는 오류가 발생했어요."
+//
+//            } finally {
+//                _rewardLoading.value = false
+//            }
+//        }
+//    }
+//
+//    fun consumeRewardToast() {
+//        _rewardToast.value = null
+//    }
+//}
+//// 🔽 파일 상단(클래스 바깥)에 추가
+//private fun retrofit2.HttpException.serverMsg(): String? = try {
+//    this.response()
+//        ?.errorBody()
+//        ?.string()
+//        ?.let { body ->
+//            // 서버가 { success:false, message:"..." } 형태로 주는 걸 가정
+//            org.json.JSONObject(body).optString("message", /* fallback */ null)
+//                ?.takeIf { it.isNotBlank() }
+//        }
+//} catch (_: Exception) {
+//    null
+//}
+//
+//
+//
 package com.malmungchi.feature.ai
 
 import android.app.Application
 import android.media.MediaRecorder
+import retrofit2.HttpException as RetrofitHttpException
+import org.json.JSONObject
+import java.io.IOException
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.malmungchi.core.repository.VoiceRepository
 import com.malmungchi.data.implementation.repository.VoiceRepositoryImpl
+
+// ▼▼▼ 와일드카드 대신 alias 임포트로 'model' 타입만 쓰게 고정 ▼▼▼
+import com.malmungchi.feature.ai.model.ChatMessage as MChatMessage
+import com.malmungchi.feature.ai.model.ChatUiState as MChatUiState
+import com.malmungchi.feature.ai.model.Role as MRole
+import com.malmungchi.feature.ai.model.BubbleStyle as MBubbleStyle
+// ▲▲▲
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
-
-import android.content.pm.PackageManager
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-
 import java.io.File
 
-data class ChatUiState(
-    val messages: List<ChatMessage> = emptyList(),
-    val isRecording: Boolean = false,
-    val isLoading: Boolean = false,
-    val botReplyCount: Int = 0,
-    val mode: String = "job"
-)
+private const val LISTENING_PLACEHOLDER = "음성 인식 중..."
 
 class ChatViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val repo: VoiceRepository = VoiceRepositoryImpl(app)
+    // ====== 모드 분기 ======
+    enum class Mode { JOB, DAILY }
+    private var currentMode: Mode = Mode.JOB
 
+    fun setModeJob() { currentMode = Mode.JOB }
+    fun setModeDaily() { currentMode = Mode.DAILY }
+
+    // ====== 의존성 / 녹음 ======
+    private val repo: VoiceRepository = VoiceRepositoryImpl(app)
     private var recorder: MediaRecorder? = null
     private var recordFile: File? = null
 
-    var ui = androidx.compose.runtime.mutableStateOf(ChatUiState())
+    // ====== UI State ======
+    var ui = androidx.compose.runtime.mutableStateOf(MChatUiState())
         private set
 
-    // ─────────────────────────────────────────────
-    // 생명주기 종료 시 안전하게 해제
-    // ─────────────────────────────────────────────
     override fun onCleared() {
         super.onCleared()
         safelyReleaseRecorder()
@@ -64,23 +289,49 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         recorder = null
     }
 
-    // ─────────────────────────────────────────────
-    // 녹음 시작
-    // ─────────────────────────────────────────────
+    // =========================================================
+    // 1) 서버가 먼저 인사/상황 제시 (텍스트 + TTS base64)
+    //    - currentMode 에 따라 job/daily 라우팅
+    // =========================================================
+    fun loadHello() {
+        viewModelScope.launch {
+            runCatching {
+                when (currentMode) {
+                    Mode.JOB   -> repo.voiceHello()
+                    Mode.DAILY -> repo.voiceHelloDaily()
+                }
+            }.onSuccess { resp ->
+                // 상황 + 질문을 하나의 말풍선으로 합침
+                val full = resp.text ?: "[${resp.situation}]\n: ${resp.question}"
+
+                val msgs = ui.value.messages + MChatMessage(
+                    role = MRole.Bot,
+                    text = full,
+                    style = MBubbleStyle.Normal   // 초기 스타터: 테두리 없음
+                )
+
+                ui.value = ui.value.copy(
+                    messages = msgs,
+                    botReplyCount = msgs.count { it.role == MRole.Bot }
+                )
+                // TODO: resp.audioBase64 재생이 필요하다면 여기서 처리
+            }
+        }
+    }
+
+    // =========================================================
+    // 2) 녹음 제어
+    // =========================================================
     fun startRecording() {
         if (ui.value.isRecording || ui.value.isLoading) return
         val ctx = getApplication<Application>()
 
-        // 혹시 남아있던 인스턴스 정리
         safelyReleaseRecorder()
-
         val file = File.createTempFile("malm_voice_", ".m4a", ctx.cacheDir)
         recordFile = file
 
         try {
             val rec = MediaRecorder().apply {
-                // 필요 시 아래 줄을 VOICE_RECOGNITION으로 바꿔 테스트해보세요.
-                // setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION)
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
@@ -92,53 +343,78 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
             }
             recorder = rec
             ui.value = ui.value.copy(isRecording = true)
-        } catch (e: Exception) {
-            // 권한 거부, 다른 앱 점유, 기기 정책 등으로 실패할 수 있음
+        } catch (_: Exception) {
             safelyReleaseRecorder()
             ui.value = ui.value.copy(isRecording = false)
-            // 필요 시 사용자 알림(토스트/스낵바) 연결 가능
-            // Log.e("ChatViewModel", "startRecording failed", e)
         }
     }
 
-    // ─────────────────────────────────────────────
-    // 녹음 종료 + 서버 전송
-    // ─────────────────────────────────────────────
+    // 녹음 종료 + 업로드
     fun stopAndSend() {
         if (!ui.value.isRecording) return
-
         safelyReleaseRecorder()
-        ui.value = ui.value.copy(isRecording = false)
 
-        val file = recordFile ?: return
-        ui.value = ui.value.copy(isLoading = true)
+        // 1) 플레이스홀더 표시 (model 타입 고정)
+        val withPlaceholder = ui.value.messages + MChatMessage(
+            role = MRole.User,
+            text = LISTENING_PLACEHOLDER,
+            style = MBubbleStyle.Normal
+        )
+        ui.value = ui.value.copy(isRecording = false, isLoading = true, messages = withPlaceholder)
+
+        val file = recordFile ?: run {
+            removePlaceholderAndStopLoading()
+            return
+        }
 
         viewModelScope.launch {
             try {
+                // 2) 서버 전송
                 val resp = withContext(Dispatchers.IO) {
-                    // NOTE: 서버가 m4a를 명시 요구하면 "audio/m4a"로 변경
                     val audioBody = file.asRequestBody("audio/mp4".toMediaType())
                     val part = MultipartBody.Part.createFormData("audio", file.name, audioBody)
-                    val modeBody: RequestBody =
-                        ui.value.mode.toRequestBody("text/plain".toMediaType())
-                    repo.voiceChat(part, modeBody)
+                    when (currentMode) {
+                        Mode.JOB   -> repo.voiceChat(part)
+                        Mode.DAILY -> repo.voiceChatDaily(part)
+                    }
                 }
 
+                // 3) 플레이스홀더 제거
+                val filtered = ui.value.messages.filterNot { it.text == LISTENING_PLACEHOLDER }
+
+                // 4) 실제 메시지 삽입
                 val newMsgs = buildList {
-                    addAll(ui.value.messages)
-                    if (resp.userText.isNotBlank()) add(ChatMessage(Role.User, resp.userText))
-                    val botText = if (resp.hint.isNullOrBlank()) resp.text
-                    else resp.text + "\nTIP: " + resp.hint
-                    add(ChatMessage(Role.Bot, botText))
+                    addAll(filtered)
+
+                    // 사용자 인식 텍스트
+                    if (resp.userText.isNotBlank()) {
+                        val style = if (resp.needRetry == true)
+                            MBubbleStyle.UserRetryNeeded else MBubbleStyle.Normal
+                        add(MChatMessage(MRole.User, resp.userText, style))
+                    }
+
+                    // Bot 응답 (+TIP / +피드백)
+                    val botText = buildString {
+                        append(resp.text)
+                        resp.hint?.takeIf { it.isNotBlank() }?.let { append("\nTIP: ").append(it) }
+                        resp.critique?.takeIf { it.isNotBlank() }?.let { append("\n피드백: ").append(it) }
+                    }
+
+                    // needRetry 여부에 따라 Bot 말풍선 스타일 (피드백 테두리)
+                    val botStyle = if (resp.needRetry == true) MBubbleStyle.BotFeedback else MBubbleStyle.Normal
+                    add(MChatMessage(MRole.Bot, botText, botStyle))
                 }
 
                 ui.value = ui.value.copy(
                     messages = newMsgs,
                     isLoading = false,
-                    botReplyCount = newMsgs.count { it.role == Role.Bot }
+                    botReplyCount = newMsgs.count { it.role == MRole.Bot }
                 )
+
+                // TODO: resp.audioBase64 재생이 필요하다면 여기서 처리
+
             } catch (_: Throwable) {
-                ui.value = ui.value.copy(isLoading = false)
+                removePlaceholderAndStopLoading()
             } finally {
                 withContext(Dispatchers.IO) { runCatching { file.delete() } }
                 recordFile = null
@@ -146,254 +422,70 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun setMode(newMode: String) {
-        ui.value = ui.value.copy(mode = newMode)
-    }
-}
-
-// ─────────────────────────────────────────────
-// 하단 마이크 버튼 (권한 요청 + 녹음 토글)
-// ─────────────────────────────────────────────
-@Composable
-fun MicButton(vm: ChatViewModel) {
-    val context = LocalContext.current
-    val permission = android.Manifest.permission.RECORD_AUDIO
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) vm.startRecording()
-        else Toast.makeText(context, "마이크 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+    private fun removePlaceholderAndStopLoading() {
+        val cleaned = ui.value.messages.filterNot { it.text == LISTENING_PLACEHOLDER }
+        ui.value = ui.value.copy(messages = cleaned, isLoading = false)
     }
 
-    val granted = ContextCompat.checkSelfPermission(context, permission) ==
-            PackageManager.PERMISSION_GRANTED
-    val isBusy = vm.ui.value.isRecording || vm.ui.value.isLoading
+    // =========================================================
+    // 3) 보상 지급 API (완료 화면용)
+    // =========================================================
+    private val _rewardLoading = MutableStateFlow(false)
+    val rewardLoading = _rewardLoading.asStateFlow()
 
-    Image(
-        painter = painterResource(
-            id = if (isBusy) R.drawable.ic_chat_mike_ing else R.drawable.ic_chat_mike
-        ),
-        contentDescription = "Mic",
-        modifier = Modifier
-            .size(56.dp)
-            .clickable {
-                if (vm.ui.value.isLoading) return@clickable
-                if (!vm.ui.value.isRecording) {
-                    if (granted) vm.startRecording() else launcher.launch(permission)
-                } else {
-                    vm.stopAndSend()
+    private val _rewardToast = MutableStateFlow<String?>(null)
+    val rewardToast = _rewardToast.asStateFlow() // UI에서 한번 보여주고 null로 초기화
+
+    /**
+     * 종료하기 클릭 시 호출: ai 채팅 보상 지급
+     * - autoTouch=1 로 안전하게 호출 (today_ai_chat 미리 터치 안 해도 OK)
+     * - 이미 지급(400)이어도 완료 플로우는 진행
+     */
+    fun giveAiChatRewardAndFinish(
+        onNavigateFinish: () -> Unit
+    ) {
+        if (_rewardLoading.value) return
+        viewModelScope.launch {
+            _rewardLoading.value = true
+            try {
+                val resp = repo.completeAiChatReward(autoTouch = 1)
+                _rewardToast.value = resp.message.ifBlank { "포인트가 지급되었습니다." }
+                onNavigateFinish()
+
+            } catch (e: retrofit2.HttpException) {
+                val msg = e.serverMsg() ?: "보상 지급 요청 실패"
+                when (e.code()) {
+                    400 -> { _rewardToast.value = msg; onNavigateFinish() } // 이미 지급됨 등
+                    401 -> _rewardToast.value = "로그인이 필요합니다."
+                    else -> _rewardToast.value = msg
                 }
+
+            } catch (_: IOException) {
+                _rewardToast.value = "네트워크 오류가 발생했어요."
+
+            } catch (_: Throwable) {
+                _rewardToast.value = "알 수 없는 오류가 발생했어요."
+
+            } finally {
+                _rewardLoading.value = false
             }
-    )
+        }
+    }
+
+    fun consumeRewardToast() {
+        _rewardToast.value = null
+    }
 }
 
-
-
-
-//package com.malmungchi.feature.ai
-//
-//import android.app.Application
-//import android.media.MediaRecorder
-//import androidx.lifecycle.AndroidViewModel
-//import androidx.lifecycle.viewModelScope
-//import com.malmungchi.core.repository.VoiceRepository
-//import com.malmungchi.data.implementation.repository.VoiceRepositoryImpl
-//import kotlinx.coroutines.Dispatchers
-//import kotlinx.coroutines.launch
-//import kotlinx.coroutines.withContext
-//import okhttp3.MediaType.Companion.toMediaType
-//import okhttp3.MultipartBody
-//import okhttp3.RequestBody
-//import okhttp3.RequestBody.Companion.asRequestBody
-//import okhttp3.RequestBody.Companion.toRequestBody
-//import android.content.pm.PackageManager
-//import android.widget.Toast
-//import androidx.activity.compose.rememberLauncherForActivityResult
-//import androidx.activity.result.contract.ActivityResultContracts
-//import androidx.compose.foundation.Image
-//import androidx.compose.foundation.clickable
-//import androidx.compose.foundation.layout.size
-//import androidx.compose.runtime.Composable
-//import androidx.compose.ui.Modifier
-//import androidx.compose.ui.platform.LocalContext
-//import androidx.compose.ui.res.painterResource
-//import androidx.compose.ui.unit.dp
-//import androidx.core.content.ContextCompat
-//
-//import java.io.File
-//
-//data class ChatUiState(
-//    val messages: List<ChatMessage> = emptyList(),   // ★ 초기 비움
-//    //val messages: List<ChatMessage> = listOf(ChatMessage(Role.Bot, "[면접 상황]\n: 본인의 장단점이 무엇인가요?")),
-//    val isRecording: Boolean = false,
-//    val isLoading: Boolean = false,       // 서버 왕복 중 마이크 아이콘 바꾸기 용
-//    val botReplyCount: Int = 0,           // 초기 Bot 1개
-//    val mode: String = "job"
-//)
-//
-//class ChatViewModel(app: Application) : AndroidViewModel(app) {
-//
-//    private val repo: VoiceRepository = VoiceRepositoryImpl(app)
-//
-//    private var recorder: MediaRecorder? = null
-//    private var recordFile: File? = null
-//
-//    var ui = androidx.compose.runtime.mutableStateOf(ChatUiState())
-//        private set
-//
-//    // ─────────────────────────────────────────────
-//    // 녹음 시작
-//    // ─────────────────────────────────────────────
-//    fun startRecording() {
-//        if (ui.value.isRecording || ui.value.isLoading) return
-//        val ctx = getApplication<Application>()
-//        val file = File.createTempFile("malm_voice_", ".m4a", ctx.cacheDir)
-//        recordFile = file
-//
-//        val rec = MediaRecorder().apply {
-//            setAudioSource(MediaRecorder.AudioSource.MIC)
-//            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-//            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-//            setAudioEncodingBitRate(128_000)
-//            setAudioSamplingRate(44_100)
-//            setOutputFile(file.absolutePath)
-//            prepare()
-//            start()
-//        }
-//        recorder = rec
-//        ui.value = ui.value.copy(isRecording = true)
-//    }
-//
-//    // ─────────────────────────────────────────────
-//    // 녹음 종료 + 서버 전송
-//    // ─────────────────────────────────────────────
-//    fun stopAndSend() {
-//        if (!ui.value.isRecording) return
-//
-//        // 녹음 정지는 예외와 상태를 분리해 안전하게
-//        try { recorder?.stop() } catch (_: Throwable) { /* ignore */ }
-//        try { recorder?.reset() } catch (_: Throwable) { /* ignore */ }
-//        try { recorder?.release() } catch (_: Throwable) { /* ignore */ }
-//        recorder = null
-//        ui.value = ui.value.copy(isRecording = false)
-//
-//        val file = recordFile ?: return
-//        ui.value = ui.value.copy(isLoading = true)
-//
-//        viewModelScope.launch {
-//            try {
-//                val resp = withContext(Dispatchers.IO) {
-//                    // NOTE: 서버가 m4a를 명시 요구하면 "audio/m4a"로 바꾸세요.
-//                    val audioBody = file.asRequestBody("audio/mp4".toMediaType())
-//                    val part = MultipartBody.Part.createFormData("audio", file.name, audioBody)
-//                    val modeBody: RequestBody = ui.value.mode.toRequestBody("text/plain".toMediaType())
-//                    repo.voiceChat(part, modeBody)
-//                }
-//
-//                val newMsgs = buildList {
-//                    addAll(ui.value.messages)
-//                    if (resp.userText.isNotBlank()) add(ChatMessage(Role.User, resp.userText))
-//                    val botText = if (resp.hint.isNullOrBlank()) resp.text else resp.text + "\nTIP: " + resp.hint
-//                    add(ChatMessage(Role.Bot, botText))
-//                }
-//
-//                ui.value = ui.value.copy(
-//                    messages = newMsgs,
-//                    isLoading = false,
-//                    botReplyCount = newMsgs.count { it.role == Role.Bot }
-//                )
-//            } catch (e: Throwable) {
-//                // TODO: 필요하면 이벤트/콜백으로 UI에 에러 알림
-//                ui.value = ui.value.copy(isLoading = false)
-//            } finally {
-//                withContext(Dispatchers.IO) { runCatching { file.delete() } }
-//                recordFile = null
-//            }
-//        }
-//    }
-////    fun stopAndSend() {
-////        if (!ui.value.isRecording) return
-////        try {
-////            recorder?.run { stop(); reset(); release() }
-////        } catch (_: Throwable) { /* ignore */ }
-////        recorder = null
-////        ui.value = ui.value.copy(isRecording = false)
-////
-////        val file = recordFile ?: return
-////        ui.value = ui.value.copy(isLoading = true)
-////
-////        viewModelScope.launch {
-////            val resp = withContext(Dispatchers.IO) {
-////                // 멀티파트 구성
-////                val audioBody = file.asRequestBody("audio/mp4".toMediaType())
-////                val part = MultipartBody.Part.createFormData("audio", file.name, audioBody)
-////                val modeBody: RequestBody = ui.value.mode.toRequestBody("text/plain".toMediaType())
-////                runCatching { repo.voiceChat(part, modeBody) }.getOrElse { throw it }
-////            }
-////
-////            // 서버 응답을 UI 메시지로 반영
-////            val newMsgs = buildList {
-////                addAll(ui.value.messages)
-////                // 사용자 음성 → STT 결과를 user 말풍선(흰색)으로
-////                if (resp.userText.isNotBlank()) add(ChatMessage(Role.User, resp.userText))
-////                // Bot 답변 + TIP(있으면 말풍선 내부에 들어가도록 "TIP: ..."을 본문 뒤에 붙임)
-////                val botText = if (resp.hint.isNullOrBlank()) resp.text
-////                else resp.text + "\nTIP: " + resp.hint
-////                add(ChatMessage(Role.Bot, botText))
-////            }
-////
-////            ui.value = ui.value.copy(
-////                messages = newMsgs,
-////                isLoading = false,
-////                botReplyCount = newMsgs.count { it.role == Role.Bot }
-////            )
-////
-////            // 임시 파일 정리
-////            withContext(Dispatchers.IO) { runCatching { file.delete() } }
-////            recordFile = null
-////        }
-////    }
-//
-//    fun setMode(newMode: String) {
-//        ui.value = ui.value.copy(mode = newMode)
-//    }
-//}
-//
-//
-//
-//
-//
-//@Composable
-//fun MicButton(vm: ChatViewModel) {
-//    val context = LocalContext.current
-//    val permission = android.Manifest.permission.RECORD_AUDIO
-//
-//    val launcher = rememberLauncherForActivityResult(
-//        contract = ActivityResultContracts.RequestPermission()
-//    ) { granted ->
-//        if (granted) vm.startRecording()
-//        else Toast.makeText(context, "마이크 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
-//    }
-//
-//    val granted = ContextCompat.checkSelfPermission(context, permission) ==
-//            PackageManager.PERMISSION_GRANTED
-//    val isBusy = vm.ui.value.isRecording || vm.ui.value.isLoading
-//
-//    Image(
-//        painter = painterResource(
-//            id = if (isBusy) R.drawable.ic_chat_mike_ing else R.drawable.ic_chat_mike
-//        ),
-//        contentDescription = "Mic",
-//        modifier = Modifier
-//            .size(56.dp)
-//            .clickable {
-//                if (vm.ui.value.isLoading) return@clickable
-//                if (!vm.ui.value.isRecording) {
-//                    if (granted) vm.startRecording() else launcher.launch(permission)
-//                } else {
-//                    vm.stopAndSend()
-//                }
-//            }
-//    )
-//}
+// 🔽 파일 하단(클래스 바깥)에 확장 함수 유지
+private fun retrofit2.HttpException.serverMsg(): String? = try {
+    this.response()
+        ?.errorBody()
+        ?.string()
+        ?.let { body ->
+            JSONObject(body).optString("message", /* fallback */ null)
+                ?.takeIf { it.isNotBlank() }
+        }
+} catch (_: Exception) {
+    null
+}
