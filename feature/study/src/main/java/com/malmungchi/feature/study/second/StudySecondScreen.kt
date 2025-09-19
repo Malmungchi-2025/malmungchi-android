@@ -249,8 +249,8 @@ private fun HandwritingGuideOverlay(
     ) {
         val showArrow = step == GuideOverlayStep.Step1
         val bubbleRes = when (step) {
-            GuideOverlayStep.Step1 -> R.drawable.img_word1
-            GuideOverlayStep.Step2 -> R.drawable.img_word2
+            GuideOverlayStep.Step1 -> R.drawable.img_words1_hint1
+            GuideOverlayStep.Step2 -> R.drawable.img_words2_hint2
             GuideOverlayStep.None -> null
         }
 

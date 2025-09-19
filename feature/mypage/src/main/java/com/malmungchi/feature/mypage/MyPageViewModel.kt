@@ -8,8 +8,10 @@ import com.malmungchi.core.model.UserDto
 import com.malmungchi.core.model.VocabularyDto
 import com.malmungchi.core.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 data class MyPageUiState(
@@ -226,6 +228,22 @@ class MyPageViewModel @Inject constructor(
                     // 롤백
                     _ui.value = before.copy(togglingId = null)
                 }
+        }
+    }
+}
+
+//로그아웃 구현
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+    private val authRepository: AuthRepository
+) : ViewModel() {
+    private val _navigateLogin = MutableSharedFlow<Unit>()
+    val navigateLogin = _navigateLogin.asSharedFlow()
+
+    fun logout() {
+        viewModelScope.launch {
+            authRepository.logoutLocal()
+            _navigateLogin.emit(Unit)
         }
     }
 }

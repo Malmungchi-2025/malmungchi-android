@@ -59,6 +59,15 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
+    // ✅ retrofit2.HttpException 사용을 위해 (이 모듈에서도 필요)
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+
+    // ✅ collectAsStateWithLifecycle 사용 시 필요
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
+
+    // ✅ 코루틴(Android)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
     // Core & Design 모듈 참조
     implementation(project(":core"))
     implementation(project(":design"))

@@ -31,4 +31,6 @@ interface AuthRepository {
         vocabCorrect: Int,
         readingCorrect: Int
     ): SaveNicknameResult
+
+    suspend fun logoutLocal()  // 로그아웃 추가.
 }

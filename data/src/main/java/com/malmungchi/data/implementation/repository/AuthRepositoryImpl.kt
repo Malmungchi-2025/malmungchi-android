@@ -3,11 +3,13 @@ package com.malmungchi.data.implementation.repository
 import com.malmungchi.core.model.*
 import com.malmungchi.core.repository.AuthRepository
 import com.malmungchi.data.api.AuthService
+import com.malmungchi.data.preference.AuthPreference
 import com.malmungchi.data.session.SessionManager
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
-    private val api: AuthService
+    private val api: AuthService,
+    private val authPref: AuthPreference,   // ★ 주입
 ) : AuthRepository {
 
     override suspend fun devRequestOtp(email: String): Boolean {
@@ -117,6 +119,12 @@ class AuthRepositoryImpl @Inject constructor(
         )
         if (!resp.success) error(resp.message ?: "별명 저장 실패")
         return resp.result ?: error("빈 응답")
+    }
+
+    //로그아웃 구현
+    override suspend fun logoutLocal() {
+        authPref.clear()
+        SessionManager.clear()  // ★ 없으면 간단히 만들어주세요
     }
 }
 //class AuthRepositoryImpl @Inject constructor(   // 👈 @Inject 추가
