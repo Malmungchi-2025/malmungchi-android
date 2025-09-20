@@ -17,3 +17,27 @@ data class LevelTestSubmitResult(
     val resultLevel: String,
     val message: String?
 )
+
+
+data class LevelsSubmitResult(
+    val correctCount: Int,
+    val resultLevel: String,
+    val detail: List<LevelSubmitDetail>? = null  // 👈 추가
+)
+
+data class LevelSubmitDetail(
+    val questionIndex: Int,
+    val isCorrect: Boolean,
+    val answerIndex: Int,
+    val userChoice: Int,
+    val explanation: String?
+)
+
+
+/** 🔵 신규 3문항 generate 응답용 (passage 포함) */
+data class LevelsGenerateResult(
+    val passage: String,
+    val questions: List<LevelTestQuestion>
+)
+
+
