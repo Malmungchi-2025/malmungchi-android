@@ -67,11 +67,15 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
+
+
     // ✅ Hilt + KSP (이미 있음)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     ksp(libs.androidx.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.34.0")
 
     // ✅ Core & Design 모듈
     implementation(project(":core"))

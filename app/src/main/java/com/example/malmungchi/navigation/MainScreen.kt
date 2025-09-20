@@ -22,10 +22,12 @@ import java.time.format.DateTimeFormatter
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.malmungchi.feature.mypage.MyPageViewModel
 
 import com.malmungchi.feature.study.intro.StudyWeeklyScreen
-
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun MainScreen(
@@ -34,6 +36,7 @@ fun MainScreen(
     onOpenSettings: () -> Unit = {},
     onOpenWordCollection: () -> Unit = {}
 ) {
+
     val navController = rememberNavController()
 
     Scaffold(
@@ -50,6 +53,7 @@ fun MainScreen(
                 startDestination = "study/weekly"   // <-- 변경: 주간 허브로 시작
             ) {
                 composable("study/weekly") {
+                    ForceSystemBarsWhite()
                     val vm: StudyReadingViewModel = hiltViewModel()
 
                     val today = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
@@ -158,5 +162,13 @@ fun MainScreen(
                 }
             }
         }
+    }
+}
+@Composable
+private fun ForceSystemBarsWhite() {
+    val sys = rememberSystemUiController()
+    SideEffect {
+        sys.setStatusBarColor(Color.White, darkIcons = true)
+        sys.setNavigationBarColor(Color.White, darkIcons = true, navigationBarContrastEnforced = false)
     }
 }

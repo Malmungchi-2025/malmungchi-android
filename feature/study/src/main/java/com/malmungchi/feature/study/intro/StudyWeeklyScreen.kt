@@ -44,8 +44,11 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
+import androidx.compose.runtime.SideEffect
 import java.net.SocketTimeoutException
 import androidx.compose.foundation.BorderStroke
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 /* ─────────────────────────────── 상수 ─────────────────────────────── */
 private val BrandBlue = Color(0xFF195FCF)
@@ -100,6 +103,14 @@ fun StudyWeeklyScreen(
     hasStudy: (String) -> Boolean
    // hasStudy: (String) -> Boolean = { false } // ★ 학습 여부 판단 주입
 ) {
+
+    // ✨ 이 화면 진입 시 시스템바 색을 확실히 흰색으로
+    val systemUi = rememberSystemUiController()
+    SideEffect {
+        systemUi.setStatusBarColor(color = Color.White, darkIcons = true)
+        systemUi.setNavigationBarColor(color = Color.White, darkIcons = true)
+    }
+
     var selected by remember { mutableStateOf(initialDateLabel) }
     val latestOnDateChange by rememberUpdatedState(onDateChange)
     val isPreview = LocalInspectionMode.current

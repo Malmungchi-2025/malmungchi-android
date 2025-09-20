@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
@@ -74,6 +75,9 @@ private fun painterResourceSafe(id: Int?): Painter? {
     if (id == null) return null
     return runCatching { painterResource(id) }.getOrNull()
 }
+
+private fun prefixLenNfc(a: String, b: String): Int =
+    nfc(a).commonPrefixWith(nfc(b)).length
 
 
 
@@ -188,7 +192,8 @@ private fun OriginalWithTypos(
     errorIndex: Int? = null,
     color: Color = Color.Black,
 ) {
-    val match = typed.commonPrefixWith(original).length
+   // val match = typed.commonPrefixWith(original).length
+    val match = nfc(typed).commonPrefixWith(nfc(original)).length
     val annotated = buildAnnotatedString {
         append(AnnotatedString(original.take(match), SpanStyle(color = color)))
         if (errorIndex != null && errorIndex in original.indices) {
@@ -258,30 +263,82 @@ private fun HandwritingGuideOverlay(
             Modifier
                 .align(Alignment.BottomStart)
                 .padding(start = 20.dp, bottom = 96.dp)
+                .offset(y = (-12).dp)   // ⬅️ 여기 추가: 전체(말풍선+화살표) 12dp 위로
         ) {
             if (bubbleRes != null) {
-                val base = Modifier
-                    .wrapContentSize()
-                    .let { if (step == GuideOverlayStep.Step1) it.offset(bubble1OffsetX, bubble1OffsetY) else it.offset(bubble2OffsetX, bubble2OffsetY) }
-                    .let {
-                        when {
-                            step == GuideOverlayStep.Step1 && bubble1Width != null -> it.width(bubble1Width)
-                            step == GuideOverlayStep.Step2 && bubble2Width != null -> it.width(bubble2Width)
-                            else -> it
-                        }
-                    }
+                // ⬇️ 화면 제약(maxWidth/maxHeight)을 알고 계산하기 위해 사용
+                BoxWithConstraints {
+                    val painter = painterResourceSafe(bubbleRes)
+                    if (painter != null) {
+                        val density = LocalDensity.current
+                        val intrinsic = painter.intrinsicSize
 
-                val bubblePainter = painterResourceSafe(bubbleRes)
-                if (bubblePainter != null) {
-                    Image(painter = bubblePainter, contentDescription = null, modifier = base)
-                } else {
-                    Box(base.height(80.dp).width(240.dp).background(Color(0x33FFFFFF), RoundedCornerShape(12.dp)))
+                        // 1) 원본 크기(dp) + 비율
+                        val intrinsicWdp = with(density) {
+                            if (intrinsic.width  > 0f) intrinsic.width.toDp()  else maxWidth * 0.8f
+                        }
+                        val intrinsicHdp = with(density) {
+                            if (intrinsic.height > 0f) intrinsic.height.toDp() else maxHeight * 0.3f
+                        }
+                        val ratio = (intrinsicHdp / intrinsicWdp).takeIf { it.isFinite() && it > 0f } ?: 0.65f
+
+                        // 2) 기본 크기 = 원본의 0.7배
+                        var targetW = intrinsicWdp * 0.7f
+                        var targetH = targetW * ratio
+
+                        // 3) 화면 안에서만 보이도록 상한(여백 포함) 적용
+                        val maxW = maxWidth  - 40.dp     // 좌측·우측 여유
+                        val maxH = maxHeight - 160.dp    // 하단 말치/버튼 여유
+                        if (targetW > maxW) {
+                            targetW = maxW
+                            targetH = targetW * ratio
+                        }
+                        if (targetH > maxH) {
+                            targetH = maxH
+                            targetW = targetH / ratio
+                        }
+
+                        // 4) step별 오프셋 적용 후 그리기 (비율 유지)
+                        val base = Modifier
+                            .wrapContentSize()
+                            .let {
+                                if (step == GuideOverlayStep.Step1)
+                                    it.offset(bubble1OffsetX, bubble1OffsetY)
+                                else
+                                    it.offset(bubble2OffsetX, bubble2OffsetY)
+                            }
+                            .width(targetW)
+                            .height(targetH)
+
+                        Image(
+                            painter = painter,
+                            contentDescription = null,
+                            modifier = base,
+                            contentScale = ContentScale.Fit   // ← 비율 유지
+                        )
+                    } else {
+                        // 대체 뷰 (리소스 로드 실패 시)
+                        Box(
+                            Modifier
+                                .offset(
+                                    if (step == GuideOverlayStep.Step1) bubble1OffsetX else bubble2OffsetX,
+                                    if (step == GuideOverlayStep.Step1) bubble1OffsetY else bubble2OffsetY
+                                )
+                                .width(maxWidth * 0.7f)
+                                .height(80.dp)
+                                .background(Color(0x33FFFFFF), RoundedCornerShape(12.dp))
+                        )
+                    }
                 }
             }
 
+            // (화살표는 기존 그대로)
             if (showArrow) {
                 val arrowPainter = painterResourceSafe(R.drawable.img_arrow)
-                val arrowMod = Modifier.align(Alignment.TopEnd).offset(40.dp, (-100).dp).size(48.dp)
+                val arrowMod = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(40.dp, (-100).dp)
+                    .size(48.dp)
                 if (arrowPainter != null) {
                     Icon(painter = arrowPainter, contentDescription = null, tint = Color.Unspecified, modifier = arrowMod)
                 } else {
@@ -291,7 +348,7 @@ private fun HandwritingGuideOverlay(
         }
 
         val malchiPainter = painterResourceSafe(R.drawable.img_malchi)
-        val malchiMod = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 40.dp).size(84.dp)
+        val malchiMod = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 40.dp).offset(y = (-12).dp) .size(84.dp)
         if (malchiPainter != null) {
             Icon(painter = malchiPainter, contentDescription = null, tint = Color.Unspecified, modifier = malchiMod)
         } else {
@@ -576,7 +633,8 @@ fun StudySecondScreen(
                                 }
 
                                 // 오탈자 표시만
-                                errorIndexUi = nfc(oldText).length
+                                errorIndexUi = prefixLenNfc(oldText, original)
+                                //errorIndexUi = nfc(oldText).length
                             },
                             placeholder = null,
                             textColor = Gray_616161,

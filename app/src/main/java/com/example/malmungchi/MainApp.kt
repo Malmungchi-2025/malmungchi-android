@@ -1,6 +1,7 @@
 package com.example.malmungchi
 
 
+
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -55,7 +56,6 @@ import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.malmungchi.data.net.RetrofitProvider
-import com.malmungchi.feature.login.LevelTestRoute
 import com.malmungchi.feature.login.LevelTestStartScreen
 import com.malmungchi.feature.mypage.RemindSettingsScreen
 import com.malmungchi.feature.mypage.SettingsScreen
@@ -81,6 +81,10 @@ import com.malmungchi.feature.ai.AiChatCompleteScreen
 import com.malmungchi.feature.ai.ChatScreen
 import com.malmungchi.feature.ai.ChatViewModel
 import com.malmungchi.feature.ai.FreeChatScreen
+import com.malmungchi.feature.login.LevelGeneratingRoute
+import com.malmungchi.feature.login.LevelReadingQuizRoute
+import com.malmungchi.feature.login.LevelTestIntroRoute
+import com.malmungchi.feature.login.LevelsViewModel
 import com.malmungchi.feature.mypage.MyPageViewModel
 import com.malmungchi.feature.mypage.nickname.NicknameCardDialog
 //import com.malmungchi.feature.mypage.nickname.NicknameCardScreen
@@ -258,10 +262,14 @@ fun MainApp() {
                     val level = meResult.level ?: 0
                     if (level <= 0) {
                         // 레벨 0 → 레벨 테스트 인트로
-                        navController.navigate("level_test_start") {
+                        navController.navigate("level_intro") {
                             popUpTo("splash") { inclusive = true }
                             launchSingleTop = true
                         }
+//                        navController.navigate("level_test_start") {
+//                            popUpTo("splash") { inclusive = true }
+//                            launchSingleTop = true
+//                        }
                     } else {
                         // 레벨 1+ → 학습 그래프
                         navController.navigate("study_graph") {
@@ -490,8 +498,13 @@ fun MainApp() {
                         val level = meResult?.level ?: 0
                         if (level <= 0) {
                             // ✅ 레벨 0 → 레벨 테스트 인트로
-                            navController.navigate("level_test_start") {
-                                popUpTo("login") { inclusive = true }
+//                            navController.navigate("level_test_start") {
+//                                popUpTo("login") { inclusive = true }
+//                                launchSingleTop = true
+//                            }
+                            // ✅ 레벨 0 → 레벨 테스트 인트로
+                            navController.navigate("level_intro") {
+                                popUpTo("email_login") { inclusive = true }
                                 launchSingleTop = true
                             }
                         } else {
@@ -523,34 +536,167 @@ fun MainApp() {
 //            )
 //        }
 
-        // 레벨 테스트 인트로
-        composable("level_test_start") {
-            LevelTestStartScreen(
-                onBackClick = { navController.popBackStack() },
-                onStartClick = {
-                    // stage = 0 → 최초 진단
-                    navController.navigate("level_test/0") {
-                        launchSingleTop = true
-                    }
+//        // 레벨 테스트 인트로
+//        composable("level_test_start") {
+//            LevelTestStartScreen(
+//                onBackClick = { navController.popBackStack() },
+//                onStartClick = {
+//                    // stage = 0 → 최초 진단
+//                    navController.navigate("level_test/0") {
+//                        launchSingleTop = true
+//                    }
+//                }
+//            )
+//        }
+//        // 레벨 테스트 본편(Route)
+//        composable("level_test/{stage}") { backStackEntry ->
+//            val stageInt = backStackEntry.arguments?.getString("stage")?.toIntOrNull() ?: 0
+//            LevelTestRoute(
+//                userName = "", // 필요 시 me()로 이름 받아 기억해뒀다가 넘겨도 OK
+//                stageInt = stageInt,
+//                onBack = { navController.popBackStack() },
+//                onGoStudy = {
+//                    // 제출 후 결과 CTA → 학습 그래프
+//                    navController.navigate("study_graph") {
+//                        launchSingleTop = true
+//                        popUpTo("level_test_start") { inclusive = true }
+//                    }
+//                }
+//            )
+//        }
+        // ───────── 레벨 테스트 플로우 ─────────
+        // 기존 위치에 추가
+        navigation(
+            route = "level_graph",
+            startDestination = "level_intro"
+        ) {
+            composable("level_intro") { backStackEntry ->
+                val parent = remember(backStackEntry) {
+                    navController.getBackStackEntry("level_graph")
                 }
-            )
-        }
-        // 레벨 테스트 본편(Route)
-        composable("level_test/{stage}") { backStackEntry ->
-            val stageInt = backStackEntry.arguments?.getString("stage")?.toIntOrNull() ?: 0
-            LevelTestRoute(
-                userName = "", // 필요 시 me()로 이름 받아 기억해뒀다가 넘겨도 OK
-                stageInt = stageInt,
-                onBack = { navController.popBackStack() },
-                onGoStudy = {
-                    // 제출 후 결과 CTA → 학습 그래프
-                    navController.navigate("study_graph") {
-                        launchSingleTop = true
-                        popUpTo("level_test_start") { inclusive = true }
-                    }
+                val vm: LevelsViewModel = hiltViewModel(parent)
+
+                LevelTestIntroRoute(
+                    onGoGenerating = { stage ->
+                        navController.navigate("level_generating") { launchSingleTop = true }
+                    },
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate("study_graph") { launchSingleTop = true }
+                        }
+                    },
+                    // ↓ 전달
+                    viewModel = vm
+                )
+            }
+
+            composable("level_generating") { backStackEntry ->
+                val parent = remember(backStackEntry) {
+                    navController.getBackStackEntry("level_graph")
                 }
-            )
+                val vm: LevelsViewModel = hiltViewModel(parent)
+
+                LevelGeneratingRoute(
+                    onReady = { _,_,_ ->
+                        navController.navigate("level_reading") { launchSingleTop = true }
+                    },
+                    onCancel = {
+                        if (!navController.popBackStack("level_intro", false)) {
+                            navController.navigate("level_intro") { launchSingleTop = true }
+                        }
+                    },
+                    viewModel = vm
+                )
+            }
+
+            composable("level_reading") { backStackEntry ->
+                val parent = remember(backStackEntry) {
+                    navController.getBackStackEntry("level_graph")
+                }
+                val vm: LevelsViewModel = hiltViewModel(parent)
+
+                LevelReadingQuizRoute(
+                    onBackClick = {
+                        if (!navController.popBackStack("level_generating", false)) {
+                            navController.navigate("level_intro") { launchSingleTop = true }
+                        }
+                    },
+                    onRetry = {
+                        vm.reset()
+                        navController.navigate("level_intro") {
+                            popUpTo("level_graph") { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    },
+                    onGoHome = {
+                        navController.navigate("study_graph") {
+                            launchSingleTop = true
+                            popUpTo("level_graph") { inclusive = true } // 스택 정리
+                        }
+                    },
+                    viewModel = vm
+                )
+            }
         }
+
+//        // ───────── 레벨 테스트 플로우 ─────────
+//
+//        // 1) 인트로
+//        composable("level_intro") {
+//            LevelTestIntroRoute(
+//                onGoGenerating = { stage ->
+//                    navController.navigate("level_generating") { launchSingleTop = true }
+//                },
+//                onBackClick = {
+//                    // 일반 뒤로 실패 시 홈으로 안전망
+//                    if (!navController.navigateUp()) {
+//                        navController.navigate("study_graph") { launchSingleTop = true }
+//                    }
+//                }
+//            )
+//        }
+//
+//        // 2) 생성중
+//        composable("level_generating") {
+//            LevelGeneratingRoute(
+//                onReady = { stage, passage, questions ->
+//                    navController.navigate("level_reading") { launchSingleTop = true }
+//                },
+//                onCancel = {
+//                    // 생성중의 '이전'은 인트로로 고정
+//                    if (!navController.popBackStack("level_intro", inclusive = false)) {
+//                        navController.navigate("level_intro") { launchSingleTop = true }
+//                    }
+//                }
+//            )
+//        }
+//
+//        // 3) 읽기/퀴즈/결과
+//        composable("level_reading") {
+//            LevelReadingQuizRoute(
+//                onBackClick = {
+//                    // 읽기의 '이전'은 생성중으로 고정
+//                    if (!navController.popBackStack("level_generating", inclusive = false)) {
+//                        // 생성중이 스택에 없으면 인트로로
+//                        navController.navigate("level_intro") { launchSingleTop = true }
+//                    }
+//                },
+//                onRetry = {
+//                    // 다시하기는 인트로로 완전히 복귀
+//                    navController.navigate("level_intro") {
+//                        launchSingleTop = true
+//                        popUpTo("level_intro") { inclusive = true }
+//                    }
+//                },
+//                onGoHome = {
+//                    // 시작하기(학습 진입)
+//                    navController.navigate("study_graph") {
+//                        launchSingleTop = true
+//                        popUpTo("level_intro") { inclusive = true } // 레벨 테스트 스택 정리
+//                    }
+//                }
+//            )
+//        }
 
         // 메인(하단바)
         composable("main") {
