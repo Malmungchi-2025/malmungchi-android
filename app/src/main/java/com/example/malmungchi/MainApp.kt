@@ -1471,7 +1471,12 @@ fun MainApp() {
                 com.malmungchi.feature.mypage.MyPageRoute(
                     onClickSettings = { navController.navigate("settings") },
                     onClickViewAllWords = { navController.navigate("word_collection") },
-                    onClickViewAllBadges = { /* TODO */ },
+                    // ✅ 여기만 채우기
+                    onClickViewAllBadges = {
+                        navController.navigate("badges")
+                    },
+
+                    //onClickViewAllBadges = { /* TODO */ },
                     onClickViewNicknameTest = {
                         navController.navigate("nickname_test_intro") { launchSingleTop = true }
                     },
@@ -1605,6 +1610,13 @@ fun MainApp() {
                         launchSingleTop = true
                     }
                 }
+            )
+        }
+
+        composable("badges") {
+            // ic_back 누르면 MyPage로 복귀
+            BadgeCollectionRoute(
+                onBack = { navController.popBackStack() }
             )
         }
 
