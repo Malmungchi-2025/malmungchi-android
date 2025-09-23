@@ -86,6 +86,7 @@ import com.malmungchi.feature.login.LevelReadingQuizRoute
 import com.malmungchi.feature.login.LevelTestIntroRoute
 import com.malmungchi.feature.login.LevelsViewModel
 import com.malmungchi.feature.mypage.MyPageViewModel
+import com.malmungchi.feature.mypage.badge.BadgeCollectionRoute
 import com.malmungchi.feature.mypage.nickname.NicknameCardDialog
 //import com.malmungchi.feature.mypage.nickname.NicknameCardScreen
 import com.malmungchi.feature.quiz.QuizCategoryRoute
