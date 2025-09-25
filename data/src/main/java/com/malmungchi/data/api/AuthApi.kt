@@ -29,6 +29,13 @@ interface AuthService {
     @POST("/api/auth/dev/verify-otp")
     suspend fun verifyOtp(@Body body: Map<String, String>): BaseResponse<Unit>
 
+    
+    //사용자 아바타 정보 전달
+    @PATCH("api/auth/me/avatar")
+    suspend fun updateAvatar(@Body body: Map<String, String>): BaseResponse<Unit>
+
+    
+
 
     // ✅ 최신 저장 단어 5개 (includeId=1, includeLiked=1 권장)
     @GET("/api/auth/me/vocabulary/recent")
