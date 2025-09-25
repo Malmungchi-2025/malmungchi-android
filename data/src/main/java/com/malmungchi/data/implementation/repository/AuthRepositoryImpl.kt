@@ -126,6 +126,18 @@ class AuthRepositoryImpl @Inject constructor(
         authPref.clear()
         SessionManager.clear()  // ★ 없으면 간단히 만들어주세요
     }
+
+    override suspend fun updateAvatarName(avatarName: String): Boolean {
+        val resp = api.updateAvatar(mapOf("avatarName" to avatarName))
+        if (!resp.success) {
+            // 서버에서 validation 실패(400)나 기타 오류 메시지가 올 수 있으니 예외로 올려주면 상위(UI)에서 토스트/다이얼로그 처리하기 좋음
+            error(resp.message ?: "아바타 저장 실패")
+        }
+        // 서버 저장 성공 → 로컬 세션도 즉시 갱신(초기 화면 렌더에 사용)
+        //SessionManager.updateAvatarName(avatarName)
+        return true
+    }
+
 }
 //class AuthRepositoryImpl @Inject constructor(   // 👈 @Inject 추가
 //    private val api: AuthService

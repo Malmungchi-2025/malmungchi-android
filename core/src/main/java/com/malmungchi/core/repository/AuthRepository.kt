@@ -33,4 +33,7 @@ interface AuthRepository {
     ): SaveNicknameResult
 
     suspend fun logoutLocal()  // 로그아웃 추가.
+
+    /** 프로필(아바타) 저장 */
+    suspend fun updateAvatarName(avatarName: String): Boolean
 }
