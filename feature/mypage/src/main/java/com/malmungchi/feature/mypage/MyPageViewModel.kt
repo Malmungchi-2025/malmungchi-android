@@ -23,7 +23,8 @@ data class MyPageUiState(
     val allVocab: List<VocabularyDto> = emptyList(),
     val allCursor: NextCursor? = null,
     val likedCursor: NextCursor? = null,
-    val togglingId: Int? = null
+    val togglingId: Int? = null,
+
 ) {
     val userName: String
         get() = when {
@@ -31,6 +32,9 @@ data class MyPageUiState(
             !user?.name.isNullOrBlank()     -> user!!.name!!.trim()
             else                            -> "사용자"
         }
+
+    val avatarName: String
+        get() = user?.avatar_name?.takeIf { it.isNotBlank() } ?: "img_malchi"
 
     /** 0->입문, 1->기초, 2->활용, 3->심화, 4+->고급 */
     val levelInt: Int get() = user?.level ?: 0

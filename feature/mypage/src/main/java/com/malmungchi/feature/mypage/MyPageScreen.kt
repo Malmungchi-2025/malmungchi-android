@@ -35,6 +35,24 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.tooling.preview.Preview
 import com.malmungchi.feature.mypage.nickname.NicknameCardDialog
 
+
+//사용자 프로필 이미지
+@androidx.annotation.DrawableRes
+private fun avatarNameToRes(context: android.content.Context, name: String): Int {
+    // 화이트리스트 매핑이 가장 안전/빠름
+    return when (name) {
+        "img_glass_malchi"  -> MyPageR.drawable.img_glass_malchi
+        "img_malchi"        -> MyPageR.drawable.img_malchi
+        "img_mungchi"       -> MyPageR.drawable.img_mungchi
+        "img_glass_mungchi" -> MyPageR.drawable.img_glass_mungchi
+        else                -> MyPageR.drawable.img_malchi // fallback
+    }
+    // ※ 만약 리소스명이 종종 바뀐다면 getIdentifier로 유연하게:
+    // val id = context.resources.getIdentifier(name, "drawable", context.packageName)
+    // return if (id != 0) id else MyPageR.drawable.img_malchi
+}
+
+
 // ===== Color & Dimens =====
 private val Blue_195FCF = Color(0xFF195FCF)
 private val Bg_EFF4FB = Color(0xFFEFF4FB)
@@ -76,6 +94,12 @@ fun MyPageRoute(
             // ✅ 유저 닉네임 타이틀(없을 수 있음)
             val nicknameTitle = ui.user?.nickname_title
 
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val avatarRes = remember(ui.avatarName) {
+                avatarNameToRes(context, ui.avatarName)
+            }
+
+
             MyPageScreen(
                 userName = ui.userName,
                 levelLabel = ui.levelLabel,
@@ -93,6 +117,9 @@ fun MyPageRoute(
                         onClickViewNicknameTest()
                     }
                 },
+
+                // ✅ 프로필 아이콘에 실제 사용자 아바타 전달
+                profileIconRes = avatarRes,
 
                 recentItems = ui.recentVocab,
                 currentRecentIndex = recentIndex,
@@ -158,7 +185,9 @@ fun MyPageScreen(
     onClickNickname: () -> Unit = {},
     recentItems: List<VocabularyDto> = emptyList(),
     currentRecentIndex: Int = 0,
-    onChangeRecentIndex: (Int) -> Unit = {}
+    onChangeRecentIndex: (Int) -> Unit = {},
+    // ✅ 추가: 호출부에서 넘겨주는 사용자 아바타 리소스
+    @androidx.annotation.DrawableRes profileIconRes: Int
 ) {
     Column(
         modifier = modifier
@@ -176,7 +205,8 @@ fun MyPageScreen(
         ProfileBlock(
             userName = userName,
             questionLabel = "치치의 어휘/문해력은?",
-            profileIconRes = MyPageR.drawable.ic_mypage_icon,
+            profileIconRes = profileIconRes,   // ✅ 여기!
+            //profileIconRes = MyPageR.drawable.ic_mypage_icon,
             onClickQuestion = onClickNickname
             //onClickQuestion = { onClickNicknameTest() }
         )
