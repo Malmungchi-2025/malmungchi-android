@@ -26,7 +26,9 @@ data class UserDto(
     val point: Int? = null,           // 👈 추가
     // 서버는 nicknameTitle 로 내려요!
     @SerializedName("nicknameTitle")
-    val nickname_title: String? = null
+    val nickname_title: String? = null,
+    @SerializedName("avatarName")
+    val avatar_name: String? = null      // ✅ 추가: drawable 이름(String)
     //val nickname_title: String? = null // 추가된 nickname_title 필드
 )
 
