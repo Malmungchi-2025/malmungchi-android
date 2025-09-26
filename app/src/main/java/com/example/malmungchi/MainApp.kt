@@ -72,15 +72,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.example.malmungchi.navigation.BottomNavItem
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.malmungchi.feature.ai.AiChatCompleteScreen
 import com.malmungchi.feature.ai.ChatScreen
 import com.malmungchi.feature.ai.ChatViewModel
 import com.malmungchi.feature.ai.FreeChatScreen
+import com.malmungchi.feature.friend.FriendAddViewModel
+import com.malmungchi.feature.friend.FriendScreen
+import com.malmungchi.feature.friend.RankTab
 import com.malmungchi.feature.login.LevelGeneratingRoute
 import com.malmungchi.feature.login.LevelReadingQuizRoute
 import com.malmungchi.feature.login.LevelTestIntroRoute
@@ -97,6 +103,7 @@ import com.malmungchi.feature.quiz.QuizRetryAllResultScreen
 import com.malmungchi.feature.quiz.QuizRetryHost
 import com.malmungchi.feature.quiz.QuizRetryIntroScreen
 import com.malmungchi.feature.quiz.QuizSolveHost
+import com.malmungchi.feature.friend.FriendAddScreen
 
 
 
@@ -1441,9 +1448,66 @@ fun MainApp() {
 //                com.malmungchi.feature.ai.AiScreen()
 //            }
 //        }
-        composable("friend") {
-            WithBottomBar(navController as NavHostController) {
-                com.malmungchi.feature.friend.FriendScreen()
+//        composable("friend") {
+//            WithBottomBar(navController as NavHostController) {
+//                com.malmungchi.feature.friend.FriendScreen()
+//            }
+//        }
+        navigation(
+            route = BottomNavItem.Friend.route, // "friend_graph"
+            startDestination = "friend/home"
+        ) {
+            composable("friend/home") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(BottomNavItem.Friend.route)
+                }
+                val vm: FriendAddViewModel = hiltViewModel(parentEntry)
+                val ui by vm.ui.collectAsState()
+                val ranks = when (ui.rankTab) {
+                    RankTab.FRIEND -> ui.friends
+                    RankTab.ALL    -> ui.all
+                }
+
+                // ✅ 바텀바 래핑
+                WithBottomBar(navController as NavHostController) {
+                    FriendScreen(
+                        onAddFriend = { navController.navigate("friend/add") },
+                        tab = ui.rankTab,
+                        onSelectFriendTab = { vm.switchTab(RankTab.FRIEND) },
+                        onSelectAllTab   = { vm.switchTab(RankTab.ALL) },
+                        ranks = ranks,
+                        loading = ui.rankLoading
+                    )
+                }
+            }
+
+            composable("friend/add") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(BottomNavItem.Friend.route)
+                }
+                val vm: FriendAddViewModel = hiltViewModel(parentEntry)
+                val ui by vm.ui.collectAsState()
+                val clipboard = LocalClipboardManager.current
+
+                // ✅ 바텀바 래핑
+                WithBottomBar(navController as NavHostController) {
+                    FriendAddScreen(
+                        myCode = ui.myCode,
+                        foundFriend = ui.foundFriend,
+                        isAdded = ui.isAdded,
+                        loading = ui.loading,
+                        onBack = { navController.popBackStack() },
+                        onSearch = { code -> vm.searchAndAdd(code) },
+                        onAddFriend = { vm.refresh() },
+                        onViewRank = {
+                            vm.switchTab(RankTab.FRIEND)
+                            navController.popBackStack()
+                        },
+                        onCopyMyCode = { code ->
+                            clipboard.setText(AnnotatedString(code))
+                        }
+                    )
+                }
             }
         }
 
@@ -1708,5 +1772,6 @@ fun MainApp() {
 
     }
 }
+
 
 

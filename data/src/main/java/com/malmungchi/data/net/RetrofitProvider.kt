@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder
 import com.malmungchi.data.api.TodayStudyApi
 import com.malmungchi.data.api.AuthService
 import com.malmungchi.data.BuildConfig              // ★ 라이브러리 모듈 BuildConfig 경로
+import com.malmungchi.data.api.FriendService
 import com.malmungchi.data.api.LevelTestApi
 import com.malmungchi.data.api.QuizApi
 import com.malmungchi.data.api.VoiceApi
@@ -86,6 +87,12 @@ object RetrofitProvider {
     ): VoiceApi = getRetrofit(context, onUnauthorized).create(VoiceApi::class.java)
 
     // RetrofitProvider.kt
+
+    // 클래스 내부에 추가
+    fun getFriendApi(
+        context: Context,
+        onUnauthorized: () -> Unit = {}
+    ): FriendService = getRetrofit(context, onUnauthorized).create(FriendService::class.java)
 
 
 

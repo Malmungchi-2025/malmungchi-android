@@ -28,8 +28,12 @@ data class UserDto(
     @SerializedName("nicknameTitle")
     val nickname_title: String? = null,
     @SerializedName("avatarName")
-    val avatar_name: String? = null      // ✅ 추가: drawable 이름(String)
+    val avatar_name: String? = null,      // ✅ 추가: drawable 이름(String)
     //val nickname_title: String? = null // 추가된 nickname_title 필드
+    @SerializedName("friendCode")
+    val friend_code: String,           // ✅ 필수값(서버 NOT NULL)
+
+
 )
 
 data class RegisterRequest(
