@@ -8,3 +8,4 @@ interface AuthPreference {
     fun clear()              // 로그 아웃 구현!
 
 }
+

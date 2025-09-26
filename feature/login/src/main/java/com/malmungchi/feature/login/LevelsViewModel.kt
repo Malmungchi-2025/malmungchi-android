@@ -160,11 +160,17 @@ fun LevelReadingQuizRoute(
         is LevelsUiState.Result -> {
             if (showComplete) {
                 // ⬇️ 결과 레벨 한글 라벨 전달 (3번에서 만든 함수 사용)
-                LevelSetCompleteScreen(
+                LevelSetCompleteRoute(
                     levelTitle = mapResultLevelToKo(s.resultLevel),
                     onRetry = { viewModel.reset(); showComplete = false; onRetry() },
-                    onStart = onGoHome
+                    onGoHome = onGoHome, // 저장 성공 시 이동
+                    characterRes = R.drawable.ic_complete_character
                 )
+//                LevelSetCompleteScreen(
+//                    levelTitle = mapResultLevelToKo(s.resultLevel),
+//                    onRetry = { viewModel.reset(); showComplete = false; onRetry() },
+//                    onStart = onGoHome
+//                )
             } else {
                 // 결과 검토 화면(문항/선택 복기) 먼저 보여주기
                 LevelReadingQuizScreen(
