@@ -85,7 +85,7 @@ fun BottomNavBar(
     val QuizRoot   = "quiz_graph"
     val AiRoot     = "ai_graph"
 //    val AiRoot     = "ai"
-    val FriendRoot = "friend"
+    val FriendRoot = "friend_graph"
     val MyPageRoot = "mypage"
 
     val items = listOf(

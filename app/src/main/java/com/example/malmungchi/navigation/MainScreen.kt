@@ -27,7 +27,14 @@ import com.malmungchi.feature.mypage.MyPageViewModel
 
 import com.malmungchi.feature.study.intro.StudyWeeklyScreen
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.malmungchi.feature.friend.FriendAddScreen
+import com.malmungchi.feature.friend.FriendAddViewModel
+import com.malmungchi.feature.friend.RankTab
 
 @Composable
 fun MainScreen(
@@ -38,6 +45,18 @@ fun MainScreen(
 ) {
 
     val navController = rememberNavController()
+    val backStack by navController.currentBackStackEntryAsState()
+    val destination = backStack?.destination
+
+    val showBottomBar = remember(destination) {
+        // 숨기고 싶은 라우트만 ‘명시적으로’ 제외
+        val hiddenRoutes = setOf(
+            "study/flow",        // 예: 전체화면 학습 플로우
+            "auth/login"         // 예: 로그인 화면
+        )
+        val currentRoute = destination?.route
+        currentRoute !in hiddenRoutes
+    }
 
     Scaffold(
         bottomBar = { BottomNavBar(navController) }
@@ -130,8 +149,65 @@ fun MainScreen(
                 route = BottomNavItem.Friend.route,
                 startDestination = "friend/home"
             ) {
-                composable("friend/home") { FriendScreen() }
+                // 1) 친구 목록
+                composable("friend/home") { backStackEntry ->
+                    // ✅ backStackEntry를 key로 remember
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry(BottomNavItem.Friend.route)
+                    }
+                    // ✅ 그래프 범위 공유 VM
+                    val vm: FriendAddViewModel = hiltViewModel(parentEntry)
+                    val ui by vm.ui.collectAsState()
+                    val ranks = when (ui.rankTab) {
+                        RankTab.FRIEND -> ui.friends
+                        RankTab.ALL    -> ui.all
+                    }
+
+                    FriendScreen(
+                        onAddFriend = { navController.navigate("friend/add") },
+                        tab = ui.rankTab,
+                        onSelectFriendTab = { vm.switchTab(RankTab.FRIEND) },
+                        onSelectAllTab   = { vm.switchTab(RankTab.ALL) },
+                        ranks = ranks,
+                        loading = ui.rankLoading
+                    )
+                }
+
+                // 2) 친구 추가
+                composable("friend/add") { backStackEntry ->
+                    // ✅ 동일하게 부모 엔트리 remember
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry(BottomNavItem.Friend.route)
+                    }
+                    val vm: FriendAddViewModel = hiltViewModel(parentEntry)
+
+                    val ui by vm.ui.collectAsState()
+                    val clipboard = LocalClipboardManager.current
+
+                    FriendAddScreen(
+                        myCode = ui.myCode,
+                        foundFriend = ui.foundFriend,
+                        isAdded = ui.isAdded,
+                        loading = ui.loading,
+                        onBack = { navController.popBackStack() },
+                        onSearch = { code -> vm.searchAndAdd(code) },
+                        onAddFriend = { vm.refresh() },
+                        onViewRank = {
+                            vm.switchTab(RankTab.FRIEND)
+                            navController.popBackStack()
+                        },
+                        onCopyMyCode = { code ->
+                            clipboard.setText(AnnotatedString(code))
+                        }
+                    )
+                }
             }
+//            navigation(
+//                route = BottomNavItem.Friend.route,
+//                startDestination = "friend/home"
+//            ) {
+//                composable("friend/home") { FriendScreen() }
+//            }
 
             // 마이페이지
             navigation(

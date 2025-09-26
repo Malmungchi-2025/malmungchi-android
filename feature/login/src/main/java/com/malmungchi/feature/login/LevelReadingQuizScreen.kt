@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
@@ -730,8 +731,12 @@ fun LevelSetCompleteScreen(
     onRetry: () -> Unit = {},
     onStart: () -> Unit = {},
     @DrawableRes characterRes: Int = R.drawable.ic_complete_character,
-    levelTitle: String // 👈 추가: "기초/실용/심화/고급"
+    levelTitle: String, // 👈 추가: "기초/실용/심화/고급"
+    userName: String = "",             // 👈 다이얼로그에 보여줄 사용자 이름(옵셔널)
+    onSaveAvatar: (String) -> Unit = {}// 👈 아바타 저장 API 연동 콜백(옵셔널)
 ) {
+    // 학습 시작하기 → 아바타 선택 다이얼로그 표시
+    var showAvatarDialog by remember { mutableStateOf(false) }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -789,18 +794,39 @@ fun LevelSetCompleteScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedBlueButton(
-                text = "다시하기",
+                text = "다시 설정하기",
                 modifier = Modifier
                     .height(48.dp)
                     .width(160.dp),
                 onClick = onRetry
             )
             BlueButton(
-                text = "시작하기",
+                text = "학습 시작하기",
                 modifier = Modifier
                     .height(48.dp)
                     .width(160.dp),
-                onClick = onStart
+                //onClick = onStart
+                onClick = {
+                    // 👇 아바타 선택 다이얼로그 열기
+                    showAvatarDialog = true
+                }
+            )
+        }
+
+        // 👇 아바타 선택 다이얼로그 (방금 만든 컴포저블)
+        if (showAvatarDialog) {
+            AvatarSelectDialog(
+                name = userName.ifBlank { "사용자" },
+                onConfirm = { avatarName ->
+                    // 1) 서버 저장(PATCH /api/auth/me/avatar) — 이미 구현된 콜백 호출
+                    onSaveAvatar(avatarName)
+                    // 2) 다이얼로그 닫고 3) 기존 플로우 계속
+                    showAvatarDialog = false
+                    onStart()
+                },
+                onDismiss = {
+                    showAvatarDialog = false
+                }
             )
         }
     }
@@ -1008,11 +1034,19 @@ private fun CircleIconButton(
 
     Card(
         shape = CircleShape,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = BorderStroke(1.dp, Color(0x11000000)),
+        //colors = CardDefaults.cardColors(containerColor = Color.White),
+        //elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        //border = BorderStroke(1.dp, Color(0x11000000)),
         modifier = Modifier
             .size(44.dp)
+            // 살짝 그림자 추가 (원형 기준, 바깥으로 번지게)
+            .shadow(
+                elevation = if (enabled) 3.dp else 0.dp,
+                shape = CircleShape,
+                clip = false, // 중요: 그림자가 바깥으로 보이게
+                ambientColor = Color(0x14000000), // 옅은 그림자
+                spotColor = Color(0x26000000)
+            )
             .clip(CircleShape)
             .clickable(enabled = enabled, onClick = onClick)
     ) {
@@ -1033,7 +1067,8 @@ private fun CircleIconButton(
                 Icon(
                     painter = painterResource(id = res),
                     contentDescription = null,
-                    tint = Color.Unspecified
+                    tint = Color.Unspecified,
+                    modifier = Modifier.fillMaxSize()  // PNG가 버튼 전체를 채우도록
                 )
             }
         }
@@ -1139,5 +1174,41 @@ private fun PreviewLevelExitAlert() {
                 onContinueClick = {}
             )
         }
+    }
+}
+
+@Composable
+private fun PngOnlyButton(@DrawableRes res: Int, enabled: Boolean = true) {
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .clickable(enabled = enabled, onClick = {})
+            .background(Color.Transparent),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painterResource(id = res),
+            contentDescription = null,
+            tint = Color.Unspecified,           // PNG 색상 보존
+            modifier = Modifier.fillMaxSize()   // PNG 자체가 원형 버튼일 때 꽉 채우기
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF1F1F1F, name = "PNG only buttons")
+@Composable
+private fun PreviewPngOnlyButtons() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF1F1F1F))
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        PngOnlyButton(R.drawable.ic_up_button, enabled = true)
+        PngOnlyButton(R.drawable.ic_up_button_null, enabled = false)
+        PngOnlyButton(R.drawable.ic_down_button, enabled = true)
+        PngOnlyButton(R.drawable.ic_down_button_null, enabled = false)
     }
 }

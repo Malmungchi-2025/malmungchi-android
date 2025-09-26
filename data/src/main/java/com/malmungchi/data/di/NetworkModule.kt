@@ -66,6 +66,43 @@ object NetworkModule {
         return LevelTestRepositoryImpl(api)
     }
 
+    @Provides
+    @Singleton
+    fun provideFriendApi(
+        @ApplicationContext context: Context
+    ): com.malmungchi.data.api.FriendService {
+        return RetrofitProvider.getFriendApi(context.applicationContext)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFriendRepository(
+        api: com.malmungchi.data.api.FriendService
+    ): com.malmungchi.core.repository.FriendRepository {
+        return com.malmungchi.data.implementation.repository.FriendRepositoryImpl(api)
+    }
+
+//    // ✅ AuthPreference 바인딩
+//    @Provides
+//    @Singleton
+//    fun provideAuthPreference(
+//        @ApplicationContext context: Context
+//    ): com.malmungchi.data.preference.AuthPreference {
+//        return com.malmungchi.data.implementation.repository.AuthPreferenceImpl(context)
+//    }
+
+    // ✅ AuthRepository 바인딩 (AuthPreference까지 주입)
+//    @Provides
+//    @Singleton
+//    fun provideAuthRepository(
+//        api: com.malmungchi.data.api.AuthService,
+//        authPref: com.malmungchi.data.preference.AuthPreference
+//    ): com.malmungchi.core.repository.AuthRepository {
+//        return com.malmungchi.data.implementation.repository.AuthRepositoryImpl(api, authPref)
+//    }
+
+
+
 
 //    @Provides
 //    @Singleton
