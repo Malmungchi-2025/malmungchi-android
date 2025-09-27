@@ -238,7 +238,7 @@ fun MainApp() {
                         launchSingleTop = true
                     }
                 },
-                autoAdvanceMillis = 1500L
+                //autoAdvanceMillis = 1500L
             )
         }
 
@@ -756,7 +756,7 @@ fun MainApp() {
                     bottomBar = {
                         BottomNavBar(navController = navController as NavHostController) }
                 ) { innerPadding ->
-                    Box(Modifier.padding(innerPadding)) {
+                    Box(Modifier.padding(innerPadding) .background(Color.White)) {
                         StudyWeeklyScreen(
                             initialDateLabel = today,
                             onDateChange = { label ->
