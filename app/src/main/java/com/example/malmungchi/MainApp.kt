@@ -79,6 +79,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.malmungchi.navigation.BottomNavItem
+import com.example.malmungchi.ui.theme.SetStatusBarWhite
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.malmungchi.feature.ai.AiChatCompleteScreen
 import com.malmungchi.feature.ai.ChatScreen
@@ -104,6 +105,7 @@ import com.malmungchi.feature.quiz.QuizRetryHost
 import com.malmungchi.feature.quiz.QuizRetryIntroScreen
 import com.malmungchi.feature.quiz.QuizSolveHost
 import com.malmungchi.feature.friend.FriendAddScreen
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 
 
@@ -735,9 +737,18 @@ fun MainApp() {
             route = "study_graph",
             startDestination = "study_weekly"
         ) {
+
+
             // 주간 허브
             composable("study_weekly") { backStackEntry ->
                 // 루트 뒤로가기 → main으로(앱 종료 방지)
+                SetStatusBarWhite()
+                val systemUi = rememberSystemUiController()
+                SideEffect {
+                    systemUi.setStatusBarColor(color = Color.White, darkIcons = true)
+                    systemUi.setNavigationBarColor(color = Color.White, darkIcons = true, navigationBarContrastEnforced = false)
+                }
+
                 StudyGraphBackHandler(navController)
 
                 val parentEntry = remember(backStackEntry) {
@@ -753,6 +764,7 @@ fun MainApp() {
                     vm.refreshStudiedDatesForWeek(LocalDate.parse(today))
                 }
                 Scaffold(
+                    containerColor = Color.White,
                     bottomBar = {
                         BottomNavBar(navController = navController as NavHostController) }
                 ) { innerPadding ->
