@@ -97,7 +97,7 @@ fun PastStudyScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 32.dp),
+            .padding(start = 20.dp, end = 20.dp, bottom = 48.dp, top = 48.dp),
         verticalArrangement = Arrangement.Top,
         contentPadding = PaddingValues(bottom = 32.dp) // 하단 여백
     ) {

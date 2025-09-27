@@ -73,6 +73,13 @@ fun MainScreen(
             ) {
                 composable("study/weekly") {
                     ForceSystemBarsWhite()
+
+                    val sys = rememberSystemUiController()
+                    SideEffect {
+                        sys.setStatusBarColor(Color.White, darkIcons = true)
+                        sys.setNavigationBarColor(Color.White, darkIcons = true)
+                    }
+
                     val vm: StudyReadingViewModel = hiltViewModel()
 
                     val today = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
