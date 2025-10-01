@@ -27,10 +27,12 @@ sealed class BottomNavItem(
         R.drawable.ic_study,
         R.drawable.ic_study_null
     )
-    object Quiz   : BottomNavItem("quiz_graph",   "퀴즈",       R.drawable.ic_quiz,   R.drawable.ic_quiz_null)
+    object Quiz   : BottomNavItem("quiz_graph",   "퀴즈뭉치",       R.drawable.ic_quiz,   R.drawable.ic_quiz_null)
     object Ai     : BottomNavItem("ai_graph",     "AI 대화",    R.drawable.ic_ai,     R.drawable.ic_ai_null)
+
+
     object Friend : BottomNavItem("friend_graph", "친구",       R.drawable.ic_friend, R.drawable.ic_freind_null) // ← 파일명 오타 주의
-    object MyPage : BottomNavItem("mypage", "마이 페이지", R.drawable.ic_mypage, R.drawable.ic_mypage_null)
+    object MyPage : BottomNavItem("mypage", "마이페이지", R.drawable.ic_mypage, R.drawable.ic_mypage_null)
 }
 
 /**
