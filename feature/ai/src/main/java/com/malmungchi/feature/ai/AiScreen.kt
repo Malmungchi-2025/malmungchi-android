@@ -55,7 +55,7 @@ fun AiScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(500.dp), // ← 카드 키우기 (원하면 380~400dp로 조정)
+                .height(420.dp), // ← 카드 키우기 (원하면 380~400dp로 조정)
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Gray_F7F7F7),
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
