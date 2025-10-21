@@ -55,28 +55,77 @@ private val badgeResMap: Map<String, Int> = mapOf(
 )
 
 // ===== Entry Point =====
+
 @Composable
-fun BadgeCollectionRoute(onBack: () -> Unit) {
-    val allBadges = remember {
-        listOf(
-            BadgeUi("img_badge_1week_attendance", "일주일 출석", true),
-            BadgeUi("img_badge_1month_attendance", "한 달 출석", false),
-            BadgeUi("img_badge_100days_attendance", "100일 출석", false),
-            BadgeUi("img_badge_first_lesson", "오늘의 학습\n첫 학습 완료", true),
-            BadgeUi("img_badge_five_lessons", "오늘의 학습\n5회 학습 완료", false),
-            BadgeUi("img_badge_first_quizmunch", "퀴즈뭉치\n첫 학습 완료", true),
-            BadgeUi("img_badge_five_quizzes", "퀴즈뭉치\n5회 학습 완료", false),
-            BadgeUi("img_badge_first_ai_chat", "AI 대화\n첫 학습 완료", true),
-            BadgeUi("img_badge_five_ai_chats", "AI 대화\n5회 학습 완료", false),
-            BadgeUi("img_badge_first_rank", "처음 1등 달성", true),
-            BadgeUi("img_badge_bonus", "보너스 배지", true),
-            BadgeUi("img_badge_early_morning", "새벽 학습", true),
-            BadgeUi("img_badge_five_logins_day", "하루 5회 학습", false)
-        )
+fun BadgeCollectionRoute(
+    onBack: () -> Unit,
+    viewModel: BadgeViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    // 🚀 진입 시 API 호출
+    LaunchedEffect(Unit) {
+        viewModel.loadBadges()
     }
 
-    BadgeCollectionScreen(onBack = onBack, badges = allBadges)
+    when (val state = uiState) {
+        is BadgeUiState.Loading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+
+        is BadgeUiState.Success -> {
+            BadgeCollectionScreen(
+                onBack = onBack,
+                badges = state.badges
+            )
+        }
+
+        is BadgeUiState.Error -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "배지 로드 실패: ${state.message}",
+                    style = TextStyle(
+                        fontFamily = Pretendard,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = Color.Red
+                    )
+                )
+            }
+        }
+        else -> Unit // ✅ 추가 (모든 경우 처리했다고 인식)
+    }
 }
+//@Composable
+//fun BadgeCollectionRoute(onBack: () -> Unit) {
+//    val allBadges = remember {
+//        listOf(
+//            BadgeUi("img_badge_1week_attendance", "일주일 출석", true),
+//            BadgeUi("img_badge_1month_attendance", "한 달 출석", false),
+//            BadgeUi("img_badge_100days_attendance", "100일 출석", false),
+//            BadgeUi("img_badge_first_lesson", "오늘의 학습\n첫 학습 완료", true),
+//            BadgeUi("img_badge_five_lessons", "오늘의 학습\n5회 학습 완료", false),
+//            BadgeUi("img_badge_first_quizmunch", "퀴즈뭉치\n첫 학습 완료", true),
+//            BadgeUi("img_badge_five_quizzes", "퀴즈뭉치\n5회 학습 완료", false),
+//            BadgeUi("img_badge_first_ai_chat", "AI 대화\n첫 학습 완료", true),
+//            BadgeUi("img_badge_five_ai_chats", "AI 대화\n5회 학습 완료", false),
+//            BadgeUi("img_badge_first_rank", "처음 1등 달성", true),
+//            BadgeUi("img_badge_bonus", "보너스 배지", true),
+//            BadgeUi("img_badge_early_morning", "새벽 학습", true),
+//            BadgeUi("img_badge_five_logins_day", "하루 5회 학습", false)
+//        )
+//    }
+//
+//    BadgeCollectionScreen(onBack = onBack, badges = allBadges)
+//}
 
 // ===== Screen =====
 @Composable
@@ -96,7 +145,7 @@ private fun BadgeCollectionScreen(
             .padding(horizontal = 20.dp)
             .verticalScroll(scrollState)
     ) {
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(48.dp))
 
         // === Top Bar ===
         Box(

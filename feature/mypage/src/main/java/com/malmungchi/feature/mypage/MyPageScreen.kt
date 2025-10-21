@@ -32,6 +32,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import kotlinx.coroutines.launch
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import com.malmungchi.feature.login.AvatarSelectDialog
 import com.malmungchi.feature.mypage.nickname.NicknameCardDialog
@@ -79,6 +80,7 @@ fun MyPageRoute(
     // ✅ 최초 1회만 데이터 로드 (중복 방지)
     LaunchedEffect(viewModel) {
         viewModel.loadIfNeeded()
+        viewModel.loadRecentBadges() // ✅ 추가
     }
 //    LaunchedEffect(Unit) {
 //        viewModel.loadIfNeeded()
@@ -142,7 +144,9 @@ fun MyPageRoute(
                 recentItems = displayUi.recentVocab,
                 currentRecentIndex = recentIndex,
                 onChangeRecentIndex = { recentIndex = it },
-                onClickChangeAvatar = { showAvatarDialog = true }
+                onClickChangeAvatar = { showAvatarDialog = true },
+                // ✅ 이 한 줄 추가!!
+                recentBadges = viewModel.recentBadges.collectAsState().value
             )
 
             // ✅ 닉네임 카드 다이얼로그
@@ -384,7 +388,8 @@ fun MyPageScreen(
     onChangeRecentIndex: (Int) -> Unit = {},
     // ✅ 추가: 호출부에서 넘겨주는 사용자 아바타 리소스
     @androidx.annotation.DrawableRes profileIconRes: Int,
-    onClickChangeAvatar: () -> Unit = {} // ✅ 추가
+    onClickChangeAvatar: () -> Unit = {}, // ✅ 추가
+    recentBadges: List<BadgeUi> = emptyList()
 ) {
     Column(
         modifier = modifier
@@ -445,7 +450,8 @@ fun MyPageScreen(
         Spacer(Modifier.height(SectionGap))
         SectionHeader(title = "배지 수집함", action = "모두보기", onAction = onClickViewAllBadges)
         Spacer(Modifier.height(12.dp))
-        BadgeCollectionCard()
+        BadgeCollectionCard(badges = recentBadges)
+//        BadgeCollectionCard()
         Spacer(Modifier.height(24.dp))
     }
 }
@@ -1071,41 +1077,82 @@ private fun DotsIndicator(
     }
 }
 
-// ===== 배지 수집함 (더미) =====
+// ===== 배지 수집함 =====
 @Composable
-private fun BadgeCollectionCard() {
+private fun BadgeCollectionCard(
+    badges: List<BadgeUi> = emptyList()
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth()
-    ) {
+    ) {1
         Column(
             modifier = Modifier.padding(start = 13.dp, end = 20.dp, top = 20.dp, bottom = 20.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                repeat(3) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Image(
-                            painter = painterResource(id = MyPageR.drawable.img_empty),
-                            contentDescription = "배지",
-                            modifier = Modifier.size(88.dp)
+            if (badges.isEmpty()) {
+                // 🔹 배지가 없을 때 안내 문구 표시
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Text(
+                        "획득한 배지가 아직 없어요 🏷️",
+                        style = TextStyle(
+                            fontFamily = Pretendard,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp,
+                            color = Gray_616161
                         )
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            text = "일주일 출석",
-                            style = TextStyle(
-                                fontFamily = Pretendard,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onBackground
-                            ),
-                            textAlign = TextAlign.Center
-                        )
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.Top   // ✅ Row 전체에서 위쪽 정렬
+                ) {
+                    badges.take(3).forEach { badge ->
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Top, // ✅ Column 내부도 위 기준
+                            modifier = Modifier.height(130.dp)     // ✅ 고정 높이로 통일
+                        ) {
+                            val context = LocalContext.current
+                            val resId = remember(badge.imageResName) {
+                                context.resources.getIdentifier(
+                                    badge.imageResName,
+                                    "drawable",
+                                    context.packageName
+                                )
+                            }
+                            val painter = if (resId != 0)
+                                painterResource(id = resId)
+                            else
+                                painterResource(id = MyPageR.drawable.img_empty)
+
+                            Image(
+                                painter = painter,
+                                contentDescription = badge.title,
+                                modifier = Modifier.size(88.dp)
+                            )
+
+                            Spacer(Modifier.height(8.dp)) // 이미지와 텍스트 간격 살짝 줄임
+
+                            Text(
+                                text = badge.title,
+                                style = TextStyle(
+                                    fontFamily = Pretendard,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                ),
+                                textAlign = TextAlign.Center,
+                                maxLines = 2,                      // ✅ 두 줄까지만
+                                lineHeight = 18.sp,
+                                modifier = Modifier.widthIn(max = 100.dp) // 줄바꿈 균일하게
+                            )
+                        }
                     }
                 }
             }

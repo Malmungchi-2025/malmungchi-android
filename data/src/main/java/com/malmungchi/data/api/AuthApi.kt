@@ -76,4 +76,8 @@ interface AuthService {
     suspend fun saveNicknameUsersOnly(
         @Body body: NicknameUsersOnlyReq
     ): BaseResponse<SaveNicknameResult>
+    
+    //배지
+    @GET("/api/auth/me/badges")
+    suspend fun getMyBadges(): BadgeResponse
 }
