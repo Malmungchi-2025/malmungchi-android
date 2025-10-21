@@ -121,7 +121,7 @@ private fun NicknameCardDialogBody(
                     onClick = onExit,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(top = 8.dp, end = 40.dp)
+                        .padding(top = 8.dp, end = 48.dp)
                 ) {
                     Icon(
                         painter = painterResource(id = MyPageR.drawable.ic_card_end),

@@ -32,7 +32,7 @@ sealed class BottomNavItem(
 
 
     object Friend : BottomNavItem("friend_graph", "친구",       R.drawable.ic_friend, R.drawable.ic_freind_null) // ← 파일명 오타 주의
-    object MyPage : BottomNavItem("mypage", "마이페이지", R.drawable.ic_mypage, R.drawable.ic_mypage_null)
+    object MyPage : BottomNavItem("mypage_graph", "마이페이지", R.drawable.ic_mypage, R.drawable.ic_mypage_null)
 }
 
 /**

@@ -4,19 +4,15 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -28,63 +24,81 @@ import com.malmungchi.core.designsystem.Pretendard
 import com.malmungchi.feature.mypage.R as MyPageR
 
 // ===== Tokens =====
-private val Blue_195FCF = Color(0xFF195FCF)
-private val Gray_989898 = Color(0xFF989898)
 private val Gray_262626 = Color(0xFF262626)
-private val Bg_EFF4FB = Color(0xFFEFF4FB)
-
-private val H_PADDING = 20.dp
+private val Gray_989898 = Color(0xFF989898)
 private val V_SECTION = 48.dp
-private val CardCorner = 16.dp
 
-// ===== Public Entry =====
+// ===== Model =====
+data class BadgeUi(
+    val key: String,
+    val title: String,
+    val unlocked: Boolean
+)
+
+// ===== Drawable Map =====
+private val badgeResMap: Map<String, Int> = mapOf(
+    "img_badge_1week_attendance" to MyPageR.drawable.img_badge_1week_attendance,
+    "img_badge_1month_attendance" to MyPageR.drawable.img_badge_1month_attendance,
+    "img_badge_100days_attendance" to MyPageR.drawable.img_badge_100days_attendance,
+    "img_badge_first_lesson" to MyPageR.drawable.img_badge_first_lesson,
+    "img_badge_five_lessons" to MyPageR.drawable.img_badge_five_lessons,
+    "img_badge_first_quizmunch" to MyPageR.drawable.img_badge_first_quizmunch,
+    "img_badge_five_quizzes" to MyPageR.drawable.img_badge_five_quizzes,
+    "img_badge_first_ai_chat" to MyPageR.drawable.img_badge_first_ai_chat,
+    "img_badge_five_ai_chats" to MyPageR.drawable.img_badge_five_ai_chats,
+    "img_badge_first_rank" to MyPageR.drawable.img_badge_first_rank,
+    "img_badge_rank_1month" to MyPageR.drawable.img_badge_rank_1month,
+    "img_badge_rank_100days" to MyPageR.drawable.img_badge_rank_100days,
+    "img_badge_bonus" to MyPageR.drawable.img_badge_bonus,
+    "img_badge_early_morning" to MyPageR.drawable.img_badge_early_morning,
+    "img_badge_five_logins_day" to MyPageR.drawable.img_badge_five_logins_day
+)
+
+// ===== Entry Point =====
 @Composable
-fun BadgeCollectionRoute(
-    onBack: () -> Unit,                    // ← ic_back 누르면 MyPageScreen으로
-) {
-    // 더미 데이터 (서버 연동 시 대체)
-    val attendanceBadges = remember {
+fun BadgeCollectionRoute(onBack: () -> Unit) {
+    val allBadges = remember {
         listOf(
-            BadgeUi("학습 1000일 달성", unlocked = true),
-            BadgeUi("일주일 출석", unlocked = false),
-            BadgeUi("일주일 출석", unlocked = false)
-        )
-    }
-    val studyBadges = remember {
-        listOf(
-            BadgeUi("학습 1000일 달성", unlocked = false),
-            BadgeUi("일주일 출석", unlocked = false),
-            BadgeUi("일주일 출석", unlocked = false)
+            BadgeUi("img_badge_1week_attendance", "일주일 출석", true),
+            BadgeUi("img_badge_1month_attendance", "한 달 출석", false),
+            BadgeUi("img_badge_100days_attendance", "100일 출석", false),
+            BadgeUi("img_badge_first_lesson", "오늘의 학습\n첫 학습 완료", true),
+            BadgeUi("img_badge_five_lessons", "오늘의 학습\n5회 학습 완료", false),
+            BadgeUi("img_badge_first_quizmunch", "퀴즈뭉치\n첫 학습 완료", true),
+            BadgeUi("img_badge_five_quizzes", "퀴즈뭉치\n5회 학습 완료", false),
+            BadgeUi("img_badge_first_ai_chat", "AI 대화\n첫 학습 완료", true),
+            BadgeUi("img_badge_five_ai_chats", "AI 대화\n5회 학습 완료", false),
+            BadgeUi("img_badge_first_rank", "처음 1등 달성", true),
+            BadgeUi("img_badge_bonus", "보너스 배지", true),
+            BadgeUi("img_badge_early_morning", "새벽 학습", true),
+            BadgeUi("img_badge_five_logins_day", "하루 5회 학습", false)
         )
     }
 
-    BadgeCollectionScreen(
-        onBack = onBack,
-        representativeTitle = "학습 1000일 달성",
-        attendanceBadges = attendanceBadges,
-        studyBadges = studyBadges
-    )
+    BadgeCollectionScreen(onBack = onBack, badges = allBadges)
 }
 
 // ===== Screen =====
 @Composable
 private fun BadgeCollectionScreen(
     onBack: () -> Unit,
-    representativeTitle: String,
-    attendanceBadges: List<BadgeUi>,
-    studyBadges: List<BadgeUi>
+    badges: List<BadgeUi>
 ) {
-    val isPreview = LocalInspectionMode.current
+    var selectedBadge by remember {
+        mutableStateOf<BadgeUi?>(badges.firstOrNull { it.key == "img_badge_1week_attendance" })
+    }
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(horizontal = H_PADDING)
+            .padding(horizontal = 20.dp)
+            .verticalScroll(scrollState)
     ) {
-
         Spacer(Modifier.height(12.dp))
-        // TopBar
+
+        // === Top Bar ===
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
@@ -104,23 +118,16 @@ private fun BadgeCollectionScreen(
                 onClick = onBack,
                 modifier = Modifier.align(Alignment.CenterStart)
             ) {
-                if (isPreview) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowBack,
-                        contentDescription = "뒤로가기"
-                    )
-                } else {
-                    Icon(
-                        painter = painterResource(id = MyPageR.drawable.ic_back),
-                        contentDescription = "뒤로가기",
-                        tint = Color.Unspecified  // 원본 이미지 색 사용
-                    )
-                }
+                Icon(
+                    painter = painterResource(id = MyPageR.drawable.ic_back),
+                    contentDescription = "뒤로가기",
+                    tint = Color.Unspecified
+                )
             }
         }
 
-        // ===== 나의 대표 배지 =====
-        Spacer(Modifier.height(V_SECTION))
+        // === 나의 대표 배지 ===
+        Spacer(Modifier.height(24.dp))
         Text(
             text = "나의 대표 배지",
             style = TextStyle(
@@ -134,166 +141,153 @@ private fun BadgeCollectionScreen(
         )
 
         Spacer(Modifier.height(12.dp))
+
+        // 💬 설명 문구 (대표 배지 위)
+        Text(
+            text = "모은 배지 중 가장 보람찬 배지를 골라\n대표 배지로 설정해주세요!",
+            style = TextStyle(
+                fontFamily = Pretendard,
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.sp,
+                color = Gray_989898,
+                lineHeight = 14.sp * 1.6f
+            ),
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+        )
+
+        Spacer(Modifier.height(20.dp))
+
+        // === 대표 배지 카드 ===
         Card(
-            shape = RoundedCornerShape(CardCorner),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp) // ✅ 살짝 줄여서 가운데로 보이게
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 24.dp),
+                    .padding(vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "모은 배지 중 가장 보람찬 배지를 골라\n대표 배지로 설정해주세요!",
-                    style = TextStyle(
-                        fontFamily = Pretendard,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp,
-                        color = Gray_989898,
-                        lineHeight = 14.sp * 1.6f  // 줄간격 160%
-                    ),
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                // 동그라미 (배지 이미지 자리)
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape)
-                        .background(Bg_EFF4FB),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // 배지 이미지가 생기면 여기서 교체
+                if (selectedBadge != null) {
+                    val resId =
+                        badgeResMap[selectedBadge!!.key] ?: MyPageR.drawable.ic_lock_on
+                    Image(
+                        painter = painterResource(id = resId),
+                        contentDescription = selectedBadge!!.title,
+                        modifier = Modifier.size(120.dp) // ✅ 1.2x 배 크기
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = selectedBadge!!.title,
+                        style = TextStyle(
+                            fontFamily = Pretendard,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 18.sp,
+                            color = Color.Black
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                } else {
+                    Text(
+                        text = "아직 대표 배지를 선택하지 않았어요!",
+                        style = TextStyle(
+                            fontFamily = Pretendard,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp,
+                            color = Gray_989898
+                        ),
+                        textAlign = TextAlign.Center
+                    )
                 }
-
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    text = representativeTitle, // "학습 1000일 달성"
-                    style = TextStyle(
-                        fontFamily = Pretendard,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 16.sp,
-                        color = Color.Black
-                    ),
-                    textAlign = TextAlign.Center
-                )
             }
         }
 
-        // ===== 출석 배지 =====
+        // === 전체 배지 리스트 ===
         Spacer(Modifier.height(V_SECTION))
-        SectionTitle("출석 배지")
+        BadgeGrid(
+            badges = badges,
+            onSelect = { selectedBadge = it }
+        )
 
-        Spacer(Modifier.height(16.dp))
-        BadgeRow(badges = attendanceBadges)
-
-        // ===== 학습 배지 =====
-        Spacer(Modifier.height(V_SECTION))
-        SectionTitle("학습 배지")
-
-        Spacer(Modifier.height(16.dp))
-        BadgeRow(badges = studyBadges)
-
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(60.dp))
     }
 }
 
-// ===== UI Pieces =====
+// ===== Grid =====
 @Composable
-private fun SectionTitle(text: String) {
-    Text(
-        text = text,
-        style = TextStyle(
-            fontFamily = Pretendard,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 18.sp,
-            color = Color.Black
-        )
-    )
-}
-
-data class BadgeUi(
-    val title: String,
-    val unlocked: Boolean
-)
-
-@Composable
-private fun BadgeRow(
-    badges: List<BadgeUi>
+private fun BadgeGrid(
+    badges: List<BadgeUi>,
+    onSelect: (BadgeUi) -> Unit
 ) {
-    // 한 줄에 3개씩
     val rows = badges.chunked(3)
     Column(modifier = Modifier.fillMaxWidth()) {
-        rows.forEachIndexed { rowIdx, row ->
-            if (rowIdx != 0) Spacer(Modifier.height(20.dp))
+        rows.forEachIndexed { index, row ->
+            if (index != 0) Spacer(Modifier.height(20.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 row.forEach { badge ->
-                    BadgeCell(badge)
+                    BadgeCell(badge = badge, onSelect = onSelect)
                 }
-                // 3개 미만이면 더미 공간으로 정렬 유지
-                repeat(3 - row.size) {
-                    Spacer(Modifier.width(88.dp))
-                }
+                repeat(3 - row.size) { Spacer(Modifier.width(88.dp)) }
             }
         }
     }
 }
 
+// ===== Cell =====
 @Composable
-private fun BadgeCell(badge: BadgeUi) {
-    val isPreview = LocalInspectionMode.current
-
+private fun BadgeCell(
+    badge: BadgeUi,
+    onSelect: (BadgeUi) -> Unit
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.widthIn(min = 88.dp)
+        modifier = Modifier
+            .widthIn(min = 88.dp)
+            .clickable(enabled = badge.unlocked) { onSelect(badge) }
     ) {
         Box(
             modifier = Modifier
                 .size(88.dp)
-                .clip(CircleShape)
-                .background(Bg_EFF4FB),
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.Transparent),
             contentAlignment = Alignment.Center
         ) {
-            if (isPreview) {
-                // 프리뷰에서는 그냥 잠금 아이콘만 보여주기
-                val vector: ImageVector = Icons.Filled.Lock
+            if (!badge.unlocked) {
                 Icon(
-                    imageVector = vector,
-                    contentDescription = "프리뷰 잠금",
-                    modifier = Modifier.size(28.dp)
+                    painter = painterResource(id = MyPageR.drawable.ic_lock_on),
+                    contentDescription = "잠금 배지",
+                    modifier = Modifier.size(32.dp),
+                    tint = Color.Unspecified
                 )
             } else {
-                // 런타임: 모듈 리소스 사용
+                val resId = badgeResMap[badge.key] ?: MyPageR.drawable.ic_lock_on
                 Image(
-                    painter = painterResource(
-                        id = if (badge.unlocked)
-                            MyPageR.drawable.ic_lock_off
-                        else
-                            MyPageR.drawable.ic_lock_on
-                    ),
-                    contentDescription = if (badge.unlocked) "잠금 해제" else "잠금",
-                    modifier = Modifier.size(28.dp)
+                    painter = painterResource(id = resId),
+                    contentDescription = badge.title,
+                    modifier = Modifier.size(88.dp)
                 )
             }
         }
         Spacer(Modifier.height(12.dp))
         Text(
-            text = badge.title, // 예: "학습 1000일 달성", "일주일 출석"
+            text = badge.title,
             style = TextStyle(
                 fontFamily = Pretendard,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
-                lineHeight = 14.sp * 1.4f,   // 줄간격 140%
-                color = Gray_262626
+                color = Gray_262626,
+                lineHeight = 14.sp * 1.4f
             ),
             textAlign = TextAlign.Center
         )
