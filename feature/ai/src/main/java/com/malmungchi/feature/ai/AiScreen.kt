@@ -1,5 +1,6 @@
 package com.malmungchi.feature.ai
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -7,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -14,6 +16,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.malmungchi.core.designsystem.Pretendard
+import com.malmungchi.feature.ai.R
+
 
 // ===== Colors =====
 private val Blue_195FCF = Color(0xFF195FCF)
@@ -55,7 +59,7 @@ fun AiScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(420.dp), // ← 카드 키우기 (원하면 380~400dp로 조정)
+                .height(432.dp), // ← 카드 키우기 (원하면 380~400dp로 조정)
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Gray_F7F7F7),
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
@@ -65,6 +69,19 @@ fun AiScreen(
                     .fillMaxSize()
                     .padding(20.dp)
             ) {
+
+                // 이미지 추가
+                Image(
+                    painter = painterResource(id = R.drawable.img_ai),
+                    contentDescription = "AI Illustration",
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .offset(y = (-40).dp)   // 🔹 30dp만큼 위로 이동 (값은 상황에 맞게 조정)
+                        .fillMaxWidth(1f)
+                        .aspectRatio(1f)
+                )
+                Spacer(Modifier.height(20.dp))
+
                 Column(
                     modifier = Modifier.align(Alignment.BottomStart)
                 ) {

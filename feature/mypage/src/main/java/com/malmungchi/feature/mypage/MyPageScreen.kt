@@ -33,6 +33,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import kotlinx.coroutines.launch
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.tooling.preview.Preview
+import com.malmungchi.feature.login.AvatarSelectDialog
 import com.malmungchi.feature.mypage.nickname.NicknameCardDialog
 
 
@@ -69,78 +70,273 @@ fun MyPageRoute(
     onClickViewAllWords: () -> Unit = {},
     onClickViewAllBadges: () -> Unit = {},
     onClickViewNicknameTest: () -> Unit = {},
-    onClickViewNicknameCard: (nicknameTitle: String, userName: String) -> Unit = { _, _ -> }  // 별명 카드로 이동하는 콜백 추가
+    onClickViewNicknameCard: (nicknameTitle: String, userName: String) -> Unit = { _, _ -> }
 ) {
     val ui by viewModel.ui.collectAsState()
 
-    LaunchedEffect(Unit) { viewModel.load() }
+    var showAvatarDialog by rememberSaveable { mutableStateOf(false) }
 
-    // 최근 단어 5개 인덱스
+    // ✅ 최초 1회만 데이터 로드 (중복 방지)
+    LaunchedEffect(viewModel) {
+        viewModel.loadIfNeeded()
+    }
+//    LaunchedEffect(Unit) {
+//        viewModel.loadIfNeeded()
+//    }
+
+    // ✅ 최근 단어 인덱스 관리
     val pageCount = ui.recentVocab.size
     var recentIndex by rememberSaveable(pageCount) { mutableStateOf(0) }
     if (recentIndex >= pageCount) recentIndex = (pageCount - 1).coerceAtLeast(0)
 
-    when {
-        ui.loading -> Box(
-            Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
-            Text("불러오는 중…")
-        }
-        ui.error != null -> Box(Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
-            Text("에러: ${ui.error}")
-        }
-        else -> {
-            // ✅ 다이얼로그 열림 상태
-            var showNicknameCard by rememberSaveable { mutableStateOf(false) }
-            // ✅ 유저 닉네임 타이틀(없을 수 있음)
-            val nicknameTitle = ui.user?.nickname_title
+    // ✅ 로딩 중에도 이전 UI 유지하기
+    // → remember로 마지막 정상 상태 저장
+    var lastNonEmptyUi by remember { mutableStateOf<MyPageUiState?>(null) }
+    if (ui.user != null) lastNonEmptyUi = ui
+    val displayUi = lastNonEmptyUi ?: ui
 
+    // ✅ 상태별 처리
+    when {
+        ui.error != null -> {
+            Box(
+                Modifier.fillMaxSize().background(Color.White),
+                contentAlignment = Alignment.Center
+            ) { Text("에러: ${ui.error}") }
+        }
+
+        //ui.loading && displayUi.user == null -> {
+        ui.loading && displayUi.user == null && lastNonEmptyUi == null -> {
+            // 데이터가 전혀 없는 첫 로딩 상태에서만 로딩 표시
+            Box(
+                Modifier.fillMaxSize().background(Color.White),
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator(color = Blue_195FCF) }
+        }
+
+        else -> {
+            // ✅ 닉네임 카드 다이얼로그 열림 여부
+            var showNicknameCard by rememberSaveable { mutableStateOf(false) }
+
+            val nicknameTitle = displayUi.user?.nickname_title
             val context = androidx.compose.ui.platform.LocalContext.current
-            val avatarRes = remember(ui.avatarName) {
-                avatarNameToRes(context, ui.avatarName)
+            val avatarRes = remember(displayUi.avatarName) {
+                avatarNameToRes(context, displayUi.avatarName)
             }
 
-
+            // ✅ 마이페이지 메인 화면 표시
             MyPageScreen(
-                userName = ui.userName,
-                levelLabel = ui.levelLabel,
-                nextStage = ui.nextStageUi,
+                userName = displayUi.userName,
+                levelLabel = displayUi.levelLabel,
+                nextStage = displayUi.nextStageUi,
                 onClickSettings = onClickSettings,
                 onClickViewAllWords = onClickViewAllWords,
                 onClickViewAllBadges = onClickViewAllBadges,
-
-                // ✅ 말풍선(치치의 어휘/문해력은?) 클릭 → 다이얼로그 오픈
                 onClickNickname = {
-                    // 닉네임이 있을 때만 카드 오픈, 없으면 테스트로
                     if (!nicknameTitle.isNullOrBlank()) {
                         showNicknameCard = true
                     } else {
                         onClickViewNicknameTest()
                     }
                 },
-
-                // ✅ 프로필 아이콘에 실제 사용자 아바타 전달
                 profileIconRes = avatarRes,
-
-                recentItems = ui.recentVocab,
+                recentItems = displayUi.recentVocab,
                 currentRecentIndex = recentIndex,
-                onChangeRecentIndex = { recentIndex = it }
+                onChangeRecentIndex = { recentIndex = it },
+                onClickChangeAvatar = { showAvatarDialog = true }
             )
 
-            // ✅ 다이얼로그 표시(마이페이지 위 오버레이)
+            // ✅ 닉네임 카드 다이얼로그
             if (showNicknameCard) {
                 NicknameCardDialog(
-                    nickname = nicknameTitle, // ex) "언어연금술사"
-                    onExit = { showNicknameCard = false }, // 닫기(스크림 탭/백 포함)
-                    onSaveImage = { nick ->
-                        // TODO: 저장 구현(원래 쓰던 로직 연결)
-                        // ex) viewModel.saveCardImage(nick)
-                        showNicknameCard = false
-                    }
+                    nickname = nicknameTitle,
+                    onExit = { showNicknameCard = false },
+                    onSaveImage = { _ -> showNicknameCard = false }
+                )
+            }
+
+            // ✅ 아바타 선택 다이얼로그
+            if (showAvatarDialog) {
+                AvatarSelectDialog(
+                    name = displayUi.userName,
+                    onConfirm = { selected ->
+                        viewModel.updateAvatar(selected)
+                        showAvatarDialog = false
+                    },
+                    onDismiss = { showAvatarDialog = false }
                 )
             }
         }
     }
 }
+//@Composable
+//fun MyPageRoute(
+//    viewModel: MyPageViewModel = hiltViewModel(),
+//    onClickSettings: () -> Unit = {},
+//    onClickViewAllWords: () -> Unit = {},
+//    onClickViewAllBadges: () -> Unit = {},
+//    onClickViewNicknameTest: () -> Unit = {},
+//    onClickViewNicknameCard: (nicknameTitle: String, userName: String) -> Unit = { _, _ -> } // 별명 카드로 이동하는 콜백
+//) {
+//    val ui by viewModel.ui.collectAsState()
+//
+//    var showAvatarDialog by rememberSaveable { mutableStateOf(false) }
+//
+//    // ✅ 1️⃣ 최초 1회만 데이터 로드 (중복 방지)
+//    LaunchedEffect(Unit) {
+//        viewModel.loadIfNeeded()
+//    }
+//
+//    // ✅ 2️⃣ 최근 단어 인덱스 관리
+//    val pageCount = ui.recentVocab.size
+//    var recentIndex by rememberSaveable(pageCount) { mutableStateOf(0) }
+//    if (recentIndex >= pageCount) recentIndex = (pageCount - 1).coerceAtLeast(0)
+//
+//    // ✅ 3️⃣ 상태별 처리
+//    if (ui.error != null) {
+//        Box(
+//            Modifier.fillMaxSize().background(Color.White),
+//            contentAlignment = Alignment.Center
+//        ) {
+//            Text("에러: ${ui.error}")
+//        }
+//    } else {
+//        // ✅ 닉네임 카드 다이얼로그 열림 여부
+//        var showNicknameCard by rememberSaveable { mutableStateOf(false) }
+//
+//        val nicknameTitle = ui.user?.nickname_title
+//        val context = androidx.compose.ui.platform.LocalContext.current
+//        val avatarRes = remember(ui.avatarName) {
+//            avatarNameToRes(context, ui.avatarName)
+//        }
+//
+//        // ✅ 마이페이지 메인 화면 표시
+//        MyPageScreen(
+//            userName = ui.userName,
+//            levelLabel = ui.levelLabel,
+//            nextStage = ui.nextStageUi,
+//            onClickSettings = onClickSettings,
+//            onClickViewAllWords = onClickViewAllWords,
+//            onClickViewAllBadges = onClickViewAllBadges,
+//            onClickNickname = {
+//                if (!nicknameTitle.isNullOrBlank()) {
+//                    showNicknameCard = true
+//                } else {
+//                    onClickViewNicknameTest()
+//                }
+//            },
+//            profileIconRes = avatarRes,
+//            recentItems = ui.recentVocab,
+//            currentRecentIndex = recentIndex,
+//            onChangeRecentIndex = { recentIndex = it },
+//            onClickChangeAvatar = { showAvatarDialog = true } // ✅ 아바타 클릭 시 다이얼로그 열기
+//        )
+//
+//        // ✅ 닉네임 카드 다이얼로그 (마이페이지 위 오버레이)
+//        if (showNicknameCard) {
+//            NicknameCardDialog(
+//                nickname = nicknameTitle, // ex) "언어연금술사"
+//                onExit = { showNicknameCard = false },
+//                onSaveImage = { nick ->
+//                    // TODO: 저장 구현 (원래 쓰던 로직 연결)
+//                    // ex) viewModel.saveCardImage(nick)
+//                    showNicknameCard = false
+//                }
+//            )
+//
+//        }
+//
+//        // ✅ 아바타 선택 다이얼로그
+//        if (showAvatarDialog) {
+//            AvatarSelectDialog(
+//                name = ui.userName,
+//                onConfirm = { selected ->
+//                    viewModel.updateAvatar(selected) // ✅ 서버 + UI 즉시 반영
+//                    showAvatarDialog = false
+//                },
+//                onDismiss = { showAvatarDialog = false }
+//            )
+//        }
+//    }
+//}
+//@Composable
+//fun MyPageRoute(
+//    viewModel: MyPageViewModel = hiltViewModel(),
+//    onClickSettings: () -> Unit = {},
+//    onClickViewAllWords: () -> Unit = {},
+//    onClickViewAllBadges: () -> Unit = {},
+//    onClickViewNicknameTest: () -> Unit = {},
+//    onClickViewNicknameCard: (nicknameTitle: String, userName: String) -> Unit = { _, _ -> }  // 별명 카드로 이동하는 콜백 추가
+//) {
+//    val ui by viewModel.ui.collectAsState()
+//
+//    LaunchedEffect(Unit) { viewModel.load() }
+//
+//    // 최근 단어 5개 인덱스
+//    val pageCount = ui.recentVocab.size
+//    var recentIndex by rememberSaveable(pageCount) { mutableStateOf(0) }
+//    if (recentIndex >= pageCount) recentIndex = (pageCount - 1).coerceAtLeast(0)
+//
+//    when {
+//        ui.loading -> Box(
+//            Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
+//            Text("불러오는 중…")
+//        }
+//        ui.error != null -> Box(Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
+//            Text("에러: ${ui.error}")
+//        }
+//        else -> {
+//            // ✅ 다이얼로그 열림 상태
+//            var showNicknameCard by rememberSaveable { mutableStateOf(false) }
+//            // ✅ 유저 닉네임 타이틀(없을 수 있음)
+//            val nicknameTitle = ui.user?.nickname_title
+//
+//            val context = androidx.compose.ui.platform.LocalContext.current
+//            val avatarRes = remember(ui.avatarName) {
+//                avatarNameToRes(context, ui.avatarName)
+//            }
+//
+//
+//            MyPageScreen(
+//                userName = ui.userName,
+//                levelLabel = ui.levelLabel,
+//                nextStage = ui.nextStageUi,
+//                onClickSettings = onClickSettings,
+//                onClickViewAllWords = onClickViewAllWords,
+//                onClickViewAllBadges = onClickViewAllBadges,
+//
+//                // ✅ 말풍선(치치의 어휘/문해력은?) 클릭 → 다이얼로그 오픈
+//                onClickNickname = {
+//                    // 닉네임이 있을 때만 카드 오픈, 없으면 테스트로
+//                    if (!nicknameTitle.isNullOrBlank()) {
+//                        showNicknameCard = true
+//                    } else {
+//                        onClickViewNicknameTest()
+//                    }
+//                },
+//
+//                // ✅ 프로필 아이콘에 실제 사용자 아바타 전달
+//                profileIconRes = avatarRes,
+//
+//                recentItems = ui.recentVocab,
+//                currentRecentIndex = recentIndex,
+//                onChangeRecentIndex = { recentIndex = it }
+//            )
+//
+//            // ✅ 다이얼로그 표시(마이페이지 위 오버레이)
+//            if (showNicknameCard) {
+//                NicknameCardDialog(
+//                    nickname = nicknameTitle, // ex) "언어연금술사"
+//                    onExit = { showNicknameCard = false }, // 닫기(스크림 탭/백 포함)
+//                    onSaveImage = { nick ->
+//                        // TODO: 저장 구현(원래 쓰던 로직 연결)
+//                        // ex) viewModel.saveCardImage(nick)
+//                        showNicknameCard = false
+//                    }
+//                )
+//            }
+//        }
+//    }
+//}
 //        else -> {
 //            // 별명 검사
 //            if (ui.user?.nickname_title.isNullOrBlank()) {
@@ -187,7 +383,8 @@ fun MyPageScreen(
     currentRecentIndex: Int = 0,
     onChangeRecentIndex: (Int) -> Unit = {},
     // ✅ 추가: 호출부에서 넘겨주는 사용자 아바타 리소스
-    @androidx.annotation.DrawableRes profileIconRes: Int
+    @androidx.annotation.DrawableRes profileIconRes: Int,
+    onClickChangeAvatar: () -> Unit = {} // ✅ 추가
 ) {
     Column(
         modifier = modifier
@@ -207,7 +404,9 @@ fun MyPageScreen(
             questionLabel = "치치의 어휘/문해력은?",
             profileIconRes = profileIconRes,   // ✅ 여기!
             //profileIconRes = MyPageR.drawable.ic_mypage_icon,
-            onClickQuestion = onClickNickname
+            onClickQuestion = onClickNickname,
+            onClickAvatar = { onClickChangeAvatar() } // ✅ 새 콜백 연결
+
             //onClickQuestion = { onClickNicknameTest() }
         )
         var showLevelSheet by rememberSaveable { mutableStateOf(false) }
@@ -303,7 +502,8 @@ private fun ProfileBlock(
     userName: String,
     questionLabel: String,
     profileIconRes: Int,
-    onClickQuestion: () -> Unit = {}
+    onClickQuestion: () -> Unit = {},
+    onClickAvatar: () -> Unit = {} // 추가
 ) {
     Row(
         modifier = Modifier
@@ -315,7 +515,7 @@ private fun ProfileBlock(
             painter = painterResource(id = profileIconRes),
             contentDescription = "프로필",
             contentScale = ContentScale.Fit,
-            modifier = Modifier.size(AVATAR_SIZE)
+            modifier = Modifier.size(AVATAR_SIZE).clickable { onClickAvatar() } // 클릭 시 다이얼로그 열기
         )
 
         Spacer(Modifier.width(AVATAR_TO_TEXT_GAP))

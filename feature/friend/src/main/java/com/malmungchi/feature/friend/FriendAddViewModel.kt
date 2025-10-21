@@ -86,6 +86,12 @@ class FriendAddViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _ui = MutableStateFlow(FriendAddUiState())
+
+    // ✅ 순위 갱신할 때 동일한 리스트면 무시
+    fun updateFriendsList(newList: List<FriendRank>) {
+        if (_ui.value.friends == newList) return
+        _ui.value = _ui.value.copy(friends = newList)
+    }
     val ui: StateFlow<FriendAddUiState> = _ui.asStateFlow()
 
     // 내 정보 캐시 (friends에 항상 포함시키기 위해)

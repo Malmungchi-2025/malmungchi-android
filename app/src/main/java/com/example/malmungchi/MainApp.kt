@@ -1543,29 +1543,79 @@ fun MainApp() {
 //                }
 //            )
 //        }
-        composable("mypage") {
-            WithBottomBar(navController as NavHostController) {
-                com.malmungchi.feature.mypage.MyPageRoute(
-                    onClickSettings = { navController.navigate("settings") },
-                    onClickViewAllWords = { navController.navigate("word_collection") },
-                    // ✅ 여기만 채우기
-                    onClickViewAllBadges = {
-                        navController.navigate("badges")
-                    },
+//        composable("mypage") {
+//            WithBottomBar(navController as NavHostController) {
+//                com.malmungchi.feature.mypage.MyPageRoute(
+//                    onClickSettings = { navController.navigate("settings") },
+//                    onClickViewAllWords = { navController.navigate("word_collection") },
+//                    // ✅ 여기만 채우기
+//                    onClickViewAllBadges = {
+//                        navController.navigate("badges")
+//                    },
+//
+//                    //onClickViewAllBadges = { /* TODO */ },
+//                    onClickViewNicknameTest = {
+//                        navController.navigate("nickname_test_intro") { launchSingleTop = true }
+//                    },
+//                    onClickViewNicknameCard = { nicknameTitle, userName ->
+//                        val n = Uri.encode(nicknameTitle)
+//                        val u = Uri.encode(userName)
+//                        navController.navigate("nickname_card_screen?nickname=$n&userName=$u") {
+//                            launchSingleTop = true
+//                        }
+//                    }
+//                )
+//            }
+//        }
+        navigation(
+            route = "mypage_graph",
+            startDestination = "mypage"
+        ) {
+            composable("mypage") { backStackEntry ->
+                // ✅ 이 위치(Composable 내부)에서만 remember/hiltViewModel 사용 가능
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("mypage_graph")
+                }
+                val vm: MyPageViewModel = hiltViewModel(parentEntry)
 
-                    //onClickViewAllBadges = { /* TODO */ },
-                    onClickViewNicknameTest = {
-                        navController.navigate("nickname_test_intro") { launchSingleTop = true }
-                    },
-                    onClickViewNicknameCard = { nicknameTitle, userName ->
-                        val n = Uri.encode(nicknameTitle)
-                        val u = Uri.encode(userName)
-                        navController.navigate("nickname_card_screen?nickname=$n&userName=$u") {
+                WithBottomBar(navController as NavHostController) {
+                    com.malmungchi.feature.mypage.MyPageRoute(
+                        viewModel = vm, // ✅ 전달
+                        onClickSettings = { navController.navigate("settings") },
+                        onClickViewAllWords = { navController.navigate("word_collection") },
+                        onClickViewAllBadges = { navController.navigate("badges") },
+                        onClickViewNicknameTest = {
+                            navController.navigate("nickname_test_intro") { launchSingleTop = true }
+                        },
+                        onClickViewNicknameCard = { nicknameTitle, userName ->
+                            val n = Uri.encode(nicknameTitle)
+                            val u = Uri.encode(userName)
+                            navController.navigate("nickname_card_screen?nickname=$n&userName=$u") {
+                                launchSingleTop = true
+                            }
+                        }
+                    )
+                }
+            }
+
+            composable("word_collection") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("mypage_graph")
+                }
+                val vm: MyPageViewModel = hiltViewModel(parentEntry)
+
+                WordCollectionRoute(
+                    viewModel = vm,
+                    onBack = {
+                        navController.navigate("mypage") {
+                            popUpTo("word_collection") { inclusive = true }
                             launchSingleTop = true
                         }
+                        vm.loadIfNeeded(forcePartialRefresh = true)
                     }
                 )
             }
+
         }
 
         // ★ 라우트 정의를 파라미터 포함으로
@@ -1722,16 +1772,7 @@ fun MainApp() {
             )
         }
         // MainApp() 의 NavHost {...} 안
-        composable("word_collection") {
-            WordCollectionRoute(
-                onBack = {
-                    navController.navigate("mypage") {
-                        popUpTo("word_collection") { inclusive = true }
-                        launchSingleTop = true
-                    }
-                }
-            )
-        }
+
 
 //        composable("nickname_test_intro") {
 //            NicknameTestIntroScreen(

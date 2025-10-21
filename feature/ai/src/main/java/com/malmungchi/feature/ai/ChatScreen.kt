@@ -98,33 +98,81 @@ private fun ChatBubbleRectTopLeftSharp(
 private fun MessageRow(msg: MChatMessage) {
     val bubbleWidthMax = 280.dp
     if (msg.role == MRole.Bot) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top
+        ) {
             Image(
                 painter = painterResource(id = R.drawable.img_chatbot_malchi),
                 contentDescription = "Bot",
-                modifier = Modifier.size(48.dp).offset(y = (-2).dp)
+                modifier = Modifier
+                    .size(40.dp) // ✅ 48 → 40으로 줄여서 말풍선 높이와 시각적으로 맞춤
+                    .align(Alignment.Top) // ✅ Row 내에서 세로 정렬 맞추기
             )
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(4.dp)) // ✅ 여백 살짝 줄이기 (6 → 4)
             ChatBubbleRectTopLeftSharp(
                 text = msg.text,
-                modifier = Modifier.widthIn(max = bubbleWidthMax).wrapContentHeight(),
+                modifier = Modifier
+                    .weight(1f, false) // ✅ 너무 넓게 퍼지지 않게 제한
+                    .widthIn(max = bubbleWidthMax)
+                    .wrapContentHeight(),
                 bgColor = Color(0xFFF7F7F7),
                 showTipInside = true,
-                borderColor = if (msg.style == MBubbleStyle.BotFeedback) Color(0xFF195FCF) else null
+                borderColor = if (msg.style == MBubbleStyle.BotFeedback)
+                    Color(0xFF195FCF)
+                else null
             )
         }
     } else {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
             ChatBubbleRectTopLeftSharp(
                 text = msg.text,
-                modifier = Modifier.widthIn(max = bubbleWidthMax).wrapContentHeight(),
+                modifier = Modifier
+                    .widthIn(max = bubbleWidthMax)
+                    .wrapContentHeight(),
                 bgColor = Color.White,
                 userShape = true,
-                borderColor = if (msg.style == MBubbleStyle.UserRetryNeeded) Color(0xFFFF0D0D) else null
+                borderColor = if (msg.style == MBubbleStyle.UserRetryNeeded)
+                    Color(0xFFFF0D0D)
+                else null
             )
         }
     }
 }
+//@Composable
+//private fun MessageRow(msg: MChatMessage) {
+//    val bubbleWidthMax = 280.dp
+//    if (msg.role == MRole.Bot) {
+//        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+//            Image(
+//                painter = painterResource(id = R.drawable.img_chatbot_malchi),
+//                contentDescription = "Bot",
+//                modifier = Modifier.size(48.dp).offset(y = (-2).dp)
+//            )
+//            Spacer(Modifier.width(6.dp))
+//            ChatBubbleRectTopLeftSharp(
+//                text = msg.text,
+//                modifier = Modifier.widthIn(max = bubbleWidthMax).wrapContentHeight(),
+//                bgColor = Color(0xFFF7F7F7),
+//                showTipInside = true,
+//                borderColor = if (msg.style == MBubbleStyle.BotFeedback) Color(0xFF195FCF) else null
+//            )
+//        }
+//    } else {
+//        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+//            ChatBubbleRectTopLeftSharp(
+//                text = msg.text,
+//                modifier = Modifier.widthIn(max = bubbleWidthMax).wrapContentHeight(),
+//                bgColor = Color.White,
+//                userShape = true,
+//                borderColor = if (msg.style == MBubbleStyle.UserRetryNeeded) Color(0xFFFF0D0D) else null
+//            )
+//        }
+//    }
+//}
 
 // ────────────────────────────────────────────────────
 // 실제 ChatScreen

@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,16 +54,17 @@ fun FriendScreen(
     val top3ForUi: List<FriendRank> = buildTop3Padded(ranks)
 
     // 4위부터: 항상 4, 5등은 채워주기
-    val base = ranks.drop(3) // 실제 4위 이후
-    val needPlaceholders = (4..5).map { targetRank ->
-        val hasThisIndex = (targetRank - 4) < base.size
-        if (hasThisIndex) null else placeholderRank(targetRank)
-    }.filterNotNull()
-
-    val listRows: List<FriendRank> = buildList {
-        addAll(base)
-        addAll(needPlaceholders)
-    }
+    val listRows: List<FriendRank> = ranks.drop(3)
+//    val base = ranks.drop(3) // 실제 4위 이후
+//    val needPlaceholders = (4..5).map { targetRank ->
+//        val hasThisIndex = (targetRank - 4) < base.size
+//        if (hasThisIndex) null else placeholderRank(targetRank)
+//    }.filterNotNull()
+//
+//    val listRows: List<FriendRank> = buildList {
+//        addAll(base)
+//        addAll(needPlaceholders)
+//    }
 
     LazyColumn(
         modifier = Modifier
@@ -146,10 +148,17 @@ fun FriendScreen(
             item { Spacer(Modifier.height(20.dp)) }
 
             // 4위 이후
-            items(listRows) { item ->
+            items(
+                items = listRows,
+                key = { item -> item.rank }   // 👈 추가: rank나 id 등 고유값
+            ) { item ->
                 RankRow(item = item)
                 Spacer(Modifier.height(10.dp))
             }
+//            items(listRows) { item ->
+//                RankRow(item = item)
+//                Spacer(Modifier.height(10.dp))
+//            }
         }
     }
 }
@@ -332,6 +341,9 @@ private fun AvatarThumb(
 ) {
     val isPreview = LocalInspectionMode.current
     val shape = CircleShape
+    // ✅ 추가: painterResource 캐싱
+    // ✅ painterResource 호출은 remember 밖으로 분리
+    val painter = if (painterRes != null) painterResource(painterRes) else null
 
     Box(
         modifier = Modifier
