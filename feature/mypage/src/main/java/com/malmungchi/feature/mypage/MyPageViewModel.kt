@@ -15,6 +15,14 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+//배지 3개 보여줌.
+data class BadgeUi(
+    val imageResName: String,
+    val title: String,
+    val unlocked: Boolean
+)
+
+
 // ✅ 메모리 캐시 (앱 프로세스 살아있는 동안만 유지)
 object MyPageCache {
     var cachedUi: MyPageUiState? = null
@@ -80,6 +88,7 @@ data class MyPageUiState(
             progress = nextProgress
         )
     }
+
 }
 
 data class NextStageUi(
@@ -99,6 +108,11 @@ class MyPageViewModel @Inject constructor(
 
     private val _ui = MutableStateFlow(MyPageUiState())
     val ui: StateFlow<MyPageUiState> = _ui
+
+    //배지 3개 추가
+    // 🔹 최근 획득한 배지 3개 저장용
+    private val _recentBadges = MutableStateFlow<List<BadgeUi>>(emptyList())
+    val recentBadges: StateFlow<List<BadgeUi>> = _recentBadges
 
     private var initialized = false // 최초 로드 여부
 
@@ -254,6 +268,53 @@ class MyPageViewModel @Inject constructor(
                     loading = false,
                     error = e.message ?: "아바타 변경 실패"
                 )
+            }
+        }
+    }
+
+    //배지 3개
+    fun loadRecentBadges() {
+        viewModelScope.launch {
+            try {
+                val badgeMap = repo.getMyBadges() // 🔹 서버에서 전체 배지 맵 받아오기
+
+                val badgeList = badgeMap
+                    .filter { it.value == true } // 해금된 배지만 필터링
+                    .map { (key, _) ->
+                        val title = when (key) {
+                            "1_week_attendance" -> "일주일 출석"
+                            "1_month_attendance" -> "한 달 출석"
+                            "100_days_attendance" -> "100일 출석"
+                            "first_lesson" -> "오늘의 학습 첫 학습 완료"
+                            "five_lessons" -> "오늘의 학습 5회 학습 완료"
+                            "first_quizmunch" -> "퀴즈뭉치 첫 학습 완료"
+                            "five_quizzes" -> "퀴즈뭉치 5회 학습 완료"
+                            "first_ai_chat" -> "AI 대화 첫 학습 완료"
+                            "five_ai_chats" -> "AI 대화 5회 학습 완료"
+                            "first_rank" -> "처음 1등 달성"
+                            "rank_1month" -> "한 달 1등 유지"
+                            "bonus_month" -> "보너스 배지"
+                            "early_morning" -> "새벽 학습"
+                            "five_logins_day" -> "하루 5회 학습"
+                            else -> key
+                        }
+
+                        // ✅ 리소스 이름 변환 규칙
+                        val mappedKey = when (key) {
+                            "1_week_attendance" -> "img_badge_1week_attendance"
+                            "1_month_attendance" -> "img_badge_1month_attendance"
+                            "100_days_attendance" -> "img_badge_100days_attendance"
+                            else -> "img_badge_${key}"
+                        }
+
+                        BadgeUi(mappedKey, title, true)
+                    }
+                    .takeLast(3)  // ✅ 최근 해금된 3개만
+                    .reversed()   // 최신순으로
+
+                _recentBadges.value = badgeList
+            } catch (e: Exception) {
+                _recentBadges.value = emptyList()
             }
         }
     }

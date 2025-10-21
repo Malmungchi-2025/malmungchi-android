@@ -141,6 +141,13 @@ class AuthRepositoryImpl @Inject constructor(
         return true
     }
 
+    //배지
+    override suspend fun getMyBadges(): Map<String, Boolean> {
+        val resp = api.getMyBadges()
+        if (!resp.success) error(resp.result ?: "배지 조회 실패")
+        return resp.result ?: emptyMap()
+    }
+
 }
 //class AuthRepositoryImpl @Inject constructor(   // 👈 @Inject 추가
 //    private val api: AuthService

@@ -36,4 +36,7 @@ interface AuthRepository {
 
     /** 프로필(아바타) 저장 */
     suspend fun updateAvatarName(avatarName: String): Boolean
+
+    //배지
+    suspend fun getMyBadges(): Map<String, Boolean>
 }
