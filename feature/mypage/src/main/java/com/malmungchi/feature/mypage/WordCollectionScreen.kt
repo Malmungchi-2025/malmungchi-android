@@ -60,7 +60,8 @@ data class WordItem(
  * ======================================================*/
 @Composable
 fun WordCollectionRoute(
-    viewModel: MyPageViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
+    viewModel: MyPageViewModel,
+    //viewModel: MyPageViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
     onBack: () -> Unit = {}
 ) {
     val ui by viewModel.ui.collectAsState()

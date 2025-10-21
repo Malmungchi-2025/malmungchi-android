@@ -63,6 +63,7 @@ fun QuizSolveHost(
     // 1초 정답 플래시 + 자동 다음
     var flash: Boolean? by remember { mutableStateOf(null) }
     LaunchedEffect(submitted, idx) {
+
         if (submitted) {
             // 서버 채점 결과 우선, 없으면 로컬 판정
             val ok = runCatching { vm.currentServerCorrectness() }.getOrNull() ?: vm.isCurrentCorrect()

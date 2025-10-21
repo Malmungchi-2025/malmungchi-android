@@ -55,7 +55,8 @@ fun BottomNavBar(
     val QuizRoot   = "quiz_graph"
     val AiRoot     = "ai_graph"
     val FriendRoot = "friend_graph"
-    val MyPageRoot = "mypage"
+    val MyPageRoot = "mypage_graph"  // ✅ 그래프 이름과 동일하게!
+//    val MyPageRoot = "mypage"
 
     val items = listOf(
         BottomNavItem.Study,
@@ -76,9 +77,11 @@ fun BottomNavBar(
                     route == "ai" || route.startsWith("ai_")
             FriendRoot -> dest?.hierarchy?.any { it.route == "friend_graph" } == true ||
                     route == "friend" || route.startsWith("friend_")
-            MyPageRoot -> route == "mypage" ||
+            MyPageRoot -> dest?.hierarchy?.any { it.route == "mypage_graph" } == true ||
                     route.startsWith("nickname_") ||
-                    route == "settings" || route == "remind_settings" || route == "word_collection"
+                    route == "settings" ||
+                    route == "remind_settings" ||
+                    route == "word_collection"
             else -> false
         }
     }

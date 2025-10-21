@@ -54,10 +54,10 @@ object RetrofitProvider {
         }
 
         val client = OkHttpClient.Builder()
-            .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
-            .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS) // ★ 서버보다 길게
-            .callTimeout(40, java.util.concurrent.TimeUnit.SECONDS) // ★ 전체 요청 상한(선택)
+            .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS) // ★ 서버보다 길게
+            .callTimeout(60, java.util.concurrent.TimeUnit.SECONDS) // ★ 전체 요청 상한(선택)
             .retryOnConnectionFailure(true)
             .pingInterval(15, java.util.concurrent.TimeUnit.SECONDS) // (옵션) 장대기 연결 유지
             .addInterceptor(AuthInterceptor(SharedPrefsTokenProvider(context)))
