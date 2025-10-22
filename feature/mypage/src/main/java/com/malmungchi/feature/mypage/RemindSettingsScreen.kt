@@ -39,9 +39,23 @@ import androidx.core.view.WindowCompat
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
 import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
+import android.os.Build
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+
+import android.provider.Settings
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.blue
+import androidx.core.graphics.green
+import androidx.core.graphics.red
+
+
+
 
 // ===== Colors =====
 private val Blue_195FCF = Color(0xFF195FCF)
@@ -84,6 +98,11 @@ fun RemindSettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // ✅ [1] 알림 채널 상태 확인 및 설정 유도 (컴포즈 진입 시 1회만 실행)
+    LaunchedEffect(Unit) {
+        ensureNotificationChannelActive(context)
+    }
+
     // ✅ 상태 저장
     var firstOn by remember { mutableStateOf(true) }
     var firstAmpm by remember { mutableStateOf(Ampm.PM) }
@@ -96,7 +115,40 @@ fun RemindSettingsScreen(
     var secondMinute by remember { mutableStateOf("30") }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState
+            ) { data ->
+                // ✅ 애니메이션 + 커스텀 카드형 스낵바
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = true,
+                    enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }) +
+                            androidx.compose.animation.fadeIn(),
+                    exit = androidx.compose.animation.fadeOut()
+                ) {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Blue_195FCF),
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                    ) {
+                        Text(
+                            text = data.visuals.message,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+                            style = TextStyle(
+                                fontFamily = Pretendard,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 15.sp,
+                                lineHeight = 20.sp
+                            )
+                        )
+                    }
+                }
+            }
+        }
     ) { scaffoldPadding ->
 
         // ✅ Box: 상태바 영역 포함 전체 흰색 배경
@@ -421,16 +473,29 @@ private fun WheelPicker(
     val density = LocalDensity.current
     val itemHeightPx = with(density) { itemHeight.toPx() }
 
+    // ✅ 중앙 정렬용 content padding
+    val padding = (totalHeight - itemHeight) / 2
+
     Box(
         modifier = modifier
             .height(totalHeight)
             .clip(RoundedCornerShape(8.dp))
             .background(Color.Transparent)
     ) {
+        // 중앙 하이라이트
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth()
+                .height(itemHeight)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Bg_EFF4FB)
+        )
+
         LazyColumn(
             state = state,
             userScrollEnabled = enabled,
-            contentPadding = PaddingValues(vertical = (totalHeight - itemHeight) / 2),
+            contentPadding = PaddingValues(vertical = padding),
         ) {
             itemsIndexed(items) { index, value ->
                 val isSel = index == selectedIndex
@@ -440,10 +505,10 @@ private fun WheelPicker(
                         .fillMaxWidth()
                         .clickable(enabled = enabled) {
                             onSelectedIndex(index)
-                            // 👇 클릭했을 때만 스크롤 애니메이션
-                            scope.launch { state.animateScrollToItem(index) }
-                        }
-                        .padding(horizontal = 12.dp),
+                            scope.launch {
+                                state.animateScrollToItem(index)
+                            }
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -461,33 +526,20 @@ private fun WheelPicker(
         }
     }
 
-    // 선택값이 외부에서 바뀌면 해당 위치로만 1회 스크롤(동기화)
+    // ✅ selection이 변경될 때마다 중앙으로 정확히 정렬
     LaunchedEffect(selectedIndex) {
-        if (state.firstVisibleItemIndex != selectedIndex) {
-            state.scrollToItem(selectedIndex)
-        }
+        state.scrollToItem(selectedIndex)
     }
 
-    // 🔧 스냅 로직: 멈춘 순간에만 실행, "필요할 때만" 애니메이션
+    // ✅ 스크롤 위치가 중앙 인덱스를 벗어나면 자동 업데이트
     LaunchedEffect(state) {
-        snapshotFlow { state.isScrollInProgress }.collect { scrolling ->
-            if (!scrolling) {
-                // 현재 중앙에 가장 가까운 인덱스 계산
-                val raw = state.firstVisibleItemIndex.toFloat() +
-                        (state.firstVisibleItemScrollOffset / itemHeightPx)
-                val target = raw.roundToInt().coerceIn(0, items.lastIndex)
-
-                val indexChanged = target != selectedIndex
-                val notCentered = state.firstVisibleItemIndex != target ||
-                        state.firstVisibleItemScrollOffset != 0
-
-                if (indexChanged) {
-                    onSelectedIndex(target)
-                }
-                if (notCentered) {
-                    // 정말 필요할 때만 스냅
-                    state.animateScrollToItem(target)
-                }
+        snapshotFlow {
+            val raw = state.firstVisibleItemIndex.toFloat() +
+                    (state.firstVisibleItemScrollOffset / itemHeightPx)
+            raw.roundToInt().coerceIn(0, items.lastIndex)
+        }.collect { targetIndex ->
+            if (targetIndex != selectedIndex) {
+                onSelectedIndex(targetIndex)
             }
         }
     }
@@ -522,6 +574,35 @@ private fun TopBar(title: String, onBack: () -> Unit) {
                 contentDescription = "뒤로가기",
                 tint = Color.Black
             )
+        }
+    }
+}
+
+fun ensureNotificationChannelActive(context: Context) {
+    val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(
+            "remind_daily",
+            "학습 리마인드",
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "매일 최대 두 번 도착하는 학습 리마인드 알림"
+            enableLights(true)
+            lightColor = Blue_195FCF.toArgb()   // ⚡️여기 수정
+            enableVibration(true)
+        }
+
+        nm.createNotificationChannel(channel)
+
+        // ⚡️ 비활성화된 경우 사용자 설정창으로 안내
+        val channelStatus = nm.getNotificationChannel("remind_daily")?.importance
+        if (channelStatus == NotificationManager.IMPORTANCE_NONE) {
+            val intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                putExtra(Settings.EXTRA_CHANNEL_ID, "remind_daily")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
         }
     }
 }
