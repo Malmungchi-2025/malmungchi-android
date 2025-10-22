@@ -80,4 +80,10 @@ interface AuthService {
     //배지
     @GET("/api/auth/me/badges")
     suspend fun getMyBadges(): BadgeResponse
+
+    //대표 배지
+    @POST("/api/auth/me/badge")
+    suspend fun updateRepresentativeBadge(
+        @Body body: Map<String, String>
+    )
 }

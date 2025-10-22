@@ -39,4 +39,9 @@ interface AuthRepository {
 
     //배지
     suspend fun getMyBadges(): Map<String, Boolean>
+
+
+    // ✅ 로컬 저장 전용 함수 추가
+    suspend fun saveLocalRepresentativeBadge(key: String)
+    suspend fun getLocalRepresentativeBadge(): String?
 }

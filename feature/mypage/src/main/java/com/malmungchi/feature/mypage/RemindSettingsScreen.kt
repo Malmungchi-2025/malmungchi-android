@@ -34,7 +34,14 @@ import com.malmungchi.feature.mypage.remind.Ampm
 import com.malmungchi.feature.mypage.remind.RemindTime
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.snapshotFlow
-
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 // ===== Colors =====
 private val Blue_195FCF = Color(0xFF195FCF)
@@ -60,7 +67,24 @@ fun RemindSettingsScreen(
     onBack: () -> Unit = {},
     onSave: (List<RemindTime>) -> Unit = {}
 ) {
-    // 기본 값
+    val systemUiController = rememberSystemUiController()
+    SideEffect {
+        // ✅ 상태바/내비게이션바 배경 흰색 + 아이콘 흰색
+        systemUiController.setStatusBarColor(
+            color = Color.White,
+            darkIcons = false
+        )
+        systemUiController.setNavigationBarColor(
+            color = Color.White,
+            darkIcons = false
+        )
+    }
+
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // ✅ 상태 저장
     var firstOn by remember { mutableStateOf(true) }
     var firstAmpm by remember { mutableStateOf(Ampm.PM) }
     var firstHour by remember { mutableStateOf("02") }
@@ -71,147 +95,148 @@ fun RemindSettingsScreen(
     var secondHour by remember { mutableStateOf("08") }
     var secondMinute by remember { mutableStateOf("30") }
 
-    // 저장 검증 메시지 (간단 스낵바)
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-
-    val context = LocalContext.current
-
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { scaffoldPadding ->
-        Column(
-            modifier = modifier
+
+        // ✅ Box: 상태바 영역 포함 전체 흰색 배경
+        Box(
+            modifier = Modifier
                 .fillMaxSize()
-                .background(Bg_EFF4FB)
+                .background(Color.White)
                 .padding(scaffoldPadding)
         ) {
-            // (A) 헤더 - 전폭 흰색
+            // ✅ 실제 본문은 연회색 배경
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-            ) {
-                // 상단 상태바 높이 등은 시스템 인셋으로 처리 가능하지만
-                // 요구사항: 아이콘이 "위에서 48dp 간격" -> TopBar 내부 padding으로 해결
-                TopBar(title = "리마인드 알림 설정", onBack = onBack)
-                Divider(color = Color.Transparent, thickness = 12.dp)
-            }
-
-            // (B) 안내 밴드
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
+                modifier = modifier
+                    .fillMaxSize()
                     .background(Bg_EFF4FB)
-                    .padding(horizontal = ScreenPadding, vertical = 12.dp),
-                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "하루에 두 번 메시지를 받을 수 있어요",
-                    style = TextStyle(
-                        fontFamily = Pretendard,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = TextDefault
-                    ),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            // 본문
-            Column(Modifier.padding(horizontal = ScreenPadding)) {
-                Spacer(Modifier.height(8.dp))
-
-                RemindCard(
-                    title = formattedTitle(firstAmpm, firstHour, firstMinute),
-                    isOn = firstOn,
-                    onToggle = { firstOn = it },
-                    ampm = firstAmpm,
-                    hour = firstHour,
-                    minute = firstMinute,
-                    onSelectAmpm = { firstAmpm = it },
-                    onSelectHour = { firstHour = it },
-                    onSelectMinute = { firstMinute = it }
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                RemindCard(
-                    title = formattedTitle(secondAmpm, secondHour, secondMinute),
-                    isOn = secondOn,
-                    onToggle = { secondOn = it },
-                    ampm = secondAmpm,
-                    hour = secondHour,
-                    minute = secondMinute,
-                    onSelectAmpm = { secondAmpm = it },
-                    onSelectHour = { secondHour = it },
-                    onSelectMinute = { secondMinute = it }
-                )
-
-                Spacer(Modifier.weight(1f))
-
-                Button(
-                    onClick = {
-                        // 켜진 항목만 수집
-                        val list = buildList {
-                            if (firstOn) add(RemindTime(firstAmpm, firstHour, firstMinute))
-                            if (secondOn) add(RemindTime(secondAmpm, secondHour, secondMinute))
-                        }
-
-                        // 검증: 최대 2개(현재 UI는 2개지만 방어), 중복 시간 금지, 최소 1개 권장
-                        val distinct = list.distinctBy { it.ampm to (it.hour to it.minute) }
-                        when {
-                            list.isEmpty() -> {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("알림 시간을 하나 이상 켜주세요.")
-                                }
-                            }
-
-                            distinct.size != list.size -> {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("동일한 시간대가 중복되었습니다. 시간을 변경해 주세요.")
-                                }
-                            }
-
-                            list.size > 2 -> {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("하루에 최대 두 번까지 설정할 수 있어요.")
-                                }
-                            }
-
-                            else -> {
-                                // ✅ 저장 + 예약(기존 알람 취소 후 재등록 포함)
-                                com.malmungchi.feature.mypage.remind.ReminderScheduler
-                                    .saveAndSchedule(context, distinct)
-                                Log.d("REMIND", "save: $distinct")
-                                // ✅ 저장 성공 안내 (이 화면의 SnackbarHost에 표시)
-                                scope.launch { snackbarHostState.showSnackbar("리마인드 시간이 저장됐어요.") }
-                                onSave(distinct) // ✅ 프론트엔드에서 저장/스케줄링 연결
-                            }
-                        }
-                    },
-                    shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(containerColor = Blue_195FCF),
+                // (A) 헤더 - 전폭 흰색
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth(0.5f)                 // 너비 절반
-                        .align(Alignment.CenterHorizontally) // 수평 가운데 정렬
-                        .padding(bottom = 48.dp)            // 아래 간격 48
-                        .height(48.dp)
+                        .fillMaxWidth()
+                        .background(Color.White)
+                ) {
+                    TopBar(title = "리마인드 알림 설정", onBack = onBack)
+                    Divider(color = Color.Transparent, thickness = 12.dp)
+                }
+
+                // (B) 안내 밴드
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Bg_EFF4FB)
+                        .padding(horizontal = ScreenPadding, vertical = 12.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "저장하기",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = Pretendard,
-                        color = Color.White
+                        text = "하루에 두 번 메시지를 받을 수 있어요",
+                        style = TextStyle(
+                            fontFamily = Pretendard,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextDefault
+                        ),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
-                Spacer(Modifier.height(16.dp))
+
+                // (C) 본문 내용
+                Column(Modifier.padding(horizontal = ScreenPadding)) {
+                    Spacer(Modifier.height(8.dp))
+
+                    RemindCard(
+                        title = formattedTitle(firstAmpm, firstHour, firstMinute),
+                        isOn = firstOn,
+                        onToggle = { firstOn = it },
+                        ampm = firstAmpm,
+                        hour = firstHour,
+                        minute = firstMinute,
+                        onSelectAmpm = { firstAmpm = it },
+                        onSelectHour = { firstHour = it },
+                        onSelectMinute = { firstMinute = it }
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    RemindCard(
+                        title = formattedTitle(secondAmpm, secondHour, secondMinute),
+                        isOn = secondOn,
+                        onToggle = { secondOn = it },
+                        ampm = secondAmpm,
+                        hour = secondHour,
+                        minute = secondMinute,
+                        onSelectAmpm = { secondAmpm = it },
+                        onSelectHour = { secondHour = it },
+                        onSelectMinute = { secondMinute = it }
+                    )
+
+                    Spacer(Modifier.weight(1f))
+
+                    Button(
+                        onClick = {
+                            val list = buildList {
+                                if (firstOn) add(RemindTime(firstAmpm, firstHour, firstMinute))
+                                if (secondOn) add(RemindTime(secondAmpm, secondHour, secondMinute))
+                            }
+
+                            val distinct = list.distinctBy { it.ampm to (it.hour to it.minute) }
+                            when {
+                                list.isEmpty() -> {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("알림 시간을 하나 이상 켜주세요.")
+                                    }
+                                }
+
+                                distinct.size != list.size -> {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("동일한 시간대가 중복되었습니다. 시간을 변경해 주세요.")
+                                    }
+                                }
+
+                                list.size > 2 -> {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("하루에 최대 두 번까지 설정할 수 있어요.")
+                                    }
+                                }
+
+                                else -> {
+                                    com.malmungchi.feature.mypage.remind.ReminderScheduler
+                                        .saveAndSchedule(context, distinct)
+                                    Log.d("REMIND", "save: $distinct")
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("리마인드 시간이 저장됐어요.")
+                                    }
+                                    onSave(distinct)
+                                }
+                            }
+                        },
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(containerColor = Blue_195FCF),
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .align(Alignment.CenterHorizontally)
+                            .padding(bottom = 48.dp)
+                            .height(48.dp)
+                    ) {
+                        Text(
+                            text = "저장하기",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = Pretendard,
+                            color = Color.White
+                        )
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+                }
             }
         }
     }
 }
+
 
 private fun formattedTitle(ampm: Ampm, h: String, m: String): String {
     // 시간은 자연스럽게(1자리/2자리 상관 없이) 표기, 분은 두 자리 유지
@@ -509,3 +534,9 @@ private fun RemindSettingsPreview() {
     }
 }
 
+
+fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
