@@ -2,6 +2,7 @@ package com.malmungchi.feature.mypage
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -71,28 +72,21 @@ fun SettingsScreen(
             onClick = { showLogout = true }         // ★ 다이얼로그 오픈
         )
 
-        Divider(Modifier.fillMaxWidth(), color = Color(0xFFF2F2F2))
-        SettingsPlainItem(
-            text = "회원 탈퇴",
-            onClick = onClickWithdraw
-        )
+//        Divider(Modifier.fillMaxWidth(), color = Color(0xFFF2F2F2))
+//        SettingsPlainItem(
+//            text = "회원 탈퇴",
+//            onClick = onClickWithdraw
+//        )
     }
 
     // ★ 로그아웃 다이얼로그
     if (showLogout) {
-        AlertDialog(
-            onDismissRequest = { showLogout = false },
-            title = { Text("로그아웃") },
-            text  = { Text("정말 로그아웃하시겠어요?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showLogout = false
-                    viewModel.logout()              // ★ 실제 로그아웃
-                }) { Text("로그아웃") }
+        LogoutAlert.Show(
+            onConfirm = {
+                showLogout = false
+                viewModel.logout() // ✅ 실제 로그아웃 실행
             },
-            dismissButton = {
-                TextButton(onClick = { showLogout = false }) { Text("취소") }
-            }
+            onDismiss = { showLogout = false }
         )
     }
 }
@@ -227,6 +221,77 @@ private fun SettingsScreenPreview() {
     MaterialTheme { SettingsScreen() }
 }
 
+
+class LogoutAlert {
+    companion object {
+        @Composable
+        fun Show(
+            onConfirm: () -> Unit, // ✅ 로그아웃 진행
+            onDismiss: () -> Unit  // ✅ 취소
+        ) {
+            AlertDialog(
+                onDismissRequest = { onDismiss() },
+                title = {
+                    Text(
+                        "로그아웃을 진행하시겠습니까?",
+                        fontFamily = Pretendard,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                text = {
+                    // ❌ 원래 두 줄이던 문구 제거 — 디자인 동일 유지
+                },
+                confirmButton = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // ✅ 왼쪽: 네 (아웃라인)
+                        OutlinedButton(
+                            onClick = { onConfirm() },
+                            shape = RoundedCornerShape(50),
+                            border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF195FCF)),
+                            modifier = Modifier
+                                .height(42.dp)
+                                .weight(1f)
+                        ) {
+                            Text("네", fontSize = 16.sp, fontFamily = Pretendard)
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        // ✅ 오른쪽: 아니요 (파란색)
+                        Button(
+                            onClick = { onDismiss() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
+                            shape = RoundedCornerShape(50),
+                            modifier = Modifier
+                                .height(42.dp)
+                                .weight(1f)
+                        ) {
+                            Text("아니요", fontSize = 16.sp, fontFamily = Pretendard, color = Color.White)
+                        }
+                    }
+                },
+                dismissButton = {},
+                containerColor = Color.White,
+                shape = RoundedCornerShape(12.dp)
+            )
+        }
+    }
+}
+
+/** ✅ Preview */
+@Preview(showBackground = true)
+@Composable
+fun PreviewLogoutAlert() {
+    LogoutAlert.Show(
+        onConfirm = {},
+        onDismiss = {}
+    )
+}
 
 //package com.malmungchi.feature.mypage
 //

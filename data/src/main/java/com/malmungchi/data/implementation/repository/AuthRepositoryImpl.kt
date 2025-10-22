@@ -148,6 +148,20 @@ class AuthRepositoryImpl @Inject constructor(
         return resp.result ?: emptyMap()
     }
 
+    // ✅ 대표 배지 로컬 저장
+    override suspend fun saveLocalRepresentativeBadge(key: String) {
+        authPref.saveRepresentativeBadge(key)
+    }
+
+    // ✅ 대표 배지 로컬 불러오기
+    override suspend fun getLocalRepresentativeBadge(): String? {
+        return authPref.getRepresentativeBadge()
+    }
+
+
+
+
+
 }
 //class AuthRepositoryImpl @Inject constructor(   // 👈 @Inject 추가
 //    private val api: AuthService

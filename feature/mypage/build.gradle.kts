@@ -47,6 +47,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(project(":feature:login"))
+    implementation(project(":feature:study"))
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -67,4 +68,6 @@ dependencies {
     // Core & Design 모듈
     implementation(project(":core"))
     implementation(project(":design"))
+
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.33.2-alpha")
 }
