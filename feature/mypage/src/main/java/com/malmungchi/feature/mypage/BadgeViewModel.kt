@@ -42,6 +42,8 @@ class BadgeViewModel @Inject constructor(
         }
     }
 
+
+
     private val badgeTitleMap = mapOf(
         "1_week_attendance" to "일주일 출석",
         "1_month_attendance" to "한 달 출석",
@@ -60,6 +62,8 @@ class BadgeViewModel @Inject constructor(
         "five_logins_day" to "하루 5회 학습"
     )
 }
+
+
 
 sealed interface BadgeUiState {
     object Loading : BadgeUiState

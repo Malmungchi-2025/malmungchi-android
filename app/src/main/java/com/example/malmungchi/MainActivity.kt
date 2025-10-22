@@ -16,6 +16,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
 import com.example.malmungchi.ui.theme.MalmungchiTheme
 import java.io.File
 import java.io.FileOutputStream
@@ -35,10 +36,22 @@ class MainActivity : ComponentActivity() {
 
 
 
-        // SplashScreen 설치
+        // ✅ 스플래시 화면
         installSplashScreen()
 
-        // 권한 확인 후 요청
+        // ✅ 상태바/내비게이션바 흰색 아이콘 유지
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        //WindowCompat.setDecorFitsSystemWindows(window, true)
+
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        controller.isAppearanceLightStatusBars = false  // 아이콘 흰색
+        controller.isAppearanceLightNavigationBars = false // 하단도 흰색
+
+        // ✅ 상태바 배경 완전 흰색 고정
+        window.statusBarColor = android.graphics.Color.WHITE
+        window.navigationBarColor = android.graphics.Color.WHITE
+
+        // ✅ 권한 처리 그대로 유지
         if (!isPermissionGranted()) {
             requestPermissionsIfNeeded()
         }
