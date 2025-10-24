@@ -93,6 +93,7 @@ fun MainScreen(
                     }
 
                     StudyWeeklyScreen(
+                        vm = vm, // ✅ ViewModel 직접 주입
                         initialDateLabel = today,
                         onDateChange = { label ->
                             runCatching { LocalDate.parse(label) }.onSuccess { picked ->
@@ -105,12 +106,12 @@ fun MainScreen(
                         bodyText = body,
                         onBackClick = { /* 탭 루트라 noop */ },
                         onGoStudyClick = { onStartStudyFlow() },
-                        onOpenPastStudy = { /* 필요 시 라우팅 확장 */ },
-
-                        // ✅ 여기 추가! 정확히 일치 비교
-                        hasStudy = { day -> studiedDates.contains(day) }
+                        onOpenPastStudy = { /* 필요 시 라우팅 확장 */ }
                     )
+
+
                 }
+            }
 //                composable("study/weekly") {
 //                    // 탭 안에서도 프리뷰/날짜 조회가 필요하면 VM 사용
 //                    val vm: StudyReadingViewModel = hiltViewModel()
@@ -133,7 +134,7 @@ fun MainScreen(
 //                        onOpenPastStudy = { /* 필요시 루트로 진입 후 해당 화면 열도록 확장 */ }
 //                    )
 //                }
-            }
+//            }
 
             // 퀴즈
             navigation(

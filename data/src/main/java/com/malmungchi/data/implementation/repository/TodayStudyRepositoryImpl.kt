@@ -158,6 +158,40 @@ class TodayStudyRepositoryImpl(
             // 필요하다면 res.result!!.totalPoint로 전체 포인트도 반환 가능
         }
     }
+
+    /** ✅ 특정 날짜의 학습 단계 조회 */
+    override suspend fun getStudyProgress(date: LocalDate): Result<Int> = withContext(Dispatchers.IO) {
+        val iso = date.format(DateTimeFormatter.ISO_DATE)
+        Log.d("API_PROGRESS_GET", "📡 [요청] GET /api/study/progress/$iso")
+        runCatching {
+            val res = api.getStudyProgress(iso)
+            check(res.success && res.result != null) { res.message ?: "단계 조회 실패" }
+            res.result!!.progress_level
+        }
+    }
+
+    /** ✅ 특정 날짜의 학습 단계 업데이트 */
+    override suspend fun updateStudyProgress(date: LocalDate, step: Int): Result<Unit> = withContext(Dispatchers.IO) {
+        val iso = date.format(DateTimeFormatter.ISO_DATE)
+        Log.d("API_PROGRESS_PATCH", "📡 [요청] PATCH /api/study/progress step=$step date=$iso")
+        runCatching {
+            val res = api.updateStudyProgress(TodayStudyApi.ProgressUpdateRequest(date = iso, step = step))
+            check(res.success) { res.message ?: "단계 저장 실패" }
+            Unit
+        }
+    }
+
+    /** ✅ 주간 진행도 조회 */
+    override suspend fun getStudyProgressWeek(center: LocalDate): Result<Map<String, Int>> =
+        withContext(Dispatchers.IO) {
+            val iso = center.format(DateTimeFormatter.ISO_DATE)
+            Log.d("API_PROGRESS_WEEK", "📡 [요청] GET /api/study/progress/week/$iso")
+            runCatching {
+                val res = api.getStudyProgressWeek(iso)
+                check(res.success && res.result != null) { res.message ?: "주간 진행도 조회 실패" }
+                res.result!!.progress_map
+            }
+        }
 }
 //이전 작동 코드
 //class TodayStudyRepositoryImpl(

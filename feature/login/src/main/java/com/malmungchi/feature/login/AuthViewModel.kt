@@ -184,31 +184,40 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _ui.update { it.copy(loading = true, error = null) }
 
-            runCatching { repo.login(email.trim(), password) }
-                .onSuccess { res ->
-                    val user = res.user
-                    val token = res.token
+            runCatching {
+                repo.login(email.trim(), password)  // ← 바로 LoginResponse 반환
+            }.onSuccess { res ->
+                val user = res.user
+                val token = res.token
 
-                    if (res.success && token != null && user != null) {
-                        val userIdInt = try { user.id.toInt() } catch (_: Exception) { null }
-                        if (userIdInt != null) {
-                            _ui.update { it.copy(loading = false, lastLogin = res) }
-                            onResult(true, userIdInt, token, null)
-                        } else {
-                            _ui.update { it.copy(loading = false) }
-                            onResult(false, null, null, "로그인 실패: 잘못된 사용자 ID 형식")
-                        }
+                // ✅ 성공
+                if (res.success && token != null && user != null) {
+                    val userIdInt = try { user.id.toInt() } catch (_: Exception) { null }
+                    if (userIdInt != null) {
+                        _ui.update { it.copy(loading = false, lastLogin = res) }
+                        onResult(true, userIdInt, token, null)
                     } else {
                         _ui.update { it.copy(loading = false) }
-                        onResult(false, null, null, res.message ?: "로그인 실패")
+                        onResult(false, null, null, "로그인 실패: 잘못된 사용자 ID 형식")
                     }
                 }
-                .onFailure { t ->
+                // ❌ 실패 — 서버가 success:false로 응답
+                else {
                     _ui.update { it.copy(loading = false) }
-                    onResult(false, null, null, t.message ?: "네트워크 오류")
+                    val msg = res.message ?: "이메일 또는 비밀번호가 올바르지 않습니다."
+                    onResult(false, null, null, msg)
                 }
+
+            }.onFailure { e ->
+                _ui.update { it.copy(loading = false) }
+                val msg = when {
+                    e.message?.contains("401") == true -> "이메일 또는 비밀번호가 올바르지 않습니다."
+                    e.message?.contains("400") == true -> "이메일/비밀번호를 모두 입력해주세요."
+                    else -> "네트워크 오류가 발생했습니다."
+                }
+                onResult(false, null, null, msg)
+            }
         }
     }
-
 
 }

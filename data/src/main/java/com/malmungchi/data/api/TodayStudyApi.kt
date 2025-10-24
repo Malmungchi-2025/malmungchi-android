@@ -12,9 +12,11 @@ import com.malmungchi.data.api.dto.StudySummaryDto
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import java.time.LocalDate
 
 interface TodayStudyApi {
     //그날의 글감 + 필사 + 단어 + 퀴즈/채점 한 번에 바인딩.
@@ -25,6 +27,35 @@ interface TodayStudyApi {
     suspend fun getAvailableDates(@Query("year") year:String, @Query("month") month:String): BaseResponse<List<String>>
 
 
+    @GET("/api/study/progress/week/{date}")
+    suspend fun getStudyProgressWeek(
+        @Path("date") date: String
+    ): BaseResponse<ProgressWeekResponse>
+
+    data class ProgressWeekResponse(
+        val progress_map: Map<String, Int>
+    )
+    // ✅ 학습 진행도 조회 (GET /api/study/progress/:date)
+    @GET("/api/study/progress/{date}")
+    suspend fun getStudyProgress(
+        @Path("date") date: String
+    ): BaseResponse<ProgressResponse>
+
+    // ✅ 학습 단계 업데이트 (PATCH /api/study/progress)
+    @PATCH("/api/study/progress")
+    suspend fun updateStudyProgress(
+        @Body body: ProgressUpdateRequest
+    ): BaseResponse<Unit>
+
+    // DTOs
+    data class ProgressResponse(
+        val progress_level: Int
+    )
+
+    data class ProgressUpdateRequest(
+        val date: String,
+        val step: Int
+    )
 
 //    // ✅ 오늘의 글감 (서버가 studyId도 top-level로 내려줌)
 //    @POST("/api/gpt/generate-quote")
@@ -84,6 +115,8 @@ interface TodayStudyApi {
         val todayReward: Int,     // 오늘 지급한 포인트 (15)
         val totalPoint: Int       // 현재 전체 보유 포인트
     )
+
+
 
 }
 
