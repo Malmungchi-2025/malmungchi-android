@@ -90,21 +90,27 @@ fun StudyCompleteScreen(
         }
 
         // 🎯 하단 버튼
-        Button(
-            onClick = { onNextClick() },
-            shape = RoundedCornerShape(50),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 32.dp)
-                .height(48.dp)
+                .padding(bottom = 32.dp),
+            contentAlignment = Alignment.Center // ✅ 중앙 정렬
         ) {
-            Text(
-                text = "학습 마치기",
-                fontSize = 16.sp,
-                fontFamily = Pretendard,
-                color = Color.White
-            )
+            Button(
+                onClick = { onNextClick() },
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
+                modifier = Modifier
+                    .width(156.dp)   // ✅ 버튼 너비
+                    .height(40.dp)   // ✅ 버튼 높이
+            ) {
+                Text(
+                    text = "학습 마치기",
+                    fontSize = 16.sp,
+                    fontFamily = Pretendard,
+                    color = Color.White
+                )
+            }
         }
     }
 }

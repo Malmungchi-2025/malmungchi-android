@@ -27,6 +27,9 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+
+        // ✅ 추가 (LocalDate, java.time.* API 하위 호환 활성화)
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "17"
@@ -81,4 +84,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":design"))
     implementation(project(":data"))
+
+    // ✅ 추가: LocalDate 등 Java 8 API 하위 호환 라이브러리
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

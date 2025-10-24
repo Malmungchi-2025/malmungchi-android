@@ -26,6 +26,15 @@ interface TodayStudyRepository {
     suspend fun saveQuizAnswer(req: QuizAnswerRequest): Result<Unit>
     /** ✅ 오늘의 학습 포인트 지급 (성공시 오늘 지급분 리턴) */
     suspend fun rewardTodayStudy(): Result<Int>
+
+    /** ✅ 특정 날짜의 학습 단계(progress_level) 조회 */
+    suspend fun getStudyProgress(date: LocalDate): Result<Int>
+
+    /** ✅ 특정 날짜의 학습 단계 업데이트 */
+    suspend fun updateStudyProgress(date: LocalDate, step: Int): Result<Unit>
+
+    /** ✅ 특정 주(week)의 날짜별 학습 단계 맵 조회 */
+    suspend fun getStudyProgressWeek(center: LocalDate): Result<Map<String, Int>>
 }
 
 //interface TodayStudyRepository {

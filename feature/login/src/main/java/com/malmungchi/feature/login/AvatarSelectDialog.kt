@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -216,7 +218,11 @@ private fun AvatarCircle(
         Image(
             painter = painterResource(id = option.resId),
             contentDescription = option.name,
-            modifier = Modifier.size(84.dp)
+            modifier = Modifier
+                .size(84.dp)
+                .offset(y = (-3).dp), // ✅ 살짝 위로 보정
+            contentScale = ContentScale.Fit, // ✅ 비율 유지 + 중앙
+            alignment = Alignment.Center
         )
     }
 }
