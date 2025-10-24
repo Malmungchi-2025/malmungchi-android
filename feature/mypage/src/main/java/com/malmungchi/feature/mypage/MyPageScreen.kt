@@ -172,202 +172,7 @@ fun MyPageRoute(
         }
     }
 }
-//@Composable
-//fun MyPageRoute(
-//    viewModel: MyPageViewModel = hiltViewModel(),
-//    onClickSettings: () -> Unit = {},
-//    onClickViewAllWords: () -> Unit = {},
-//    onClickViewAllBadges: () -> Unit = {},
-//    onClickViewNicknameTest: () -> Unit = {},
-//    onClickViewNicknameCard: (nicknameTitle: String, userName: String) -> Unit = { _, _ -> } // 별명 카드로 이동하는 콜백
-//) {
-//    val ui by viewModel.ui.collectAsState()
-//
-//    var showAvatarDialog by rememberSaveable { mutableStateOf(false) }
-//
-//    // ✅ 1️⃣ 최초 1회만 데이터 로드 (중복 방지)
-//    LaunchedEffect(Unit) {
-//        viewModel.loadIfNeeded()
-//    }
-//
-//    // ✅ 2️⃣ 최근 단어 인덱스 관리
-//    val pageCount = ui.recentVocab.size
-//    var recentIndex by rememberSaveable(pageCount) { mutableStateOf(0) }
-//    if (recentIndex >= pageCount) recentIndex = (pageCount - 1).coerceAtLeast(0)
-//
-//    // ✅ 3️⃣ 상태별 처리
-//    if (ui.error != null) {
-//        Box(
-//            Modifier.fillMaxSize().background(Color.White),
-//            contentAlignment = Alignment.Center
-//        ) {
-//            Text("에러: ${ui.error}")
-//        }
-//    } else {
-//        // ✅ 닉네임 카드 다이얼로그 열림 여부
-//        var showNicknameCard by rememberSaveable { mutableStateOf(false) }
-//
-//        val nicknameTitle = ui.user?.nickname_title
-//        val context = androidx.compose.ui.platform.LocalContext.current
-//        val avatarRes = remember(ui.avatarName) {
-//            avatarNameToRes(context, ui.avatarName)
-//        }
-//
-//        // ✅ 마이페이지 메인 화면 표시
-//        MyPageScreen(
-//            userName = ui.userName,
-//            levelLabel = ui.levelLabel,
-//            nextStage = ui.nextStageUi,
-//            onClickSettings = onClickSettings,
-//            onClickViewAllWords = onClickViewAllWords,
-//            onClickViewAllBadges = onClickViewAllBadges,
-//            onClickNickname = {
-//                if (!nicknameTitle.isNullOrBlank()) {
-//                    showNicknameCard = true
-//                } else {
-//                    onClickViewNicknameTest()
-//                }
-//            },
-//            profileIconRes = avatarRes,
-//            recentItems = ui.recentVocab,
-//            currentRecentIndex = recentIndex,
-//            onChangeRecentIndex = { recentIndex = it },
-//            onClickChangeAvatar = { showAvatarDialog = true } // ✅ 아바타 클릭 시 다이얼로그 열기
-//        )
-//
-//        // ✅ 닉네임 카드 다이얼로그 (마이페이지 위 오버레이)
-//        if (showNicknameCard) {
-//            NicknameCardDialog(
-//                nickname = nicknameTitle, // ex) "언어연금술사"
-//                onExit = { showNicknameCard = false },
-//                onSaveImage = { nick ->
-//                    // TODO: 저장 구현 (원래 쓰던 로직 연결)
-//                    // ex) viewModel.saveCardImage(nick)
-//                    showNicknameCard = false
-//                }
-//            )
-//
-//        }
-//
-//        // ✅ 아바타 선택 다이얼로그
-//        if (showAvatarDialog) {
-//            AvatarSelectDialog(
-//                name = ui.userName,
-//                onConfirm = { selected ->
-//                    viewModel.updateAvatar(selected) // ✅ 서버 + UI 즉시 반영
-//                    showAvatarDialog = false
-//                },
-//                onDismiss = { showAvatarDialog = false }
-//            )
-//        }
-//    }
-//}
-//@Composable
-//fun MyPageRoute(
-//    viewModel: MyPageViewModel = hiltViewModel(),
-//    onClickSettings: () -> Unit = {},
-//    onClickViewAllWords: () -> Unit = {},
-//    onClickViewAllBadges: () -> Unit = {},
-//    onClickViewNicknameTest: () -> Unit = {},
-//    onClickViewNicknameCard: (nicknameTitle: String, userName: String) -> Unit = { _, _ -> }  // 별명 카드로 이동하는 콜백 추가
-//) {
-//    val ui by viewModel.ui.collectAsState()
-//
-//    LaunchedEffect(Unit) { viewModel.load() }
-//
-//    // 최근 단어 5개 인덱스
-//    val pageCount = ui.recentVocab.size
-//    var recentIndex by rememberSaveable(pageCount) { mutableStateOf(0) }
-//    if (recentIndex >= pageCount) recentIndex = (pageCount - 1).coerceAtLeast(0)
-//
-//    when {
-//        ui.loading -> Box(
-//            Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
-//            Text("불러오는 중…")
-//        }
-//        ui.error != null -> Box(Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
-//            Text("에러: ${ui.error}")
-//        }
-//        else -> {
-//            // ✅ 다이얼로그 열림 상태
-//            var showNicknameCard by rememberSaveable { mutableStateOf(false) }
-//            // ✅ 유저 닉네임 타이틀(없을 수 있음)
-//            val nicknameTitle = ui.user?.nickname_title
-//
-//            val context = androidx.compose.ui.platform.LocalContext.current
-//            val avatarRes = remember(ui.avatarName) {
-//                avatarNameToRes(context, ui.avatarName)
-//            }
-//
-//
-//            MyPageScreen(
-//                userName = ui.userName,
-//                levelLabel = ui.levelLabel,
-//                nextStage = ui.nextStageUi,
-//                onClickSettings = onClickSettings,
-//                onClickViewAllWords = onClickViewAllWords,
-//                onClickViewAllBadges = onClickViewAllBadges,
-//
-//                // ✅ 말풍선(치치의 어휘/문해력은?) 클릭 → 다이얼로그 오픈
-//                onClickNickname = {
-//                    // 닉네임이 있을 때만 카드 오픈, 없으면 테스트로
-//                    if (!nicknameTitle.isNullOrBlank()) {
-//                        showNicknameCard = true
-//                    } else {
-//                        onClickViewNicknameTest()
-//                    }
-//                },
-//
-//                // ✅ 프로필 아이콘에 실제 사용자 아바타 전달
-//                profileIconRes = avatarRes,
-//
-//                recentItems = ui.recentVocab,
-//                currentRecentIndex = recentIndex,
-//                onChangeRecentIndex = { recentIndex = it }
-//            )
-//
-//            // ✅ 다이얼로그 표시(마이페이지 위 오버레이)
-//            if (showNicknameCard) {
-//                NicknameCardDialog(
-//                    nickname = nicknameTitle, // ex) "언어연금술사"
-//                    onExit = { showNicknameCard = false }, // 닫기(스크림 탭/백 포함)
-//                    onSaveImage = { nick ->
-//                        // TODO: 저장 구현(원래 쓰던 로직 연결)
-//                        // ex) viewModel.saveCardImage(nick)
-//                        showNicknameCard = false
-//                    }
-//                )
-//            }
-//        }
-//    }
-//}
-//        else -> {
-//            // 별명 검사
-//            if (ui.user?.nickname_title.isNullOrBlank()) {
-//                // 별명이 없다면 별명 테스트 화면으로 이동
-//                MyPageScreen(
-//                    userName = ui.userName,
-//                    levelLabel = ui.levelLabel,
-//                    nextStage = ui.nextStageUi,
-//                    onClickSettings = onClickSettings,
-//                    onClickViewAllWords = onClickViewAllWords,
-//                    onClickViewAllBadges = onClickViewAllBadges,
-//                    onClickNicknameTest = { onClickViewNicknameTest() },  // 별명 테스트 클릭 시
-//                    recentItems = ui.recentVocab,
-//                    currentRecentIndex = 0,
-//                    onChangeRecentIndex = {}
-//                )
-//            } else {
-//                // 별명이 있으면 별명 카드 화면으로 이동
-//                NicknameCardScreen(
-//                    userName = ui.userName, // ui.userName을 전달
-//                    nickname = ui.user?.nickname_title ?: "별명 없음",  // 별명 제목이 없으면 기본값
-//                    onExit = onClickViewNicknameCard  // 완료 시 별명 화면으로 돌아가기
-//                )
-//            }
-//        }
-//    }
-//}
+
 
 // ===== Public Screen (UI만) =====
 @Composable
@@ -389,7 +194,8 @@ fun MyPageScreen(
     // ✅ 추가: 호출부에서 넘겨주는 사용자 아바타 리소스
     @androidx.annotation.DrawableRes profileIconRes: Int,
     onClickChangeAvatar: () -> Unit = {}, // ✅ 추가
-    recentBadges: List<BadgeUi> = emptyList()
+    recentBadges: List<BadgeUi> = emptyList(),
+    nicknameTitle: String? = null // ✅ 추가
 ) {
     Column(
         modifier = modifier
@@ -406,14 +212,23 @@ fun MyPageScreen(
         Spacer(Modifier.height(32.dp))
         ProfileBlock(
             userName = userName,
-            questionLabel = "치치의 어휘/문해력은?",
-            profileIconRes = profileIconRes,   // ✅ 여기!
-            //profileIconRes = MyPageR.drawable.ic_mypage_icon,
+            // ✅ nickname_title이 있으면 그걸 표시, 없으면 기존 문구 유지
+            questionLabel = nicknameTitle ?: "치치의 어휘/문해력은?",
+            //questionLabel = displayUi.user?.nickname_title ?: "치치의 어휘/문해력은?",
+            profileIconRes = profileIconRes,
             onClickQuestion = onClickNickname,
-            onClickAvatar = { onClickChangeAvatar() } // ✅ 새 콜백 연결
-
-            //onClickQuestion = { onClickNicknameTest() }
+            onClickAvatar = { onClickChangeAvatar() }
         )
+//        ProfileBlock(
+//            userName = userName,
+//            questionLabel = "치치의 어휘/문해력은?",
+//            profileIconRes = profileIconRes,   // ✅ 여기!
+//            //profileIconRes = MyPageR.drawable.ic_mypage_icon,
+//            onClickQuestion = onClickNickname,
+//            onClickAvatar = { onClickChangeAvatar() } // ✅ 새 콜백 연결
+//
+//            //onClickQuestion = { onClickNicknameTest() }
+//        )
         var showLevelSheet by rememberSaveable { mutableStateOf(false) }
 
         Spacer(Modifier.height(20.dp))
@@ -517,12 +332,29 @@ private fun ProfileBlock(
             .height(AVATAR_SIZE),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(id = profileIconRes),
-            contentDescription = "프로필",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(AVATAR_SIZE).clickable { onClickAvatar() } // 클릭 시 다이얼로그 열기
-        )
+        // ✅ Box로 아바타 이미지 + 연필 아이콘 겹치기
+        Box(modifier = Modifier.size(AVATAR_SIZE)) {
+            Image(
+                painter = painterResource(id = profileIconRes),
+                contentDescription = "프로필",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .size(AVATAR_SIZE)
+                    .clip(CircleShape)
+                    .clickable { onClickAvatar() }
+            )
+
+            // ✅ 아바타 오른쪽 아래 모서리에 수정 아이콘 배치
+            Icon(
+                painter = painterResource(id = MyPageR.drawable.ic_pencil),
+                contentDescription = "프로필 수정",
+                tint = Color(0xFF616161),
+                modifier = Modifier
+                    .size(18.dp)
+                    .align(Alignment.BottomEnd)
+                    .offset(x = -2.dp, y = -2.dp) // 살짝 바깥으로
+            )
+        }
 
         Spacer(Modifier.width(AVATAR_TO_TEXT_GAP))
 
@@ -549,12 +381,12 @@ private fun ProfileBlock(
                     )
                 )
                 Spacer(Modifier.width(6.dp))
-                Icon(
-                    painter = painterResource(id = MyPageR.drawable.ic_pencil),
-                    contentDescription = "이름 수정",
-                    tint = Gray_616161,
-                    modifier = Modifier.size(14.dp)
-                )
+//                Icon(
+//                    painter = painterResource(id = MyPageR.drawable.ic_pencil),
+//                    contentDescription = "이름 수정",
+//                    tint = Gray_616161,
+//                    modifier = Modifier.size(14.dp)
+//                )
             }
 
             Spacer(Modifier.weight(1f))
@@ -647,44 +479,7 @@ private fun LevelBlock(
 }
 
 private fun formatNum(n: Int): String = "%,d".format(n)
-//@Composable
-//private fun LevelBlock(
-//    userName: String,
-//    levelLabel: String,
-//    progress: Float
-//) {
-//    Row(
-//        modifier = Modifier.fillMaxWidth(),
-//        verticalAlignment = Alignment.CenterVertically
-//    ) {
-//        Spacer(Modifier.height(16.dp))
-//
-//        Text(
-//            text = "${userName}님의 수준은 ‘${levelLabel}’", // ← 이름/단계 문구
-//            style = TextStyle(
-//                fontFamily = Pretendard,
-//                fontSize = 16.sp,
-//                fontWeight = FontWeight.Medium,
-//                color = Color.Black
-//            ),
-//            modifier = Modifier.weight(1f)
-//        )
-//        Icon(
-//            painter = painterResource(id = MyPageR.drawable.ic_question),
-//            contentDescription = "레벨 설명",
-//            tint = Color(0xFF262626),
-//            modifier = Modifier.size(20.dp)
-//        )
-//    }
-//
-//    Spacer(Modifier.height(8.dp))
-//    ProgressBar(
-//        progress = progress.coerceIn(0f, 1f),
-//        height = 12.dp,
-//        trackColor = Bg_EFF4FB,
-//        progressColor = Blue_195FCF
-//    )
-//}
+
 
 @Composable
 private fun ProgressBar(
@@ -726,105 +521,7 @@ private fun LevelInfoBottomSheet(
         LevelInfoBottomSheetContent(next = next, onDismiss = onDismiss)
     }
 }
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//private fun LevelInfoBottomSheet(
-//    next: NextStageUi?,           // null이면 최고 단계
-//    onDismiss: () -> Unit
-//) {
-//    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-//    ModalBottomSheet(
-//        onDismissRequest = onDismiss,
-//        sheetState = sheetState,
-//        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), // 상단 두 모서리만 둥글게
-//        containerColor = Color.White
-//    ) {
-//        Column(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(horizontal = 20.dp, vertical = 16.dp),
-//            horizontalAlignment = Alignment.CenterHorizontally
-//        ) {
-//            // 제목: Pretendard 18, 세미볼드, 블랙
-//            Text(
-//                text = "수준별 학습 구간",
-//                style = TextStyle(
-//                    fontFamily = Pretendard,
-//                    fontWeight = FontWeight.SemiBold,
-//                    fontSize = 18.sp,
-//                    color = Color(0xFF000000)
-//                ),
-//                textAlign = TextAlign.Center
-//            )
-//
-//            Spacer(Modifier.height(10.dp))
-//
-//            // 설명 1: Pretendard 14, 미디엄, 블랙
-//            Text(
-//                text = "학습을 하며 얻은 포인트를 모아 다음 수준에 도달하세요!",
-//                style = TextStyle(
-//                    fontFamily = Pretendard,
-//                    fontWeight = FontWeight.Medium,
-//                    fontSize = 14.sp,
-//                    color = Color(0xFF000000),
-//                    lineHeight = 20.sp
-//                ),
-//                textAlign = TextAlign.Center
-//            )
-//
-//            Spacer(Modifier.height(6.dp))
-//
-//            // 설명 2: Pretendard 12, 미디엄, 616161
-//            Text(
-//                text = "해당 구간은 학습을 진행시 얻는 XP를 통해 얻을 수 있어요.",
-//                style = TextStyle(
-//                    fontFamily = Pretendard,
-//                    fontWeight = FontWeight.Medium,
-//                    fontSize = 12.sp,
-//                    color = Gray_616161,
-//                    lineHeight = 18.sp
-//                ),
-//                textAlign = TextAlign.Center
-//            )
-//
-//            Spacer(Modifier.height(16.dp))
-//
-//            if (next == null) {
-//                InfoRow("현재 단계", "고급 (최고 단계)")
-//            } else {
-//                InfoRow("현재 단계", next.currentLabel)
-//                InfoRow("다음 단계", next.nextLabel)
-//                InfoRow("타깃 포인트", "${formatNum(next.target)}")
-//                InfoRow("내 포인트", "${formatNum(next.currentPoint)}")
-//                InfoRow("남은 포인트", "${formatNum(next.remain)}")
-//            }
-//
-//            Spacer(Modifier.height(20.dp))
-//
-//            // 닫기 버튼: 배경 195FCF, 텍스트 흰색 16 세미볼드
-//            Button(
-//                onClick = onDismiss,
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .height(44.dp),
-//                shape = RoundedCornerShape(12.dp),
-//                colors = ButtonDefaults.buttonColors(
-//                    containerColor = Blue_195FCF,
-//                    contentColor = Color.White
-//                )
-//            ) {
-//                Text(
-//                    "닫기",
-//                    fontFamily = Pretendard,
-//                    fontWeight = FontWeight.SemiBold,
-//                    fontSize = 16.sp
-//                )
-//            }
-//
-//            Spacer(Modifier.height(12.dp))
-//        }
-//    }
-//}
+
 
 //바텀시트(프로그래스바)
 @Composable
@@ -982,75 +679,7 @@ private fun WordCollectionCard(
         )
     }
 }
-//@Composable
-//private fun WordCollectionCard(
-//    items: List<VocabularyDto> = emptyList(),
-//    index: Int = 0,
-//    onClick: () -> Unit = {},
-//    onSelectIndex: (Int) -> Unit = {}
-//) {
-//    val item = items.getOrNull(index)
-//
-//    Card(
-//        colors = CardDefaults.cardColors(containerColor = Color.White),
-//        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-//        shape = RoundedCornerShape(CardCorner),
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .clickable { onClick() }
-//    ) {
-//        Column(modifier = Modifier.padding(20.dp)) {
-//            Text(
-//                text = item?.word ?: "최근 단어가 없어요",
-//                style = TextStyle(
-//                    fontFamily = Pretendard,
-//                    fontWeight = FontWeight.SemiBold,
-//                    fontSize = 16.sp,
-//                    color = MaterialTheme.colorScheme.onBackground
-//                )
-//            )
-//
-//            Spacer(Modifier.height(8.dp))
-//            Text(
-//                text = item?.meaning ?: "단어를 저장하면 여기에서 바로 볼 수 있어요.",
-//                style = TextStyle(
-//                    fontFamily = Pretendard,
-//                    fontWeight = FontWeight.Medium,
-//                    fontSize = 14.sp,
-//                    lineHeight = 22.sp,
-//                    color = MaterialTheme.colorScheme.onBackground
-//                )
-//            )
-//
-//            Spacer(Modifier.height(12.dp))
-//            val ex = item?.example
-//            if (!ex.isNullOrBlank()) {
-//                Text(
-//                    text = "예문) $ex",
-//                    style = TextStyle(
-//                        fontFamily = Pretendard,
-//                        fontWeight = FontWeight.Medium,
-//                        fontSize = 12.sp,
-//                        lineHeight = 18.sp,
-//                        color = Gray_616161
-//                    )
-//                )
-//            }
-//        }
-//    }
-//
-//    // 카드 아래 도트 인디케이터
-//    if (items.isNotEmpty()) {
-//        Spacer(Modifier.height(12.dp))
-//        DotsIndicator(
-//            count = items.size,       // 최근 단어 개수
-//            selectedIndex = index,    // 현재 보고 있는 인덱스
-//            selectedColor = Blue_195FCF,
-//            unselectedColor = Color(0xFFE0E0E0),
-//            onSelect = onSelectIndex
-//        )
-//    }
-//}
+
 
 @Composable
 private fun DotsIndicator(
@@ -1278,6 +907,35 @@ private fun LevelInfoBottomSheetContent(
     }
 }
 
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, showSystemUi = true)
+@Composable
+private fun MyPageScreenPreview() {
+    MyPageScreen(
+        userName = "하진",
+        levelLabel = "활용",
+        nextStage = NextStageUi(
+            currentLabel = "활용",
+            nextLabel = "심화",
+            target = 2000,
+            currentPoint = 1200,
+            remain = 800,
+            progress = 0.6f
+        ),
+        onClickSettings = {},
+        onClickViewAllWords = {},
+        onClickViewAllBadges = {},
+        onClickNicknameTest = {},
+        profileIconRes = MyPageR.drawable.img_glass_mungchi,
+        recentItems = listOf(
+            VocabularyDto(id = 1, word = "serendipity", meaning = "뜻밖의 행운", example = "She found the café by pure serendipity.")
+        ),
+//        recentBadges = listOf(
+//            BadgeUi("img_badge_beginner", "첫 학습 달성"),
+//            BadgeUi("img_badge_5days", "5일 연속 학습"),
+//            BadgeUi("img_badge_rankup", "레벨 업!")
+//        )
+    )
+}
 @Composable
 private fun FakeBottomSheetPreviewHost(content: @Composable () -> Unit) {
     Box(

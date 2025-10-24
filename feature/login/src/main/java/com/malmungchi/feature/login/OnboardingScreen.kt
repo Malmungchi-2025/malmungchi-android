@@ -269,19 +269,29 @@ private fun OnboardingPagePreviewContainer(page: OnboardingPage) {
 
             Spacer(Modifier.height(ButtonTopGap))
 
-            Button(
-                onClick = {},
+            // 버튼 — 이미지 아래
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = OnboardingBlue,
-                    contentColor = Color.White
-                ),
-                elevation = ButtonDefaults.buttonElevation(0.dp)
+                    .padding(horizontal = -20.dp) // ✅ Column의 좌우 padding(=HorizontalPad 20dp)을 상쇄
             ) {
-                Text(text = page.buttonLabel, style = buttonTextStyle())
+                Button(
+                    onClick = {},
+                    modifier = Modifier
+                        .fillMaxWidth()   // ✅ 가로 꽉 채움 (좌우 여백 제거)
+                        .height(52.dp),   // ✅ 세로 그대로 유지
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = OnboardingBlue,
+                        contentColor = Color.White
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(0.dp)
+                ) {
+                    Text(
+                        text = page.buttonLabel,
+                        style = buttonTextStyle()
+                    )
+                }
             }
         }
     }

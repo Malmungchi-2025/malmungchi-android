@@ -414,13 +414,22 @@ fun SocialIcon64(
 @Composable
 private fun EmailLoginScreenPreview() {
     MaterialTheme {
+        // 🧩 Fake ViewModel 대체를 위해 loginOverride를 반드시 지정
         EmailLoginScreen(
             onBack = {},
             onLoginSuccess = { _, _ -> },
-            // 👇 프리뷰용 가짜 로그인
-            loginOverride = { email, _, cb ->
-                val ok = email.endsWith("@test.com")
-                cb(ok, if (ok) 1 else null, if (ok) "TOKEN123" else null, if (ok) null else "프리뷰 실패")
+            loginOverride = { email, pw, cb ->
+                // 👇 프리뷰용 가짜 로그인
+                when {
+                    email.isBlank() || pw.isBlank() ->
+                        cb(false, null, null, "이메일 또는 비밀번호를 입력하세요.")
+                    !email.endsWith("@test.com") ->
+                        cb(false, null, null, "등록되지 않은 이메일입니다.")
+                    pw != "1234" ->
+                        cb(false, null, null, "비밀번호가 잘못되었습니다.")
+                    else ->
+                        cb(true, 1, "TOKEN123", null)
+                }
             }
         )
     }

@@ -733,15 +733,353 @@ fun MainApp() {
         }
 
         // 학습 그래프 (루트: 주간 허브)
+//        navigation(
+//            route = "study_graph",
+//            startDestination = "study_weekly"
+//        ) {
+//
+//
+//            // 주간 허브
+//            composable("study_weekly") { backStackEntry ->
+//                // 루트 뒤로가기 → main으로(앱 종료 방지)
+//                SetStatusBarWhite()
+//                val systemUi = rememberSystemUiController()
+//                SideEffect {
+//                    systemUi.setStatusBarColor(color = Color.White, darkIcons = true)
+//                    systemUi.setNavigationBarColor(color = Color.White, darkIcons = true, navigationBarContrastEnforced = false)
+//                }
+//
+//                StudyGraphBackHandler(navController)
+//
+//                val parentEntry = remember(backStackEntry) {
+//                    navController.getBackStackEntry("study_graph")
+//                }
+//                val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
+//
+//                val today = LocalDate.now().format(DateTimeFormatter.ISO_DATE) // "YYYY-MM-DD"
+//                val body = vm.quote.collectAsState().value
+//                val studiedDates by vm.studiedDates.collectAsState(initial = emptySet())
+//
+//                // ✅ 화면 진입 시 "오늘의 글감" 불러오기
+//                LaunchedEffect(Unit) {
+//                    vm.fetchTodayQuote()
+//                    vm.refreshStudiedDatesForWeek(LocalDate.parse(today))
+//                }
+//
+//                LaunchedEffect(today) {
+//                    vm.refreshStudiedDatesForWeek(LocalDate.parse(today))
+//                }
+//                Scaffold(
+//                    containerColor = Color.White,
+//                    bottomBar = {
+//                        BottomNavBar(navController = navController as NavHostController) }
+//                ) { innerPadding ->
+//                    Box(Modifier.padding(innerPadding) .background(Color.White)) {
+//                        StudyWeeklyScreen(
+//                            initialDateLabel = today,
+//                            onDateChange = { label ->
+//                                runCatching { LocalDate.parse(label) }.onSuccess { picked ->
+//                                    vm.fetchPastStudyByDate(picked)
+//                                    vm.refreshStudiedDatesForWeek(picked)
+//                                }
+//                            },
+//                            bodyText = body,
+//                            onBackClick = { navController.popBackStack() },
+//                            onGoStudyClick = {
+//                                navController.navigate("study_intro") {
+//                                    launchSingleTop = true
+//                                    restoreState = true
+//                                }
+//                            },
+//                            onOpenPastStudy = { label ->
+//                                navController.navigate("past_study/$label") {
+//                                    launchSingleTop = true
+//                                    restoreState = true
+//                                }
+//                            },
+//                            hasStudy = { day -> studiedDates.contains(day) }
+//                        )
+//                    }
+//                }
+//
+////                StudyWeeklyScreen(
+////                    initialDateLabel = today,
+////                    onDateChange = { label ->
+////                        runCatching { LocalDate.parse(label) }.onSuccess { picked ->
+////                            vm.fetchPastStudyByDate(picked)
+////                            vm.refreshStudiedDatesForWeek(picked)
+////                        }
+////                    },
+////                    bodyText = body,
+////                    onBackClick = { navController.popBackStack() },
+////                    onGoStudyClick = {
+////                        navController.navigate("study_intro") {
+////                            launchSingleTop = true
+////                            restoreState = true
+////                        }
+////                    },
+////                    onOpenPastStudy = { label ->
+////                        navController.navigate("past_study/$label") {
+////                            launchSingleTop = true
+////                            restoreState = true
+////                        }
+////                    },
+////                    hasStudy = { day -> studiedDates.contains(day) }
+////                )
+//            }
+//
+//            // 지난 학습 상세
+//            composable("past_study/{date}") { backStackEntry ->
+//                val parentEntry = remember(backStackEntry) {
+//                    navController.getBackStackEntry("study_graph")
+//                }
+//                val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
+//
+//                val dateParam = backStackEntry.arguments?.getString("date") // "YYYY-MM-DD"
+//                val localDate = dateParam?.let { LocalDate.parse(it) }
+//
+//                LaunchedEffect(dateParam) {
+//                    localDate?.let { vm.fetchPastStudyByDate(it) }
+//                }
+//
+//                PastStudyScreenRoute(
+//                    dateLabel = dateParam?.replace("-", ".") ?: "",
+//                    viewModel = vm,
+//                    onLoad = null,
+//                    onBackClick = { navController.popBackStack() }
+//                )
+//            }
+//
+//            // 1단계 인트로
+//            composable("study_intro") { backStackEntry ->
+//                val parentEntry = remember(backStackEntry) {
+//                    navController.getBackStackEntry("study_graph")
+//                }
+//                val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
+//
+//                StudyIntroScreen(
+//                    onStart = { /* optional */ },
+//                    onNavigateNext = {
+//                        navController.navigate("study_reading") {
+//                            launchSingleTop = true
+//                            restoreState = true
+//                        }
+//                    }
+//                )
+//            }
+//
+//            // 1단계 본문 → Appendix
+//            composable("study_reading") { backStackEntry ->
+//                val parentEntry = remember(backStackEntry) {
+//                    navController.getBackStackEntry("study_graph")
+//                }
+//                val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
+//
+//                StudyReadingScreen(
+//                    viewModel = vm,
+//                    onNextClick = {
+//                        navController.navigate("appendix") {
+//                            launchSingleTop = true
+//                            restoreState = true
+//                            popUpTo("study_graph") { inclusive = false }
+//                        }
+//                    },
+//                    onBackClick = { navController.popBackStack() }
+//                )
+//            }
+//
+//            // Appendix → AppendixList
+//            composable("appendix") {
+//                StudyAppendixScreen(
+//                    onNavigateNext = {
+//                        navController.navigate("appendix_list") {
+//                            launchSingleTop = true
+//                            restoreState = true
+//                            popUpTo("study_graph") { inclusive = false }
+//                        }
+//                    }
+//                )
+//            }
+//
+//            // AppendixList → 2단계 Intro
+//            composable("appendix_list") { backStackEntry ->
+//                val parentEntry = remember(backStackEntry) {
+//                    navController.getBackStackEntry("study_graph")
+//                }
+//                val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
+//
+//                val sidState = vm.studyId.collectAsState()
+//                val sid = sidState.value
+//
+//                LaunchedEffect(sid) {
+//                    android.util.Log.d("NAV", ">> appendix_list (sid=$sid)")
+//                }
+//
+//                if (sid == null) {
+//                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+//                        CircularProgressIndicator()
+//                    }
+//                } else {
+//                    StudyAppendixListScreen(
+//                        studyId = sid,
+//                        viewModel = vm,
+//                        onBackClick = {
+//                            navController.navigate("study_reading") {
+//                                launchSingleTop = true
+//                                restoreState = true
+//                                popUpTo("study_graph") { inclusive = false }
+//                            }
+//                        },
+//                        onNavigateNext = {
+//                            navController.navigate("study_second_intro") {
+//                                launchSingleTop = true
+//                                restoreState = true
+//                                popUpTo("study_graph") { inclusive = false }
+//                            }
+//                        }
+//                    )
+//                }
+//            }
+//
+//            // 2단계 Intro → 2단계 본문
+//            composable("study_second_intro") {
+//                StudySecondIntroScreen(
+//                    onNavigateNext = {
+//                        navController.navigate("study_second") {
+//                            launchSingleTop = true
+//                            restoreState = true
+//                            popUpTo("study_graph") { inclusive = false }
+//                        }
+//                    }
+//                )
+//            }
+//
+//            // 2단계 본문 → 3단계 Intro
+//            composable("study_second") { backStackEntry ->
+//                val parentEntry = remember(backStackEntry) {
+//                    navController.getBackStackEntry("study_graph")
+//                }
+//                val viewModel: StudyReadingViewModel = hiltViewModel(parentEntry)
+//
+//                StudySecondScreen(
+//                    viewModel = viewModel,
+//                    onBackClick = {
+//                        navController.navigate("appendix_list") {      // ✅ 정확한 라우트명
+//                            popUpTo("study_second") { inclusive = true }
+//                            launchSingleTop = true
+//                        }
+//                    },
+//                    //onBackClick = { navController.popBackStack() },
+//                    onNextClick = {
+//                        navController.navigate("study_third_intro") {
+//                            launchSingleTop = true
+//                            restoreState = true
+//                            popUpTo("study_graph") { inclusive = false }
+//                        }
+//                    }
+//                )
+//            }
+//
+//            // 3단계 Intro → 3단계 본문
+//            composable("study_third_intro") {
+//                StudyThirdIntroScreen(
+//                    onNavigateNext = {
+//                        navController.navigate("study_third") {
+//                            launchSingleTop = true
+//                            restoreState = true
+//                            popUpTo("study_graph") { inclusive = false }
+//                        }
+//                    }
+//                )
+//            }
+//
+//            // 3단계 본문 → 결과
+//            composable("study_third") { backStackEntry ->
+//                val parentEntry = remember(backStackEntry) {
+//                    navController.getBackStackEntry("study_graph")
+//                }
+//                val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
+//
+//                val id = vm.studyId.collectAsState().value
+//                val text = vm.quote.collectAsState().value
+//
+//                LaunchedEffect(id, text) {
+//                    if (id == null || text.isBlank()) {
+//                        vm.fetchTodayQuote()
+//                    }
+//                }
+//
+//                if (id == null || text.isBlank()) {
+//                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+//                        CircularProgressIndicator()
+//                    }
+//                } else {
+//                    StudyThirdScreen(
+//                        studyId = id,
+//                        text = text,
+//                        viewModel = vm,
+//                        onBackClick = { navController.popBackStack("study_second", inclusive = false) },
+//                        onNextClick = {
+//                            navController.navigate("study_third_result/$id") {
+//                                launchSingleTop = true
+//                                restoreState = true
+//                                //popUpTo("study_graph") { inclusive = false }
+//                            }
+//                        }
+//                    )
+//                }
+//            }
+//
+//            // 결과 → 완료
+//            composable("study_third_result/{studyId}") { backStackEntry ->
+//                val parentEntry = remember(backStackEntry) {
+//                    navController.getBackStackEntry("study_graph")
+//                }
+//                val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
+//
+//                val id = backStackEntry.arguments?.getString("studyId")?.toIntOrNull()
+//                if (id == null) {
+//                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+//                        Text("잘못된 접근입니다.")
+//                    }
+//                } else {
+//                    StudyThirdResultScreenWrapper(
+//                        studyId = id,
+//                        viewModel = vm,
+//                        onBackClick = { navController.popBackStack("study_third", inclusive = false) },
+//                        onFinishClick = {
+//                            navController.navigate("study_third_complete") {
+//                                launchSingleTop = true
+//                                restoreState = true
+//                                popUpTo("study_graph") { inclusive = false }
+//                            }
+//                        }
+//                    )
+//                }
+//            }
+//
+//            // 완료 → 메인
+//            composable("study_third_complete") {
+//                val viewModel: StudyReadingViewModel = hiltViewModel()  // ViewModel 가져오기
+//
+//                StudyCompleteScreen(
+//                    viewModel = viewModel,   // ★ viewModel 전달
+//                    onNextClick = {
+//                        navController.navigate("main") {
+//                            launchSingleTop = true
+//                            popUpTo("study_graph") { inclusive = true }
+//                        }
+//                    }
+//                )
+//            }
+//        }
         navigation(
             route = "study_graph",
             startDestination = "study_weekly"
         ) {
 
-
-            // 주간 허브
+            // ───────────── 주간 허브 ─────────────
             composable("study_weekly") { backStackEntry ->
-                // 루트 뒤로가기 → main으로(앱 종료 방지)
                 SetStatusBarWhite()
                 val systemUi = rememberSystemUiController()
                 SideEffect {
@@ -756,25 +1094,27 @@ fun MainApp() {
                 }
                 val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
 
-                val today = LocalDate.now().format(DateTimeFormatter.ISO_DATE) // "YYYY-MM-DD"
+                val today = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
                 val body = vm.quote.collectAsState().value
-                val studiedDates by vm.studiedDates.collectAsState(initial = emptySet())
 
-                LaunchedEffect(today) {
-                    vm.refreshStudiedDatesForWeek(LocalDate.parse(today))
+                // ✅ 주간 학습 상태 갱신 (진입 시)
+                LaunchedEffect(Unit) {
+                    vm.fetchTodayQuote()
+                    vm.refreshStudyProgressForWeek(LocalDate.parse(today))
                 }
+
                 Scaffold(
                     containerColor = Color.White,
-                    bottomBar = {
-                        BottomNavBar(navController = navController as NavHostController) }
+                    bottomBar = { BottomNavBar(navController = navController as NavHostController) }
                 ) { innerPadding ->
-                    Box(Modifier.padding(innerPadding) .background(Color.White)) {
+                    Box(Modifier.padding(innerPadding).background(Color.White)) {
                         StudyWeeklyScreen(
+                            vm = vm,  // ✅ 추가
                             initialDateLabel = today,
                             onDateChange = { label ->
                                 runCatching { LocalDate.parse(label) }.onSuccess { picked ->
                                     vm.fetchPastStudyByDate(picked)
-                                    vm.refreshStudiedDatesForWeek(picked)
+                                    vm.refreshStudyProgressForWeek(picked)
                                 }
                             },
                             bodyText = body,
@@ -790,46 +1130,21 @@ fun MainApp() {
                                     launchSingleTop = true
                                     restoreState = true
                                 }
-                            },
-                            hasStudy = { day -> studiedDates.contains(day) }
+                            }
+
                         )
                     }
                 }
-
-//                StudyWeeklyScreen(
-//                    initialDateLabel = today,
-//                    onDateChange = { label ->
-//                        runCatching { LocalDate.parse(label) }.onSuccess { picked ->
-//                            vm.fetchPastStudyByDate(picked)
-//                            vm.refreshStudiedDatesForWeek(picked)
-//                        }
-//                    },
-//                    bodyText = body,
-//                    onBackClick = { navController.popBackStack() },
-//                    onGoStudyClick = {
-//                        navController.navigate("study_intro") {
-//                            launchSingleTop = true
-//                            restoreState = true
-//                        }
-//                    },
-//                    onOpenPastStudy = { label ->
-//                        navController.navigate("past_study/$label") {
-//                            launchSingleTop = true
-//                            restoreState = true
-//                        }
-//                    },
-//                    hasStudy = { day -> studiedDates.contains(day) }
-//                )
             }
 
-            // 지난 학습 상세
+            // ───────────── 지난 학습 상세 ─────────────
             composable("past_study/{date}") { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("study_graph")
                 }
                 val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
 
-                val dateParam = backStackEntry.arguments?.getString("date") // "YYYY-MM-DD"
+                val dateParam = backStackEntry.arguments?.getString("date")
                 val localDate = dateParam?.let { LocalDate.parse(it) }
 
                 LaunchedEffect(dateParam) {
@@ -844,7 +1159,7 @@ fun MainApp() {
                 )
             }
 
-            // 1단계 인트로
+            // ───────────── 1단계 Intro ─────────────
             composable("study_intro") { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("study_graph")
@@ -852,7 +1167,7 @@ fun MainApp() {
                 val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
 
                 StudyIntroScreen(
-                    onStart = { /* optional */ },
+                    onStart = {},
                     onNavigateNext = {
                         navController.navigate("study_reading") {
                             launchSingleTop = true
@@ -862,7 +1177,7 @@ fun MainApp() {
                 )
             }
 
-            // 1단계 본문 → Appendix
+            // ───────────── 1단계 본문 → Appendix ─────────────
             composable("study_reading") { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("study_graph")
@@ -882,7 +1197,7 @@ fun MainApp() {
                 )
             }
 
-            // Appendix → AppendixList
+            // ───────────── Appendix → AppendixList ─────────────
             composable("appendix") {
                 StudyAppendixScreen(
                     onNavigateNext = {
@@ -895,19 +1210,13 @@ fun MainApp() {
                 )
             }
 
-            // AppendixList → 2단계 Intro
+            // ───────────── AppendixList → 2단계 Intro ─────────────
             composable("appendix_list") { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("study_graph")
                 }
                 val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
-
-                val sidState = vm.studyId.collectAsState()
-                val sid = sidState.value
-
-                LaunchedEffect(sid) {
-                    android.util.Log.d("NAV", ">> appendix_list (sid=$sid)")
-                }
+                val sid = vm.studyId.collectAsState().value
 
                 if (sid == null) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -935,8 +1244,16 @@ fun MainApp() {
                 }
             }
 
-            // 2단계 Intro → 2단계 본문
-            composable("study_second_intro") {
+            // ───────────── 2단계 Intro ─────────────
+            composable("study_second_intro") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("study_graph")
+                }
+                val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
+
+                // ✅ 1단계 완료 표시
+                LaunchedEffect(Unit) { vm.markStepComplete(1) }
+
                 StudySecondIntroScreen(
                     onNavigateNext = {
                         navController.navigate("study_second") {
@@ -948,22 +1265,21 @@ fun MainApp() {
                 )
             }
 
-            // 2단계 본문 → 3단계 Intro
+            // ───────────── 2단계 본문 ─────────────
             composable("study_second") { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("study_graph")
                 }
-                val viewModel: StudyReadingViewModel = hiltViewModel(parentEntry)
+                val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
 
                 StudySecondScreen(
-                    viewModel = viewModel,
+                    viewModel = vm,
                     onBackClick = {
-                        navController.navigate("appendix_list") {      // ✅ 정확한 라우트명
+                        navController.navigate("appendix_list") {
                             popUpTo("study_second") { inclusive = true }
                             launchSingleTop = true
                         }
                     },
-                    //onBackClick = { navController.popBackStack() },
                     onNextClick = {
                         navController.navigate("study_third_intro") {
                             launchSingleTop = true
@@ -974,8 +1290,16 @@ fun MainApp() {
                 )
             }
 
-            // 3단계 Intro → 3단계 본문
-            composable("study_third_intro") {
+            // ───────────── 3단계 Intro ─────────────
+            composable("study_third_intro") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("study_graph")
+                }
+                val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
+
+                // ✅ 2단계 완료 표시
+                LaunchedEffect(Unit) { vm.markStepComplete(2) }
+
                 StudyThirdIntroScreen(
                     onNavigateNext = {
                         navController.navigate("study_third") {
@@ -987,7 +1311,7 @@ fun MainApp() {
                 )
             }
 
-            // 3단계 본문 → 결과
+            // ───────────── 3단계 본문 → 결과 ─────────────
             composable("study_third") { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("study_graph")
@@ -998,9 +1322,7 @@ fun MainApp() {
                 val text = vm.quote.collectAsState().value
 
                 LaunchedEffect(id, text) {
-                    if (id == null || text.isBlank()) {
-                        vm.fetchTodayQuote()
-                    }
+                    if (id == null || text.isBlank()) vm.fetchTodayQuote()
                 }
 
                 if (id == null || text.isBlank()) {
@@ -1017,21 +1339,20 @@ fun MainApp() {
                             navController.navigate("study_third_result/$id") {
                                 launchSingleTop = true
                                 restoreState = true
-                                //popUpTo("study_graph") { inclusive = false }
                             }
                         }
                     )
                 }
             }
 
-            // 결과 → 완료
+            // ───────────── 결과 → 완료 ─────────────
             composable("study_third_result/{studyId}") { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("study_graph")
                 }
                 val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
-
                 val id = backStackEntry.arguments?.getString("studyId")?.toIntOrNull()
+
                 if (id == null) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("잘못된 접근입니다.")
@@ -1052,13 +1373,18 @@ fun MainApp() {
                 }
             }
 
-            // 완료 → 메인
+            // ───────────── 완료 화면 ─────────────
             composable("study_third_complete") {
-                val viewModel: StudyReadingViewModel = hiltViewModel()  // ViewModel 가져오기
+                val vm: StudyReadingViewModel = hiltViewModel()
+
+                // ✅ 3단계 완료 표시
+                LaunchedEffect(Unit) { vm.markStepComplete(3) }
 
                 StudyCompleteScreen(
-                    viewModel = viewModel,   // ★ viewModel 전달
+                    viewModel = vm,
                     onNextClick = {
+                        // ✅ 완료 후 주간화면 새로고침 후 메인으로
+                        vm.refreshStudyProgressForWeek(LocalDate.now())
                         navController.navigate("main") {
                             launchSingleTop = true
                             popUpTo("study_graph") { inclusive = true }
