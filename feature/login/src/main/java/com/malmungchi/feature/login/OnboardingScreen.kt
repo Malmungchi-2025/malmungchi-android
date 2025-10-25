@@ -23,7 +23,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.ui.graphics.RectangleShape
 import com.malmungchi.core.designsystem.Pretendard
+
 import com.malmungchi.feature.login.R
 
 // ── Colors ─────────────────────────────────────────────────────────────────────
@@ -185,12 +187,14 @@ fun OnboardingScreen(
                 Spacer(Modifier.height(ButtonTopGap))
 
                 // 버튼 — 이미지 아래
+                // 버튼 — 이미지 아래
                 Button(
                     onClick = onFinish,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(14.dp),
+                        .fillMaxWidth()          // 가로 전체
+                        .height(52.dp)           // 🔹 원래 높이로 복원
+                        .padding(horizontal = 0.dp), // 좌우 여백 제거
+                    shape = RectangleShape,      // 🔹 라운드 완전 제거
                     colors = ButtonDefaults.buttonColors(
                         containerColor = OnboardingBlue,
                         contentColor = Color.White
@@ -198,7 +202,12 @@ fun OnboardingScreen(
                     elevation = ButtonDefaults.buttonElevation(0.dp)
                 ) {
                     val isLast = p.isLast
-                    Text(text = if (isLast) "시작하기" else "건너뛰기", style = buttonTextStyle())
+                    Text(
+                        text = if (isLast) "시작하기" else "건너뛰기",
+                        style = buttonTextStyle(),
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }

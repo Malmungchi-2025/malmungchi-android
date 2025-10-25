@@ -433,6 +433,7 @@ private fun WeeklyCalendarBar(
         Box(
             modifier = Modifier
                 .width(arrowSlotWidth)
+                .offset(y = (-24).dp) // 🔹 위로 8dp 올리기
                 .clickable { onPrevWeek() },
             contentAlignment = Alignment.Center
         ) {
@@ -489,6 +490,7 @@ private fun WeeklyCalendarBar(
         Box(
             modifier = Modifier
                 .width(arrowSlotWidth)
+                .offset(y = (-24).dp) // 🔹 위로 8dp 올리기
                 .clickable { onNextWeek() },
             contentAlignment = Alignment.Center
         ) {
