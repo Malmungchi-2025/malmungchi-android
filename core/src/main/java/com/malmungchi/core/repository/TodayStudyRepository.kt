@@ -16,7 +16,8 @@ interface TodayStudyRepository {
     // ✅ 달력용: 해당 연월의 학습 존재 날짜 목록
     suspend fun getAvailableDates(year: String, month: String): Result<List<String>>
     suspend fun generateTodayQuote(): Result<TodayQuote>
-    suspend fun searchWordDefinition(word: String): Result<WordItem>
+    suspend fun searchWordDefinition(word: String): Result<List<WordItem>>
+    //suspend fun searchWordDefinition(word: String): Result<WordItem>
     suspend fun saveWord(studyId: Int, word: WordItem): Result<Unit>
     suspend fun getVocabularyList(studyId: Int): Result<List<WordItem>>
     suspend fun getHandwriting(studyId: Int): Result<String>

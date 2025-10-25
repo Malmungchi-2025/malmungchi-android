@@ -96,7 +96,8 @@ fun StudyReadingScreen(
         fontWeight = FontWeight.Medium,
         lineHeight = (16f * 1.6f).sp,  // == 25.6sp (≈ 160%)
         color = Color(0xFF333333),
-        textAlign = TextAlign.Start
+        textAlign = TextAlign.Justify    // ✅ 양쪽 정렬 (수능 지문 느낌)
+        //textAlign = TextAlign.Start
     )
     val density = LocalDensity.current
 
@@ -214,12 +215,36 @@ fun StudyReadingScreen(
                         )
                     }
                     else -> {
+                        // ✅ 문단 분리 대신 전체 텍스트 한 번에 표시 (가장 깔끔한 형태)
                         Text(
-                            text = quote,
+                            text = quote.trim(),
                             style = commonTextStyle,
+                            textAlign = TextAlign.Justify,
                             modifier = contentModifier
                         )
                     }
+//                    else -> {
+//                        Column(
+//                            modifier = contentModifier,
+//                            verticalArrangement = Arrangement.spacedBy(16.dp) // ✅ 문단 간 간격 늘림
+//                        ) {
+//                            quote.split(Regex("\n{2,}"))
+//                                .filter { it.isNotBlank() }
+//                                .forEach { paragraph ->
+//                                    Text(
+//                                        text = paragraph.trim(),
+//                                        style = commonTextStyle,
+//                                        textAlign = TextAlign.Justify
+//                                    )
+//                                }
+//                        }
+//                    }
+//                        Text(
+//                            text = quote,
+//                            style = commonTextStyle,
+//                            modifier = contentModifier
+//                        )
+
                 }
             }
 
