@@ -64,12 +64,12 @@ class TodayStudyRepositoryImpl(
     }
 
     /** ✅ 단어 검색 */
-    override suspend fun searchWordDefinition(word: String): Result<WordItem> = withContext(Dispatchers.IO) {
+    override suspend fun searchWordDefinition(word: String): Result<List<WordItem>> = withContext(Dispatchers.IO) {
         Log.d("API_SEARCH_WORD", "📡 [요청] POST /api/vocabulary/search word=$word")
         runCatching {
             val res = api.searchWord(WordRequest(word))
             check(res.success && res.result != null) { res.message ?: "단어 검색 실패" }
-            res.result!!
+            res.result!! // ✅ 이미 List<WordItem>
         }
     }
 

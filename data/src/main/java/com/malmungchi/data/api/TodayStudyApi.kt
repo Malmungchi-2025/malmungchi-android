@@ -73,7 +73,7 @@ interface TodayStudyApi {
 
     // ✅ 단어 검색 (GPT, 저장 X)
     @POST("/api/gpt/vocabulary/search")
-    suspend fun searchWord(@Body request: WordRequest): BaseResponse<WordItem>
+    suspend fun searchWord(@Body request: WordRequest): BaseResponse<List<WordItem>>
 
     // ✅ 단어 저장 (오늘 study_id에 귀속)
     @POST("/api/gpt/vocabulary")
