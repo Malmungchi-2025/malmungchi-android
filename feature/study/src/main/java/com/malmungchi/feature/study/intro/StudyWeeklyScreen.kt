@@ -672,7 +672,7 @@ private fun OverviewCard(
         shadowElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 280.dp)  // ✅ 카드 높이 조금 늘림 (기본 높이 보장)
+            .heightIn(min = 400.dp)  // ✅ 카드 높이 조금 늘림 (기본 높이 보장)
     ) {
         Column(Modifier.padding(16.dp)) {
 
@@ -708,7 +708,7 @@ private fun OverviewCard(
                 fontWeight = FontWeight.Medium,
                 color = Color(0xFF333333),
                 lineHeight = 25.6.sp,
-                maxLines = 9,
+                maxLines = 12,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))

@@ -80,8 +80,16 @@ class StudyReadingViewModel @Inject constructor(
         repository.getStudyByDate(date)
             .onSuccess { b ->
                 _studyId.value = b.studyId
-                _quote.value = b.content
 
+                // ✅ 글감 텍스트 정리 (줄바꿈·들여쓰기 제거, 한 문단으로)
+                val cleaned = b.content
+                    .replace("\r\n", " ")
+                    .replace("\r", " ")
+                    .replace("\n", " ")
+                    .replace(Regex("[ \t]+"), " ")
+                    .trim()
+
+                _quote.value = cleaned
                 _savedWords.value = b.vocabulary
                 _highlightWords.value = b.vocabulary.map { it.word }
 
@@ -166,32 +174,76 @@ class StudyReadingViewModel @Inject constructor(
             repository.generateTodayQuote()
                 .onSuccess {
                     Log.d("API_FETCH_QUOTE", "✅ [응답 성공] studyId=${it.studyId}, level=${it.level}")
-                    _quote.value = it.content
+
+                    val cleaned = it.content
+                        .replace("\r\n", " ")          // 윈도우 개행 → 공백
+                        .replace("\r", " ")            // 혹시 모를 \r 단독 → 공백
+                        .replace("\n", " ")            // 모든 줄바꿈 → 공백
+                        .replace(Regex("[ \t]+"), " ") // 다중 공백 1칸으로
+                        .trim()
+                    _quote.value = cleaned
                     _studyId.value = it.studyId
-                    // 필요하면 레벨도 상태로 보관해서 UI에 뱃지/라벨 표시
-                    //_level.value = it.level ?: SessionManager.level
                 }
-//            repository.generateTodayQuote()
-//                .onSuccess {
-//                    Log.d("API_FETCH_QUOTE", "✅ [응답 성공] studyId=${it.studyId}")
-//                    _quote.value = it.content
-//                    _studyId.value = it.studyId
-//                }
                 .onFailure { e ->
                     Log.e("API_FETCH_QUOTE", "❌ [응답 실패] ${e.message}", e)
                     _quote.value = "❗ 오류: ${e.message}"
                 }
         }
     }
+//    fun fetchTodayQuote() {
+//        Log.d("API_FETCH_QUOTE", "📡 [요청] /api/gpt/generate-quote")
+//        viewModelScope.launch {
+//            repository.generateTodayQuote()
+//                .onSuccess {
+//                    Log.d("API_FETCH_QUOTE", "✅ [응답 성공] studyId=${it.studyId}, level=${it.level}")
+//                    _quote.value = it.content
+//                    _studyId.value = it.studyId
+//                    // 필요하면 레벨도 상태로 보관해서 UI에 뱃지/라벨 표시
+//                    //_level.value = it.level ?: SessionManager.level
+//                }
+////            repository.generateTodayQuote()
+////                .onSuccess {
+////                    Log.d("API_FETCH_QUOTE", "✅ [응답 성공] studyId=${it.studyId}")
+////                    _quote.value = it.content
+////                    _studyId.value = it.studyId
+////                }
+//                .onFailure { e ->
+//                    Log.e("API_FETCH_QUOTE", "❌ [응답 실패] ${e.message}", e)
+//                    _quote.value = "❗ 오류: ${e.message}"
+//                }
+//        }
+//    }
+
+//    /** ✅ 단어 검색 (토큰 인자 제거) */
+//    fun searchWord(word: String) {
+//        Log.d("API_SEARCH_WORD", "📡 [요청] POST /api/vocabulary/search")
+//        viewModelScope.launch {
+//            repository.searchWordDefinition(word)
+//                .onSuccess {
+//                    Log.d("API_SEARCH_WORD", "✅ [응답 성공] 단어='${it.word}', 뜻='${it.meaning}'")
+//                    _selectedWord.value = it
+//                }
+//                .onFailure { e ->
+//                    Log.e("API_SEARCH_WORD", "❌ [응답 실패] ${e.message}", e)
+//                    _selectedWord.value = null
+//                }
+//        }
+//    }
 
     /** ✅ 단어 검색 (토큰 인자 제거) */
     fun searchWord(word: String) {
         Log.d("API_SEARCH_WORD", "📡 [요청] POST /api/vocabulary/search")
         viewModelScope.launch {
             repository.searchWordDefinition(word)
-                .onSuccess {
-                    Log.d("API_SEARCH_WORD", "✅ [응답 성공] 단어='${it.word}', 뜻='${it.meaning}'")
-                    _selectedWord.value = it
+                .onSuccess { list ->
+                    val first = list.firstOrNull()
+                    if (first != null) {
+                        Log.d("API_SEARCH_WORD", "✅ [응답 성공] 단어='${first.word}', 뜻='${first.meaning}'")
+                        _selectedWord.value = first
+                    } else {
+                        Log.w("API_SEARCH_WORD", "⚠️ 결과가 비어 있습니다.")
+                        _selectedWord.value = null
+                    }
                 }
                 .onFailure { e ->
                     Log.e("API_SEARCH_WORD", "❌ [응답 실패] ${e.message}", e)
