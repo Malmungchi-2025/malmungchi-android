@@ -194,7 +194,60 @@ fun WhiteSystemBars() {
         systemUi.setNavigationBarColor(color = Color.White, darkIcons = true)
     }
 }
+//아래처럼, 바텀 네비게이션이 있는 상위 그래프(study_graph, quiz_graph, ai_graph,
+@Composable
+private fun BottomNavBackHandler(navController: NavController) {
+    val backEntry by navController.currentBackStackEntryAsState()
+    val route = backEntry?.destination?.route
 
+    BackHandler {
+        when {
+            // ✅ 바텀 네비게이션 하위 그래프 중 하나면 → 항상 study_graph(홈 탭)으로 이동
+            route?.startsWith("quiz") == true ||
+                    route?.startsWith("ai") == true ||
+                    route?.startsWith("friend") == true ||
+                    route?.startsWith("mypage") == true -> {
+                navController.navigate("study_graph") {
+                    launchSingleTop = true
+                    popUpTo("study_graph") { inclusive = false }
+                }
+            }
+
+            // ✅ 나머지는 기본 popBackStack()
+            else -> {
+                navController.popBackStack()
+            }
+        }
+    }
+}
+
+/* ───────────────────────────────
+   전역 학습 중단 감시 핸들러
+   ─────────────────────────────── */
+@Composable
+fun GlobalStudyBackHandler(navController: NavController) {
+    val backEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backEntry?.destination?.route
+    var showExitAlert by remember { mutableStateOf(false) }
+
+    // 뒤로가기 감시: study_로 시작하고 weekly가 아닐 때만 Alert
+    BackHandler(enabled = currentRoute?.startsWith("study_") == true && currentRoute != "study_weekly") {
+        showExitAlert = true
+    }
+
+    if (showExitAlert) {
+        com.malmungchi.feature.study.EndStudyAlert.Show(
+            onConfirm = {
+                showExitAlert = false
+                navController.navigate("study_weekly") {
+                    launchSingleTop = true
+                    popUpTo("study_graph") { inclusive = false }
+                }
+            },
+            onDismiss = { showExitAlert = false }
+        )
+    }
+}
 
 /* ────────────────────────────────────────────────────────────────────────────────
    MainApp (전체)
@@ -204,7 +257,15 @@ fun MainApp() {
 
     WhiteSystemBars()
     val navController = rememberNavController()
+
+
+    // ✅ 항상 최상단에서 감시하는 Alert 핸들러 추가
+    GlobalStudyBackHandler(navController)
+
     val appContext = LocalContext.current
+
+    // ✅ 새 백핸들러 적용
+//    BottomNavBackHandler(navController)
 
     // ✅ 전역 백핸들러: 스택 있으면 뒤로, 없으면 main으로(종료 방지)
     BackHandler {
@@ -1075,8 +1136,59 @@ fun MainApp() {
 //        }
         navigation(
             route = "study_graph",
-            startDestination = "study_weekly"
+            startDestination = "study_graph_entry"   // ✅ 여기만 바꾸면 끝!
+            //startDestination = "study_weekly"
         ) {
+
+            // ✅ 공용: 항상 활성화되는 invisible Composable
+
+
+            // ✅ 그래프 진입 시 전역 핸들러 1회 등록
+            composable("study_graph_entry") {
+                LaunchedEffect(Unit) {
+                    // 전역 핸들러 navigate 전에 study_graph에 남게 함
+                    if (navController.currentDestination?.route != "study_graph_global_handler") {
+                        navController.navigate("study_graph_global_handler") {
+                            launchSingleTop = true
+                        }
+                    }
+
+                    // 주간 허브로 이동
+                    navController.navigate("study_weekly") {
+                        launchSingleTop = true
+                    }
+                }
+                Box(Modifier.size(0.dp))
+            }
+
+            composable("study_graph_global_handler") {
+                val parentEntry = remember(it) { navController.getBackStackEntry("study_graph") }
+                val vm: StudyReadingViewModel = hiltViewModel(parentEntry)
+                var showExitAlert by remember { mutableStateOf(false) }
+                val backEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = backEntry?.destination?.route
+
+                BackHandler(enabled = currentRoute != "study_weekly") {
+                    showExitAlert = true
+                }
+
+                if (showExitAlert) {
+                    com.malmungchi.feature.study.EndStudyAlert.Show(
+                        onConfirm = {
+                            showExitAlert = false
+                            vm.refreshStudyProgressForWeek(LocalDate.now())
+                            navController.navigate("study_weekly") {
+                                launchSingleTop = true
+                                popUpTo("study_graph") { inclusive = false }
+                            }
+                        },
+                        onDismiss = { showExitAlert = false }
+                    )
+                }
+
+                // 빈 UI
+                Box(Modifier.size(0.dp))
+            }
 
             // ───────────── 주간 허브 ─────────────
             composable("study_weekly") { backStackEntry ->
