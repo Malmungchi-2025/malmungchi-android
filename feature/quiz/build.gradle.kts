@@ -63,6 +63,9 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
+    //gif
+    implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
+
     // Core & Design 모듈
     implementation(project(":core"))
     implementation(project(":design"))
