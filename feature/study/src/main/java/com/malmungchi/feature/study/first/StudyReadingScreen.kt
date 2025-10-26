@@ -275,6 +275,7 @@ fun StudyReadingScreen(
                         }
                 )
 
+
                 Button(
                     onClick = onNextClick,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
@@ -421,6 +422,7 @@ fun RegexHighlightedText(
     modifier: Modifier = Modifier,
     textStyle: TextStyle = TextStyle.Default
 ) {
+    // 🚫 remember 제거, 매번 새로 계산되게
     val annotated: AnnotatedString = buildAnnotatedString {
         append(text)
         highlights.forEach { word ->
@@ -434,8 +436,36 @@ fun RegexHighlightedText(
             }
         }
     }
-    Text(annotated, style = textStyle, modifier = modifier)
+
+    // highlights가 바뀔 때마다 Text 재구성되도록
+    Text(
+        text = annotated,
+        style = textStyle,
+        modifier = modifier,
+    )
 }
+//@Composable
+//fun RegexHighlightedText(
+//    text: String,
+//    highlights: List<String>,
+//    modifier: Modifier = Modifier,
+//    textStyle: TextStyle = TextStyle.Default
+//) {
+//    val annotated: AnnotatedString = buildAnnotatedString {
+//        append(text)
+//        highlights.forEach { word ->
+//            val regex = Regex(Regex.escape(word))
+//            regex.findAll(text).forEach { match ->
+//                addStyle(
+//                    style = SpanStyle(background = Color(0xFFCCFF00)),
+//                    start = match.range.first,
+//                    end = match.range.last + 1
+//                )
+//            }
+//        }
+//    }
+//    Text(annotated, style = textStyle, modifier = modifier)
+//}
 
 /** ProgressBar (가로 패딩 제거) */
 @Composable
