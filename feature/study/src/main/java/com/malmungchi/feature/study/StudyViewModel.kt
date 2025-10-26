@@ -17,6 +17,7 @@ import retrofit2.HttpException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.update
 
 
 @HiltViewModel
@@ -91,7 +92,9 @@ class StudyReadingViewModel @Inject constructor(
 
                 _quote.value = cleaned
                 _savedWords.value = b.vocabulary
-                _highlightWords.value = b.vocabulary.map { it.word }
+                _highlightWords.update { current ->
+                    (current + b.vocabulary.map { it.word }).distinct()
+                }
 
                 // ✅ 채점 관련 필드(userChoice, isCorrect)는 버린다
                 _quizList.value = b.quizzes.map { q ->
@@ -279,6 +282,7 @@ class StudyReadingViewModel @Inject constructor(
     val savedWords: StateFlow<List<WordItem>> = _savedWords
 
     /** ✅ 서버에서 단어 목록 가져와 전체 데이터 저장 (토큰 인자 제거) */
+    // 수정된 함수 본문 ↓
     fun loadVocabularyList(studyId: Int) {
         Log.d("API_LOAD_VOCAB", "📡 [요청] GET /api/vocabulary/$studyId")
         viewModelScope.launch {
@@ -286,7 +290,11 @@ class StudyReadingViewModel @Inject constructor(
                 .onSuccess { words ->
                     Log.d("API_LOAD_VOCAB", "✅ [응답 성공] 단어 개수=${words.size}")
                     _savedWords.value = words
-                    _highlightWords.value = words.map { it.word }
+
+                    // ✅ 기존 하이라이트를 유지하며 새 단어 누적
+                    _highlightWords.update { current ->
+                        (current + words.map { w -> w.word }).distinct()
+                    }
                 }
                 .onFailure { e ->
                     Log.e("API_LOAD_VOCAB", "❌ [응답 실패] ${e.message}", e)
@@ -525,9 +533,11 @@ class StudyReadingViewModel @Inject constructor(
     /** ✅ 특정 주(week)의 모든 날짜 진행도 불러오기 (서버 1회 호출 버전) */
     /** ✅ 특정 주(week)의 모든 날짜 진행도 불러오기 (서버 1회 호출 버전) */
     fun refreshStudyProgressForWeek(center: LocalDate) = viewModelScope.launch {
-        repository.getStudyProgressWeek(center)
+        // 🔹 일요일이면 하루 빼서 전달 (주차 어긋남 보정)
+        val correctedCenter = if (center.dayOfWeek.value == 7) center.minusDays(1) else center
+
+        repository.getStudyProgressWeek(correctedCenter)
             .onSuccess { map ->
-                // 🔹 3단계면 자동으로 4로 치환
                 val adjusted = map.mapValues { (_, v) -> if (v == 3) 4 else v }
                 _progressMap.value = adjusted
                 Log.d("PROGRESS_WEEK", "✅ 주간 진행도 로드 성공 (${adjusted.size}일): $adjusted")
