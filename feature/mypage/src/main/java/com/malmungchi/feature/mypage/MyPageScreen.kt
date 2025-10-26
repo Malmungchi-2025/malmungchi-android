@@ -1,6 +1,7 @@
 package com.malmungchi.feature.mypage
 
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -73,6 +74,7 @@ fun MyPageRoute(
     onClickViewNicknameTest: () -> Unit = {},
     onClickViewNicknameCard: (nicknameTitle: String, userName: String) -> Unit = { _, _ -> }
 ) {
+
     val ui by viewModel.ui.collectAsState()
 
     var showAvatarDialog by rememberSaveable { mutableStateOf(false) }
@@ -119,7 +121,7 @@ fun MyPageRoute(
             // ✅ 닉네임 카드 다이얼로그 열림 여부
             var showNicknameCard by rememberSaveable { mutableStateOf(false) }
 
-            val nicknameTitle = displayUi.user?.nickname_title
+            val nicknameTitle = displayUi.user?.nicknameTitle
             val context = androidx.compose.ui.platform.LocalContext.current
             val avatarRes = remember(displayUi.avatarName) {
                 avatarNameToRes(context, displayUi.avatarName)
@@ -130,6 +132,7 @@ fun MyPageRoute(
                 userName = displayUi.userName,
                 levelLabel = displayUi.levelLabel,
                 nextStage = displayUi.nextStageUi,
+                nicknameTitle = nicknameTitle,
                 onClickSettings = onClickSettings,
                 onClickViewAllWords = onClickViewAllWords,
                 onClickViewAllBadges = onClickViewAllBadges,
@@ -197,6 +200,8 @@ fun MyPageScreen(
     recentBadges: List<BadgeUi> = emptyList(),
     nicknameTitle: String? = null // ✅ 추가
 ) {
+
+    Log.d("MyPageScreen", "nicknameTitle(MyPageScreen): $nicknameTitle")
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -399,7 +404,7 @@ private fun ProfileBlock(
                     .padding(horizontal = BUBBLE_H_PADDING, vertical = BUBBLE_V_PADDING)
             ) {
                 Text(
-                    text = questionLabel,
+                    text = if (questionLabel.isNotBlank()) questionLabel else "치치의 어휘/문해력은?",
                     style = TextStyle(
                         fontFamily = Pretendard,
                         fontSize = BUBBLE_TEXT_SIZE,
@@ -407,6 +412,7 @@ private fun ProfileBlock(
                         color = Color(0xFF262626)
                     )
                 )
+
             }
         }
     }
@@ -929,6 +935,7 @@ private fun MyPageScreenPreview() {
         recentItems = listOf(
             VocabularyDto(id = 1, word = "serendipity", meaning = "뜻밖의 행운", example = "She found the café by pure serendipity.")
         ),
+
 //        recentBadges = listOf(
 //            BadgeUi("img_badge_beginner", "첫 학습 달성"),
 //            BadgeUi("img_badge_5days", "5일 연속 학습"),
