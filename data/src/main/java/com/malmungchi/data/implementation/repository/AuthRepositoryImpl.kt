@@ -53,7 +53,7 @@ class AuthRepositoryImpl @Inject constructor(
             val user = r.result
             if (user != null) {
                 SessionManager.updateLevel(user.level)   // ✅ 새 메서드
-                SessionManager.updateNicknameTitle(user.nickname_title)
+                SessionManager.updateNicknameTitle(user.nicknameTitle)
                 // ✅ 선택: 친구코드/아바타 캐시
                 //SessionManager.updateFriendCode(user.friend_code)
                 //SessionManager.updateAvatarName(user.avatar_name)
