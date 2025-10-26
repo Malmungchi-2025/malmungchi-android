@@ -63,13 +63,13 @@ private fun AiChatCompleteContent(
             .background(Color.White)
             .padding(horizontal = 16.dp)
     ) {
-        // 본문(스크롤)
+        // ✅ 중앙 콘텐츠 (약간 아래로 내림)
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(top = 48.dp, bottom = 120.dp), // 버튼 자리 확보
-            horizontalAlignment = Alignment.CenterHorizontally
+                .align(Alignment.Center)
+                .offset(y = 24.dp), // 🔹 중앙보다 약간 아래로 내려서 시각적 중심 맞춤
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = "AI 대화 완료!",
@@ -80,15 +80,12 @@ private fun AiChatCompleteContent(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
 
             Image(
                 painter = painterResource(id = R.drawable.ic_complete_character),
                 contentDescription = null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 180.dp, max = 300.dp)
-                    .aspectRatio(1f, matchHeightConstraintsFirst = true),
+                modifier = Modifier.size(220.dp),
                 contentScale = ContentScale.Fit
             )
 
@@ -104,7 +101,7 @@ private fun AiChatCompleteContent(
             )
         }
 
-        // 하단 버튼: 바닥에서 48dp 위 고정
+        // ✅ 하단 버튼
         Button(
             onClick = onClickFinish,
             enabled = true,
@@ -125,7 +122,6 @@ private fun AiChatCompleteContent(
         }
     }
 }
-
 /* ─────────────────────────────────────────────
  * 3) Preview: VM 없이 Content만 호출
  * ───────────────────────────────────────────── */

@@ -270,6 +270,12 @@ fun ChatScreen(
 
             Spacer(Modifier.height(12.dp))
 
+            // 오늘 날짜 계산 (YYYY.MM.DD 포맷)
+            val todayLabel = remember {
+                val now = java.time.LocalDate.now()
+                "%04d.%02d.%02d".format(now.year, now.monthValue, now.dayOfMonth)
+            }
+
             // 날짜 배지
             Box(
                 modifier = Modifier
@@ -278,7 +284,7 @@ fun ChatScreen(
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
-                    "2025.04.05",
+                    text = todayLabel,
                     fontFamily = Pretendard,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp,

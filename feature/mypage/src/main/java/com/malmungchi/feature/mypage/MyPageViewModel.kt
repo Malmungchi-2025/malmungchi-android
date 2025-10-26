@@ -149,6 +149,7 @@ class MyPageViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 val user = repo.me()
+                Log.d("MyPageVM", "nicknameTitle(서버): ${user?.nicknameTitle}") // ← 이 한 줄!
                 val (recent, _) = repo.getMyRecentVocabulary(limit = 5)
                 val (liked, likedCur) = repo.getMyLikedVocabulary(limit = 10)
                 val (all, allCur) = repo.getMyVocabulary(limit = 20)
