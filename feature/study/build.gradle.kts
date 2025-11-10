@@ -25,11 +25,14 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+
+        // ✅ 추가 (LocalDate, java.time.* API 하위 호환 활성화)
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -63,7 +66,25 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
-    // Core & Design 모듈
+    // ✅ Retrofit (feature 모듈에서도 필요)
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+
+
+    // ✅ Hilt + KSP (이미 있음)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    ksp(libs.androidx.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.34.0")
+
+    // ✅ Core & Design 모듈
     implementation(project(":core"))
     implementation(project(":design"))
+    implementation(project(":data"))
+
+    // ✅ 추가: LocalDate 등 Java 8 API 하위 호환 라이브러리
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

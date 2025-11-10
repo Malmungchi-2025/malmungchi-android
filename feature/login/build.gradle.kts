@@ -24,11 +24,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -62,7 +62,11 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
+
+
     // Core & Design 모듈
     implementation(project(":core"))
     implementation(project(":design"))
+
+    implementation("androidx.compose.material:material-icons-extended")
 }

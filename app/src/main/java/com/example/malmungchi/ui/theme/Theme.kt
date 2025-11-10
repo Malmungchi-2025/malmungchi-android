@@ -10,6 +10,13 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+//import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
+import android.view.View
+import android.view.WindowInsetsController
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalView
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -20,7 +27,9 @@ private val DarkColorScheme = darkColorScheme(
 private val LightColorScheme = lightColorScheme(
     primary = Purple40,
     secondary = PurpleGrey40,
-    tertiary = Pink40
+    tertiary = Pink40,
+    background = androidx.compose.ui.graphics.Color.White, // 추가
+    surface = androidx.compose.ui.graphics.Color.White,    // 추가
 
     /* Other default colors to override
     background = Color(0xFFFFFBFE),
@@ -32,6 +41,39 @@ private val LightColorScheme = lightColorScheme(
     onSurface = Color(0xFF1C1B1F),
     */
 )
+
+
+@Composable
+fun SetStatusBarWhite() {
+    val view = LocalView.current
+    val activity = view.context as? Activity
+
+    DisposableEffect(activity) {
+        activity?.window?.let { window ->
+            // ⬇ 중요: 이 화면에서는 시스템바 뒤로 그리지 않음
+            androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, true)
+
+            window.statusBarColor = android.graphics.Color.WHITE
+            window.navigationBarColor = android.graphics.Color.WHITE
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                window.insetsController?.setSystemBarsAppearance(
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                )
+                window.insetsController?.setSystemBarsAppearance(
+                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
+                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                window.decorView.systemUiVisibility =
+                    (View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR)
+            }
+        }
+        onDispose { }
+    }
+}
 
 @Composable
 fun MalmungchiTheme(
@@ -50,9 +92,15 @@ fun MalmungchiTheme(
         else -> LightColorScheme
     }
 
+
+
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        content = content
+        content = {
+            SetStatusBarWhite() // ⬅️ 여기로 옮기기
+            content()
+        }
+        //content = content
     )
 }
