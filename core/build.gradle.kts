@@ -1,7 +1,8 @@
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
+    id("com.android.library")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
+    kotlin("kapt") // ✅ Hilt 사용 시 필요
 }
 
 android {
@@ -9,51 +10,51 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.malmungchi.core"
         minSdk = 24
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17   // ✅ JDK 17 적용
+        targetCompatibility = JavaVersion.VERSION_17
+
+
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"                              // ✅ JDK 17 적용
     }
+
     buildFeatures {
-        compose = true
+        compose = true                                // ✅ Compose 활성화
+        buildConfig = true   // ✅ BuildConfig 사용 가능하게 설정
+
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.11"     // ✅ Compose 최신 버전
+    }
+    lint {
+        abortOnError = false
     }
 }
 
 dependencies {
-
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
+    // ✅ Compose 기본 의존성
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
+    implementation(libs.androidx.ui.tooling.preview)
     debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
+    implementation(libs.androidx.activity.compose)   // ✅ setContent 사용 가능
+
+    // ✅ Hilt
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    kapt("com.google.dagger:hilt-compiler:2.51.1")
+
+    // ✅ Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // Moshi
+    implementation("com.squareup.moshi:moshi:1.15.0")
+    kapt("com.squareup.moshi:moshi-kotlin-codegen:1.15.0")
 }

@@ -25,11 +25,11 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -51,6 +51,7 @@ dependencies {
 
     // ✅ Hilt (플러그인 없이 라이브러리만)
     implementation(libs.hilt.android)
+    implementation(project(":data"))
     ksp(libs.hilt.compiler)
     ksp(libs.androidx.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
@@ -58,7 +59,20 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
+    // ✅ retrofit2.HttpException 사용을 위해 (이 모듈에서도 필요)
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+
+    // ✅ collectAsStateWithLifecycle 사용 시 필요
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
+
+    // ✅ 코루틴(Android)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
     // Core & Design 모듈 참조
     implementation(project(":core"))
     implementation(project(":design"))
+
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
+    implementation("com.squareup.okhttp3:okhttp")
+    implementation("com.squareup.okhttp3:logging-interceptor")
 }
