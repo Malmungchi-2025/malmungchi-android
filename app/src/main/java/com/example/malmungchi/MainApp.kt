@@ -1446,13 +1446,21 @@ fun MainApp() {
                         studyId = id,
                         text = text,
                         viewModel = vm,
-                        onBackClick = { navController.popBackStack("study_second", inclusive = false) },
-                        onNextClick = {
-                            navController.navigate("study_third_result/$id") {
+                        //되돌아가기 버튼 수정
+                        //onBackClick = { navController.popBackStack("study_second", inclusive = false) },
+                        onBackClick = {
+                            navController.navigate("study_second") {
                                 launchSingleTop = true
                                 restoreState = true
+                                popUpTo("study_graph") { inclusive = false }
                             }
                         }
+//                        onNextClick = {
+//                            navController.navigate("study_third_result/$id") {
+//                                launchSingleTop = true
+//                                restoreState = true
+//                            }
+//                        }
                     )
                 }
             }
