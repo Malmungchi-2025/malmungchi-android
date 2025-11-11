@@ -169,30 +169,66 @@ class StudyReadingViewModel @Inject constructor(
 //                }
 //            }
 //    }
-
     /** ✅ 오늘의 학습 글감 API 호출 (토큰 인자 제거) */
     fun fetchTodayQuote() {
-        Log.d("API_FETCH_QUOTE", "📡 [요청] /api/gpt/generate-quote")
         viewModelScope.launch {
             repository.generateTodayQuote()
                 .onSuccess {
-                    Log.d("API_FETCH_QUOTE", "✅ [응답 성공] studyId=${it.studyId}, level=${it.level}")
-
                     val cleaned = it.content
-                        .replace("\r\n", " ")          // 윈도우 개행 → 공백
-                        .replace("\r", " ")            // 혹시 모를 \r 단독 → 공백
-                        .replace("\n", " ")            // 모든 줄바꿈 → 공백
-                        .replace(Regex("[ \t]+"), " ") // 다중 공백 1칸으로
+                        .replace("\r\n", " ")
+                        .replace("\r", " ")
+                        .replace("\n", " ")
+                        .replace(Regex("[ \t]+"), " ")
                         .trim()
                     _quote.value = cleaned
                     _studyId.value = it.studyId
                 }
                 .onFailure { e ->
-                    Log.e("API_FETCH_QUOTE", "❌ [응답 실패] ${e.message}", e)
                     _quote.value = "❗ 오류: ${e.message}"
                 }
         }
     }
+//    fun fetchTodayQuote() {
+//        Log.d("API_FETCH_QUOTE", "📡 [요청] /api/gpt/generate-quote")
+//        viewModelScope.launch {
+//            repository.generateTodayQuote()
+//                .onSuccess {
+//                    Log.d("API_FETCH_QUOTE", "✅ [응답 성공] studyId=${it.studyId}, level=${it.level}")
+//
+//                    // ✅ 불필요한 replace 제거하고 원문 그대로 사용
+//                    _quote.value = it.content
+//                    _studyId.value = it.studyId
+//                }
+//                .onFailure { e ->
+//                    Log.e("API_FETCH_QUOTE", "❌ [응답 실패] ${e.message}", e)
+//                    _quote.value = "❗ 오류: ${e.message}"
+//                }
+//        }
+//    }
+
+//    /** ✅ 오늘의 학습 글감 API 호출 (토큰 인자 제거) */
+//    fun fetchTodayQuote() {
+//        Log.d("API_FETCH_QUOTE", "📡 [요청] /api/gpt/generate-quote")
+//        viewModelScope.launch {
+//            repository.generateTodayQuote()
+//                .onSuccess {
+//                    Log.d("API_FETCH_QUOTE", "✅ [응답 성공] studyId=${it.studyId}, level=${it.level}")
+//
+//                    val cleaned = it.content
+//                        .replace("\r\n", " ")          // 윈도우 개행 → 공백
+//                        .replace("\r", " ")            // 혹시 모를 \r 단독 → 공백
+//                        .replace("\n", " ")            // 모든 줄바꿈 → 공백
+//                        .replace(Regex("[ \t]+"), " ") // 다중 공백 1칸으로
+//                        .trim()
+//                    _quote.value = cleaned
+//                    _studyId.value = it.studyId
+//                }
+//                .onFailure { e ->
+//                    Log.e("API_FETCH_QUOTE", "❌ [응답 실패] ${e.message}", e)
+//                    _quote.value = "❗ 오류: ${e.message}"
+//                }
+//        }
+//    }
 //    fun fetchTodayQuote() {
 //        Log.d("API_FETCH_QUOTE", "📡 [요청] /api/gpt/generate-quote")
 //        viewModelScope.launch {
