@@ -1,5 +1,6 @@
 package com.malmungchi.feature.study.first
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -111,13 +112,13 @@ fun StudyAppendixListContent(
             Spacer(Modifier.height(16.dp))
 
             // 🔹 단어 카드 리스트(남은 높이 채우기)
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color(0xFFF9F9F9),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f) // ✅ Column 안에서 남은 공간
-            ) {
+//            Surface(
+//                shape = RoundedCornerShape(12.dp),
+//                color = Color(0xFFF9F9F9),
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .weight(1f) // ✅ Column 안에서 남은 공간
+//            ) {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -125,50 +126,59 @@ fun StudyAppendixListContent(
                 ) {
                     items(words) { WordCard(it) }
                 }
-            }
+
         }
 
         // 🔹 하단 버튼 (Box 스코프 안, align 사용 가능)
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter) // ✅ BoxScope.align 정상사용
-                .padding(bottom = 48.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.BottomCenter
         ) {
-            OutlinedButton(
-                onClick = onBackClick,
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color(0xFF195FCF)
-                ),
+            Row(
                 modifier = Modifier
-                    .height(42.dp)
-                    .weight(1f)
+                    .align(Alignment.BottomCenter)
+                    //.padding(horizontal = 20.dp)
+                    .offset(y = (-64).dp) // ✅ 바텀시트 위로 64dp 띄움
+                    .fillMaxWidth(),      // ✅ Row 전체 폭 사용
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    "이전 단계",
-                    fontSize = 16.sp,
-                    fontFamily = Pretendard
-                )
-            }
+                OutlinedButton(
+                    onClick = onBackClick,
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFF195FCF)
+                    ),
+                    border = BorderStroke(1.dp, Color(0xFF195FCF)),
+                    modifier = Modifier
+                        .height(42.dp)
+                        .weight(1f) // ✅ 좌우 길이 자동 맞춤
+                ) {
+                    Text(
+                        "이전 단계",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = Pretendard
+                    )
+                }
 
-            Button(
-                onClick = onNavigateNext,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF195FCF)
-                ),
-                shape = RoundedCornerShape(50),
-                modifier = Modifier
-                    .height(42.dp)
-                    .weight(1f)
-            ) {
-                Text(
-                    "다음 단계",
-                    fontSize = 16.sp,
-                    fontFamily = Pretendard,
-                    color = Color.White
-                )
+                Button(
+                    onClick = onNavigateNext,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF195FCF)
+                    ),
+                    shape = RoundedCornerShape(50),
+                    modifier = Modifier
+                        .height(42.dp)
+                        .weight(1f) // ✅ 좌우 길이 자동 맞춤
+                ) {
+                    Text(
+                        "다음 단계",
+                        fontSize = 16.sp,
+                        fontFamily = Pretendard,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                }
             }
         }
     }
@@ -197,12 +207,12 @@ fun StepProgressBarAppendix(totalSteps: Int = 3) {
 @Composable
 fun WordCard(item: WordItem) {
     Surface(
-        shape = RoundedCornerShape(12.dp),
-        shadowElevation = 4.dp,
-        color = Color.White,
+        shape = RoundedCornerShape(20.dp),
+        shadowElevation = 2.dp,
+        color = Color(0xFFF7F7F7),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 16.dp)
     ) {
         Column(
             modifier = Modifier

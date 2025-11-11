@@ -1,6 +1,7 @@
 package com.malmungchi.feature.study.second
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -267,7 +268,9 @@ private fun HandwritingGuideOverlay(
         ) {
             if (bubbleRes != null) {
                 // ⬇️ 화면 제약(maxWidth/maxHeight)을 알고 계산하기 위해 사용
+
                 BoxWithConstraints {
+
                     val painter = painterResourceSafe(bubbleRes)
                     if (painter != null) {
                         val density = LocalDensity.current
@@ -347,7 +350,7 @@ private fun HandwritingGuideOverlay(
             }
         }
 
-        val malchiPainter = painterResourceSafe(R.drawable.img_malchi)
+        val malchiPainter = painterResourceSafe(R.drawable.img_malchi_new)
         val malchiMod = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 40.dp).offset(y = (-12).dp) .size(84.dp)
         if (malchiPainter != null) {
             Icon(painter = malchiPainter, contentDescription = null, tint = Color.Unspecified, modifier = malchiMod)
@@ -424,13 +427,15 @@ private fun BottomNavigationButtons(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 20.dp)
+            .offset(y = (-64).dp),
+    horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         OutlinedButton(
             onClick = onBackClick,
             shape = RoundedCornerShape(50),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = Blue_195FCF),
+            border = BorderStroke(1.dp, Blue_195FCF),
             modifier = Modifier
                 .height(42.dp)
                 .weight(1f)
@@ -917,76 +922,94 @@ fun Preview_Handwriting_AfterOnboarding() {
     var typedValue by remember { mutableStateOf(TextFieldValue("“빛을 보기 위")) }
     var errorIndexUi by remember { mutableStateOf<Int?>(null) }
 
-    Column(
+    Box(
         Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(start = 20.dp, end = 20.dp, top = 48.dp, bottom = 48.dp)
     ) {
-        TopBar(title = "오늘의 학습", onBackClick = {})
-        Spacer(Modifier.height(24.dp))
-        Text("학습 진행률", fontSize = 16.sp, color = Color.Black)
-        Spacer(Modifier.height(16.dp))
-        StepProgressBarPreview(totalSteps = 3, currentStep = 2)
+        // ✅ 상단 및 본문 콘텐츠
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(start = 20.dp, end = 20.dp, top = 48.dp, bottom = 48.dp)
+        ) {
+            TopBar(title = "오늘의 학습", onBackClick = {})
+            Spacer(Modifier.height(24.dp))
+            Text("학습 진행률", fontSize = 16.sp, color = Color.Black)
+            Spacer(Modifier.height(16.dp))
+            StepProgressBarPreview(totalSteps = 3, currentStep = 2)
 
-        Spacer(Modifier.height(40.dp))
-        SentenceCounter(current = uiIndex + 1, total = sentences.size)
-        Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(40.dp))
+            SentenceCounter(current = uiIndex + 1, total = sentences.size)
+            Spacer(Modifier.height(32.dp))
 
-        Column(Modifier.padding(start = SentenceIndent)) {
-            OriginalWithTypos(original = original, typed = typedValue.text, errorIndex = errorIndexUi, color = Color.Black)
-            Spacer(Modifier.height(12.dp))
-            FullWidthInputChip(
-                value = typedValue,
-                onValueChange = { newV ->
-                    if (newV.composition != null) {
-                        errorIndexUi = null
-                        typedValue = newV.copy()
-                        return@FullWidthInputChip
-                    }
-                    val newText = newV.text
-                    val oldText = typedValue.text
-                    if (newText.length <= oldText.length) {
-                        errorIndexUi = null
-                        typedValue = newV
-                        return@FullWidthInputChip
-                    }
-                    if (isSafePrefix(newText, original)) {
-                        errorIndexUi = null
-                        typedValue = newV
-                        return@FullWidthInputChip
-                    }
-                    errorIndexUi = nfc(oldText).length
-                },
-                textColor = Gray_616161,
-                background = Field_EFF4FB
-            )
+            Column(Modifier.padding(start = SentenceIndent)) {
+                OriginalWithTypos(
+                    original = original,
+                    typed = typedValue.text,
+                    errorIndex = errorIndexUi,
+                    color = Color.Black
+                )
+                Spacer(Modifier.height(12.dp))
+                FullWidthInputChip(
+                    value = typedValue,
+                    onValueChange = { newV ->
+                        if (newV.composition != null) {
+                            errorIndexUi = null
+                            typedValue = newV.copy()
+                            return@FullWidthInputChip
+                        }
+                        val newText = newV.text
+                        val oldText = typedValue.text
+                        if (newText.length <= oldText.length) {
+                            errorIndexUi = null
+                            typedValue = newV
+                            return@FullWidthInputChip
+                        }
+                        if (isSafePrefix(newText, original)) {
+                            errorIndexUi = null
+                            typedValue = newV
+                            return@FullWidthInputChip
+                        }
+                        errorIndexUi = nfc(oldText).length
+                    },
+                    textColor = Gray_616161,
+                    background = Field_EFF4FB
+                )
+            }
+
+            Spacer(Modifier.height(48.dp))
+
+            val hasNext = uiIndex < sentences.size - 1
+            if (hasNext) {
+                Text(
+                    text = "다음 문장",
+                    fontFamily = Pretendard,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    color = Gray_616161,
+                    modifier = Modifier.padding(start = SentenceIndent)
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = sentences[uiIndex + 1],
+                    fontFamily = Pretendard,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp,
+                    color = Gray_989898,
+                    lineHeight = 26.sp,
+                    modifier = Modifier.padding(start = SentenceIndent)
+                )
+            }
         }
 
-        Spacer(Modifier.height(48.dp))
-
-        val hasNext = uiIndex < sentences.size - 1
-        if (hasNext) {
-            Text(
-                text = "다음 문장",
-                fontFamily = Pretendard,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                color = Gray_616161,
-                modifier = Modifier.padding(start = SentenceIndent)
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = sentences[uiIndex + 1],
-                fontFamily = Pretendard,
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                color = Gray_989898,
-                lineHeight = 26.sp,
-                modifier = Modifier.padding(start = SentenceIndent)
-            )
-        }
-
-        Spacer(Modifier.height(24.dp))
+        // ✅ 하단 버튼 (바텀시트 위로 64dp 띄움)
+        BottomNavigationButtons(
+            onBackClick = {},
+            onNextClick = {},
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .offset(y = (-64).dp) // ✅ 바텀시트 위로 64dp 간격
+        )
     }
 }

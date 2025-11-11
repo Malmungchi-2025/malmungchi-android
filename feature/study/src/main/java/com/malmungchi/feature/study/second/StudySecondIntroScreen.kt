@@ -52,7 +52,7 @@ fun StudySecondIntroScreen(
 
             // 🔹 설명 문구
             Text(
-                text = "앞앞단 글에 대한 필사를 진행하며,\n다시 한 번 들어다보세요!",
+                text = "읽었던 글에 대한 필사를 진행하며,\n다시 한 번 들어다보세요!",
                 color = Color(0xFF333333),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
