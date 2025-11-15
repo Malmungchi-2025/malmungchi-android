@@ -54,12 +54,12 @@ fun WordCollectBottomSheet(
                 Text("단어 수집", fontSize = 14.sp, fontWeight = FontWeight.Medium,
                     fontFamily = Pretendard, color = Color(0xFF195FCF))
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
 
                 Text(word, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
                     fontFamily = Pretendard, color = Color(0xFF333333))
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
                 Text(": $definition", fontSize = 14.sp, fontWeight = FontWeight.Medium,
                     fontFamily = Pretendard, color = Color(0xFF333333))
 
@@ -74,13 +74,22 @@ fun WordCollectBottomSheet(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    // 🔹 취소 버튼 — 흰색 배경 + 파란 테두리 (#195FCF, 1dp)
                     Button(
-                        onClick = onDismiss,
+                        onClick = { onDismiss() },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        modifier = Modifier.weight(1f).height(36.dp)
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF195FCF)), // ✅ 테두리 추가
+                        modifier = Modifier
+                            .height(36.dp)
+                            .weight(1f)
                     ) {
-                        Text("취소", fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
-                            fontFamily = Pretendard, color = Color(0xFF195FCF))
+                        Text(
+                            "취소",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = Pretendard,
+                            color = Color(0xFF195FCF)
+                        )
                     }
                     Spacer(Modifier.width(8.dp))
                     Button(
@@ -110,14 +119,13 @@ fun WordCollectBottomSheetContent(
         color = Color.White,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(12.dp)
     ) {
         Column(
             modifier = Modifier
                 .background(Color.White)
-                .padding(24.dp)
+                .padding(12.dp)
         ) {
-            // ✅ 상단 제목
             Text(
                 text = "단어 수집",
                 fontSize = 14.sp,
@@ -126,34 +134,29 @@ fun WordCollectBottomSheetContent(
                 color = Color(0xFF195FCF)
             )
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp)) // 24 → 12로 수정됨 (✔️ 요청 반영)
 
-            // ✅ 원형 단어
             Text(
                 text = word,
-                fontSize = 18.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = Pretendard,
                 color = Color(0xFF333333)
             )
 
-            Spacer(Modifier.height(8.dp))
-
-            // ✅ 뜻
+            Spacer(Modifier.height(4.dp)) // 단어 → 뜻 (✔️)
             Text(
                 text = ": $definition",
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 fontFamily = Pretendard,
                 color = Color(0xFF333333)
             )
 
-            Spacer(Modifier.height(8.dp))
-
-            // ✅ 예문
+            Spacer(Modifier.height(8.dp)) // 뜻 → 예문 (✔️)
             Text(
                 text = example,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 fontFamily = Pretendard,
                 color = Color(0xFF666666)
@@ -161,30 +164,43 @@ fun WordCollectBottomSheetContent(
 
             Spacer(Modifier.height(24.dp))
 
-            // ✅ 버튼 영역
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Button(
                     onClick = { onDismiss() },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF195FCF)),
                     modifier = Modifier
-                        .height(36.dp)
+                        .height(40.dp)
                         .weight(1f)
                 ) {
-                    Text("취소", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, fontFamily = Pretendard, color = Color(0xFF195FCF))
+                    Text(
+                        "취소",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = Pretendard,
+                        color = Color(0xFF195FCF)
+                    )
                 }
-                Spacer(Modifier.width(8.dp))
-                Button(
-                    onClick = {
 
-                        // 🔥 [연동 예정] 여기서 ViewModel → Repository → API 호출 연결
-                        // onSaveClick() → 실제 단어 저장 로직 추가 예정
-                    },
+                Spacer(Modifier.width(8.dp))
+
+                Button(
+                    onClick = {},
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
                     modifier = Modifier
-                        .height(36.dp)
+                        .height(40.dp)
                         .weight(1f)
                 ) {
-                    Text("저장", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, fontFamily = Pretendard, color = Color.White)
+                    Text(
+                        "단어 수집하기",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = Pretendard,
+                        color = Color.White
+                    )
                 }
             }
         }

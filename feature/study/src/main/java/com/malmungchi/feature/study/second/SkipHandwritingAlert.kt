@@ -1,5 +1,6 @@
 package com.malmungchi.feature.study.second
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -53,7 +54,8 @@ class SkipHandwritingAlert {
                         OutlinedButton(
                             onClick = { onConfirm() },
                             shape = RoundedCornerShape(50),
-                            border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp),
+                            border = BorderStroke(1.dp, Color(0xFF195FCF)),
+                            //border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF195FCF)),
                             modifier = Modifier
                                 .height(42.dp)
