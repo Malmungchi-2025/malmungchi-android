@@ -379,8 +379,44 @@ fun ChatScreen(
         }
 
         // 하단 마이크
-        Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp)) {
-            MicButton(vm)
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 48.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                // 🔵 안내 멘트 (녹음 여부에 따라 색상/텍스트 변경)
+                val guideText = if (vm.ui.value.isRecording) {
+                    "마이크 활성화 — 완료 시 중단 버튼을 눌러주세요!"
+                } else {
+                    "하단의 마이크를 눌러주세요."
+                }
+
+                val guideColor = if (vm.ui.value.isRecording)
+                    Color(0xFF195FCF)
+                else
+                    Color(0xFF616161)
+
+                Text(
+                    text = guideText,
+                    fontFamily = Pretendard,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp,
+                    color = guideColor,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                //MicButton(vm)
+                Box(
+                    modifier = Modifier.size(
+                        if (vm.ui.value.isRecording) 64.dp else 56.dp
+                    )
+                ) {
+                    MicButton(vm)
+                }
+            }
         }
 
         // ✅ 다이얼로그 렌더 (루트 Box의 마지막 자식으로)
