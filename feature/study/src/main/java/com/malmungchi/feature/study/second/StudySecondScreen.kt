@@ -649,41 +649,47 @@ fun StudySecondScreen(
                         FullWidthInputChip(
                             value = typedValue,
                             onValueChange = { newV ->
-                                val newText = nfc(newV.text)
-                                val originalClean = nfc(original)
 
-                                // 삭제 허용
-                                if (newText.length <= typedValue.text.length) {
-                                    typedValue = newV
+                                val newTextRaw = newV.text
+                                val newText = nfc(newTextRaw)
+                                val originalClean = nfc(original)
+                                val oldText = typedValue.text
+
+                                // 1) 삭제 허용
+                                if (newText.length <= oldText.length) {
                                     errorIndexUi = null
+                                    typedValue = newV
                                     viewModel.onUserInputChange(newText)
                                     return@FullWidthInputChip
                                 }
 
-                                // 조합 중이면 prefix 체크만 수행
+                                // 2) 조합 중일 때 — 무조건 prefix 검사만
                                 if (newV.composition != null) {
-                                    if (originalClean.startsWith(newText)) {
-                                        typedValue = newV
+                                    if (originalClean.startsWith(newText) ||
+                                        originalClean.startsWith(newText.dropLast(1)) // 초성만 들어온 경우 허용
+                                    ) {
                                         errorIndexUi = null
+                                        typedValue = newV
                                     } else {
                                         errorIndexUi = newText.length - 1
                                     }
                                     return@FullWidthInputChip
                                 }
 
-                                // 완성된 문자 입력 시 → prefix 체크
+                                // 3) 완성형 입력 — prefix 검사
                                 if (originalClean.startsWith(newText)) {
-                                    typedValue = newV
                                     errorIndexUi = null
+                                    typedValue = newV
                                     viewModel.onUserInputChange(newText)
 
                                     // 문장 완성
-                                    if (newText == originalClean) advanceOrFinish()
-
+                                    if (newText == originalClean) {
+                                        advanceOrFinish()
+                                    }
                                     return@FullWidthInputChip
                                 }
 
-                                // 오타
+                                // 4) 오타
                                 errorIndexUi = newText.length - 1
                             },
 //                            onValueChange = { newV ->
