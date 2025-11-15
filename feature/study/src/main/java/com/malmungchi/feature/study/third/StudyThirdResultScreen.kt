@@ -477,7 +477,7 @@ fun StudyThirdResultScreen(
                         contentDescription = null,
                         modifier = Modifier
                             .align(Alignment.TopStart)   // ⭐ 필수!!
-                            .size(160.dp)
+                            .size(140.dp)
                             .offset(x = (-46).dp, y = (-42).dp)
                             .zIndex(10f)
                     )
@@ -486,7 +486,8 @@ fun StudyThirdResultScreen(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .offset(
-                                y = if (index == 0) 160.dp else 140.dp //1번만 간격을 크게!
+                                y = if (index == 0 || index == 2) 160.dp else 140.dp
+                                //y = if (index == 0) 160.dp else 140.dp //1번만 간격을 크게!
                             )
                             //.offset(y = 140.dp) //  해설 블록을 약간 더 아래로 내려서 보이게!
                             .zIndex(0f)
