@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,13 +44,19 @@ fun StudyThirdScreen(
     val quizList by viewModel.quizList.collectAsState()
 
     // ✅ 최초 진입 시 1회 호출
-    LaunchedEffect(Unit) { viewModel.generateQuiz(text, studyId) }
+    LaunchedEffect(studyId) {
+        if (viewModel.quizList.value.isEmpty()) {
+            viewModel.generateQuiz(text, studyId)
+        }
+    }
+    //LaunchedEffect(Unit) { viewModel.generateQuiz(text, studyId) }
 
     // ✅ 로딩 플래그
     val isLoading = quizList.isEmpty()
 
     // ✅ 현재 문제 인덱스 & 선택값 (로딩 때도 state는 유지)
-    var currentIndex by remember { mutableStateOf(0) }
+    var currentIndex by rememberSaveable { mutableStateOf(0) }
+    //var currentIndex by remember { mutableStateOf(0) }
     val selectedAnswers = remember { mutableStateMapOf<Int, Int>() }
 
     val currentQuestion = if (!isLoading) quizList[currentIndex] else null
@@ -162,10 +169,11 @@ fun StudyThirdScreen(
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 48.dp)          // 세컨드와 동일
+                .padding(bottom = 24.dp)          // 세컨드와 동일
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .offset(y = (-64).dp),// 세컨드와 동일
+                .padding(bottom = 64.dp),
+                //.offset(y = (-64).dp),// 세컨드와 동일
             horizontalArrangement = Arrangement.spacedBy(12.dp) // 세컨드와 동일
         ) {
             OutlinedButton(
@@ -173,6 +181,7 @@ fun StudyThirdScreen(
                 enabled = !isLoading && currentIndex > 0,      // 동작만 조건, UI는 동일
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF195FCF)),
+                border = BorderStroke(1.dp, Color(0xFF195FCF)),
                 modifier = Modifier
                     .height(42.dp)   // 세컨드와 동일
                     .weight(1f)      // 세컨드와 동일

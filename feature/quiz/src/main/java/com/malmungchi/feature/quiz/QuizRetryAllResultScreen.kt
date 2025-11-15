@@ -99,7 +99,7 @@ fun QuizRetryAllResultScreen(
                 text = categoryTitle,
                 fontFamily = Pretendard,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp,
+                fontSize = 20.sp,
                 color = Color.Black,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center
@@ -153,8 +153,6 @@ fun QuizRetryAllResultScreen(
         }
     }
 }
-
-/* ---------- 단일 카드(배경 EFF4FB + 흰 카드 + 정답/해설) ---------- */
 @Composable
 private fun RetryResultCard(
     item: RetryResultItem,
@@ -162,125 +160,268 @@ private fun RetryResultCard(
     wrongIconRes: Int? = null
 ) {
     val inPreview = LocalInspectionMode.current
+    val isCorrect = item.userAnswer == item.correctAnswer
+    val iconRes = if (isCorrect) {
+        correctIconRes ?: R.drawable.ic_correct
+    } else {
+        wrongIconRes ?: R.drawable.ic_wrong
+    }
 
-    Box(Modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth()) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 140.dp) // 카드와 해설 간 간격 확보
+    ) {
 
-            // 1) 흰 카드(질문/선택지)만 별도로
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text(
-                        text = "${item.order}/${item.total}",
-                        fontFamily = Pretendard, fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium, color = Color(0xFF616161)
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = item.question,
-                        fontFamily = Pretendard, fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold, color = Color.Black, lineHeight = 26.sp
-                    )
-                    Spacer(Modifier.height(16.dp))
-
-                    when (item.type) {
-                        RetryResultType.MCQ -> McqResult(item.options, item.userAnswer, item.correctAnswer)
-                        RetryResultType.OX   -> OxResult(item.userAnswer, item.correctAnswer)
-                        RetryResultType.SHORT-> ShortResult(item.userAnswer, item.correctAnswer, item.isCorrect)
-                    }
-                }
-            }
-
-            // 2) 정답/해설 전용 BgBlue 박스 (상단 모서리 0dp → 카드와 딱 맞닿게)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(
+        /* ▼▼▼ 1) 정답·해설 박스 (뒤쪽 / zIndex 낮음) ▼▼▼ */
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .offset(y = 140.dp) // 해설 박스를 더 아래로 내려 배치
+                .zIndex(0f)
+                .fillMaxWidth()
+                .clip(
+                    RoundedCornerShape(
                         topStart = 0.dp, topEnd = 0.dp,
                         bottomStart = 12.dp, bottomEnd = 12.dp
-                    ))
-                    .background(Color(0xFFEFF4FB)) // BgBlue
+                    )
+                )
+                .background(BgBlue)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(top = 12.dp, bottom = 24.dp)   // 세로 여백
+                    .padding(start = 20.dp, end = 12.dp)    // 좌우 여백 (StudyThird 기준)
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(top = 12.dp, bottom = 12.dp) // 세로 여백
-                        .padding(start = 6.dp, end = 6.dp)   // ▶ 왼쪽 치우침 방지: 양쪽 6dp 들여쓰기
-                ) {
-                    // 라벨: 616161, 12, Medium
-                    Text(
-                        text = "정답",
-                        fontFamily = Pretendard, fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium, color = Color(0xFF616161)
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    // 값: Black, 14, Medium
-                    Text(
-                        text = item.correctAnswer,
-                        fontFamily = Pretendard, fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium, color = Color.Black
-                    )
+                // 🔹 정답 라벨
+                Text(
+                    text = "정답",
+                    fontFamily = Pretendard,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = LabelGray
+                )
 
-                    Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(2.dp))   // 라벨 → 값 간 기본 간격
 
-                    Text(
-                        text = "해설",
-                        fontFamily = Pretendard, fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium, color = Color(0xFF616161)
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = item.explanation,
-                        fontFamily = Pretendard, fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium, color = Color.Black
-                    )
-                }
+                // 🔹 정답 텍스트
+                Text(
+                    text = item.correctAnswer,
+                    fontFamily = Pretendard,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black,
+                    lineHeight = 20.sp          // StudyThird 스타일 유지
+                )
+
+                Spacer(Modifier.height(12.dp))  // 정답 → 해설 구분 간격
+
+                // 🔹 해설 라벨
+                Text(
+                    text = "해설",
+                    fontFamily = Pretendard,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = LabelGray
+                )
+
+                Spacer(Modifier.height(2.dp))   // 라벨 → 값 간 간격
+
+                // 🔹 해설 텍스트
+                Text(
+                    text = item.explanation,
+                    fontFamily = Pretendard,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black,
+                    lineHeight = 20.sp           // StudyThird 스타일 유지
+                )
             }
         }
 
-        // 좌상단 결과 아이콘
-        val resId = if (item.isCorrect)
-            (correctIconRes ?: R.drawable.ic_correct)
-        else
-            (wrongIconRes   ?: R.drawable.ic_wrong)
+        /* ▲▲▲ 해설 박스 끝 ▲▲▲ */
 
+        /* ▼▼▼ 2) 문제 카드 (앞쪽 / zIndex 높음) ▼▼▼ */
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter)
+                .zIndex(1f)
+                .offset(y = 0.dp)
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(
+                    text = "${item.order}/${item.total}",
+                    fontFamily = Pretendard, fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium, color = LabelGray
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = item.question,
+                    fontFamily = Pretendard,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black,
+                    lineHeight = 26.sp
+                )
+                Spacer(Modifier.height(16.dp))
+
+                // 선택지 렌더
+                when (item.type) {
+                    RetryResultType.MCQ -> McqResult(item.options, item.userAnswer, item.correctAnswer)
+                    RetryResultType.OX -> OxResult(item.userAnswer, item.correctAnswer)
+                    RetryResultType.SHORT -> ShortResult(item.userAnswer, item.correctAnswer, isCorrect)
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+        /* ▲ 문제 카드 끝 */
+
+        /* ▼ 결과 아이콘 (카드 좌측 위 겹치게) ▼ */
         if (!inPreview) {
             Image(
-                painter = painterResource(id = resId),
+                painter = painterResource(id = iconRes),
                 contentDescription = null,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .offset(x = (-12).dp, y = (-12).dp)
-                    .size(120.dp)           // ← 72~88.dp 권장
-                    .zIndex(1f)
+                    .size(100.dp)
+                    .zIndex(2f)
             )
-//            Icon(
+        }
+    }
+}
+
+///* ---------- 단일 카드(배경 EFF4FB + 흰 카드 + 정답/해설) ---------- */
+//@Composable
+//private fun RetryResultCard(
+//    item: RetryResultItem,
+//    correctIconRes: Int? = null,
+//    wrongIconRes: Int? = null
+//) {
+//    val inPreview = LocalInspectionMode.current
+//
+//    Box(Modifier.fillMaxWidth()) {
+//        Column(Modifier.fillMaxWidth()) {
+//
+//            // 1) 흰 카드(질문/선택지)만 별도로
+//            Card(
+//                shape = RoundedCornerShape(12.dp),
+//                colors = CardDefaults.cardColors(containerColor = Color.White),
+//                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+//                modifier = Modifier.fillMaxWidth()
+//            ) {
+//                Column(Modifier.padding(16.dp)) {
+//                    Text(
+//                        text = "${item.order}/${item.total}",
+//                        fontFamily = Pretendard, fontSize = 12.sp,
+//                        fontWeight = FontWeight.Medium, color = Color(0xFF616161)
+//                    )
+//                    Spacer(Modifier.height(8.dp))
+//                    Text(
+//                        text = item.question,
+//                        fontFamily = Pretendard, fontSize = 18.sp,
+//                        fontWeight = FontWeight.SemiBold, color = Color.Black, lineHeight = 26.sp
+//                    )
+//                    Spacer(Modifier.height(16.dp))
+//
+//                    when (item.type) {
+//                        RetryResultType.MCQ -> McqResult(item.options, item.userAnswer, item.correctAnswer)
+//                        RetryResultType.OX   -> OxResult(item.userAnswer, item.correctAnswer)
+//                        RetryResultType.SHORT-> ShortResult(item.userAnswer, item.correctAnswer, item.isCorrect)
+//                    }
+//                }
+//            }
+//
+//            // 2) 정답/해설 전용 BgBlue 박스 (상단 모서리 0dp → 카드와 딱 맞닿게)
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .clip(RoundedCornerShape(
+//                        topStart = 0.dp, topEnd = 0.dp,
+//                        bottomStart = 12.dp, bottomEnd = 12.dp
+//                    ))
+//                    .background(Color(0xFFEFF4FB)) // BgBlue
+//            ) {
+//                Column(
+//                    modifier = Modifier
+//                        .padding(top = 12.dp, bottom = 12.dp) // 세로 여백
+//                        .padding(start = 12.dp, end = 6.dp)   // ▶ 왼쪽 치우침 방지: 양쪽 6dp 들여쓰기
+//                ) {
+//                    // 라벨: 616161, 12, Medium
+//                    Text(
+//                        text = "정답",
+//                        fontFamily = Pretendard, fontSize = 12.sp,
+//                        fontWeight = FontWeight.Medium, color = Color(0xFF616161)
+//                    )
+//                    Spacer(Modifier.height(4.dp))
+//                    // 값: Black, 14, Medium
+//                    Text(
+//                        text = item.correctAnswer,
+//                        fontFamily = Pretendard, fontSize = 14.sp,
+//                        fontWeight = FontWeight.Medium, color = Color.Black
+//                    )
+//
+//                    Spacer(Modifier.height(10.dp))
+//
+//                    Text(
+//                        text = "해설",
+//                        fontFamily = Pretendard, fontSize = 12.sp,
+//                        fontWeight = FontWeight.Medium, color = Color(0xFF616161)
+//                    )
+//                    Spacer(Modifier.height(4.dp))
+//                    Text(
+//                        text = item.explanation,
+//                        fontFamily = Pretendard, fontSize = 14.sp,
+//                        fontWeight = FontWeight.Medium, color = Color.Black
+//                    )
+//                }
+//            }
+//        }
+//
+//        // 좌상단 결과 아이콘
+//        val resId = if (item.isCorrect)
+//            (correctIconRes ?: R.drawable.ic_correct)
+//        else
+//            (wrongIconRes   ?: R.drawable.ic_wrong)
+//
+//        if (!inPreview) {
+//            Image(
 //                painter = painterResource(id = resId),
 //                contentDescription = null,
-//                tint = Color.Unspecified,
+//                modifier = Modifier
+//                    .align(Alignment.TopStart)
+//                    .offset(x = (-12).dp, y = (-12).dp)
+//                    .size(120.dp)           // ← 72~88.dp 권장
+//                    .zIndex(1f)
+//            )
+////            Icon(
+////                painter = painterResource(id = resId),
+////                contentDescription = null,
+////                tint = Color.Unspecified,
+////                modifier = Modifier
+////                    .align(Alignment.TopStart)
+////                    .offset(x = (-8).dp, y = (-8).dp)
+////                    .size(48.dp)
+////                    .zIndex(1f)
+////            )
+//        } else {
+//            Icon(
+//                imageVector = if (item.isCorrect) Icons.Filled.CheckCircle else Icons.Filled.Close,
+//                contentDescription = null,
+//                tint = if (item.isCorrect) BrandBlue else Color(0xFFFF0D0D),
 //                modifier = Modifier
 //                    .align(Alignment.TopStart)
 //                    .offset(x = (-8).dp, y = (-8).dp)
 //                    .size(48.dp)
 //                    .zIndex(1f)
 //            )
-        } else {
-            Icon(
-                imageVector = if (item.isCorrect) Icons.Filled.CheckCircle else Icons.Filled.Close,
-                contentDescription = null,
-                tint = if (item.isCorrect) BrandBlue else Color(0xFFFF0D0D),
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .offset(x = (-8).dp, y = (-8).dp)
-                    .size(48.dp)
-                    .zIndex(1f)
-            )
-        }
-    }
-}
+//        }
+//    }
+//}
 
 /* ---------- 정답/해설 한 줄 컴포넌트 (라벨+값) ---------- */
 @Composable
@@ -315,7 +456,7 @@ private fun McqResult(options: List<String>, user: String?, correct: String) {
             val bgColor = when {
                 isCorrectOpt -> CorrectFill
                 isUserWrong  -> WrongFill
-                else         -> ChipGray
+                else         ->  Color(0xFFEFF4FB)
             }
             val borderColor = when {
                 isCorrectOpt -> BrandBlue
@@ -326,18 +467,28 @@ private fun McqResult(options: List<String>, user: String?, correct: String) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(64.dp)
                     .border(2.dp, borderColor, RoundedCornerShape(12.dp)), // ✅ 테두리 적용
                 shape = RoundedCornerShape(12.dp),
                 color = bgColor
             ) {
-                Text(
-                    text = opt,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                    fontFamily = Pretendard,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Black // ✅ 내부색이 연하니 가독성 유지
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(start = 8.dp, end = 12.dp),
+                    //.padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.CenterStart           // ⭐ 글자 완전 가운데 정렬!
+                ) {
+                    Text(
+                        text = opt,
+                        modifier = Modifier.padding(start = 8.dp),
+                        //modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                        fontFamily = Pretendard,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black // ✅ 내부색이 연하니 가독성 유지
+                    )
+                }
             }
         }
     }

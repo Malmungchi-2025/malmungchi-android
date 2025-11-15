@@ -488,7 +488,7 @@ class StudyReadingViewModel @Inject constructor(
     fun submitQuizAnswer(studyId: Int, index: Int, userChoice: String) {
         val req = QuizAnswerRequest(
             studyId = studyId,
-            questionIndex = index +1,     // ✅ 필드명 변경
+            questionIndex = index, // +1,     // ✅ 필드명 변경
             userChoice = userChoice
         )
         viewModelScope.launch {
