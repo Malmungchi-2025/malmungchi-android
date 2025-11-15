@@ -102,7 +102,7 @@ fun QuizMcqScreen(
                 text = categoryTitle,
                 fontFamily = Pretendard,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp,
+                fontSize = 20.sp,
                 color = Color.Black,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center
@@ -159,7 +159,7 @@ fun QuizMcqScreen(
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.Black,
-                lineHeight = 30.sp
+                lineHeight = 24.sp
             )
 
             Spacer(Modifier.height(20.dp))
@@ -243,6 +243,80 @@ fun QuizMcqScreen(
  * --------------------------------------------------------- */
 private enum class OptionVisualState { DEFAULT, SELECTED, CORRECT, WRONG }
 
+//@Composable
+//private fun OptionItem(
+//    label: String,
+//    state: OptionVisualState,
+//    showResultIcon: Boolean,
+//    inPreview: Boolean,
+//    onClick: () -> Unit
+//) {
+//    val shape = RoundedCornerShape(12.dp)
+//    val iconSize = 20.dp                    // ← 아이콘 고정 크기
+//    val iconSlotWidth = 28.dp               // ← 슬롯 폭(여유 약간)
+//
+//    val bg = when (state) {
+//        OptionVisualState.DEFAULT  -> Color.White
+//        OptionVisualState.SELECTED -> BrandBlue.copy(alpha = 0.2f)   // 선택(제출 전)
+//        OptionVisualState.CORRECT  -> BrandBlue.copy(alpha = 0.2f)   // 정답(제출 후)
+//        OptionVisualState.WRONG    -> WrongRed.copy(alpha = 0.2f)    // 오답(제출 후)
+//    }
+//
+//    val border = when (state) {
+//        OptionVisualState.DEFAULT  -> Color(0xFFE0E0E0)
+//        OptionVisualState.SELECTED -> BrandBlue
+//        OptionVisualState.CORRECT  -> BrandBlue
+//        OptionVisualState.WRONG    -> WrongRed
+//    }
+//
+//    Row(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .clip(shape)
+//            .background(bg)
+//            .border(width = 2.dp, color = border, shape = shape)
+//            .clickable(onClick = onClick)
+//            .padding(horizontal = 16.dp, vertical = 14.dp),
+//        verticalAlignment = Alignment.CenterVertically
+//    ) {
+//        Text(
+//            text = label,
+//            fontFamily = Pretendard,
+//            fontSize = 16.sp,
+//            fontWeight = FontWeight.Medium,
+//            color = Color.Black,
+//            modifier = Modifier.weight(1f)
+//        )
+//
+//        // ▼ 항상 동일 폭의 아이콘 슬롯 유지 (보여줄 때만 아이콘 배치)
+//        Box(
+//            modifier = Modifier
+//                .width(iconSlotWidth)
+//                .height(iconSize),
+//            contentAlignment = Alignment.Center
+//        ) {
+//            if (showResultIcon) {
+//                if (inPreview) {
+//                    val icon = if (state == OptionVisualState.CORRECT)
+//                        Icons.Filled.CheckCircle else Icons.Filled.Close
+//                    Icon(icon, contentDescription = null, tint =
+//                        if (state == OptionVisualState.CORRECT) BrandBlue else WrongRed,
+//                        modifier = Modifier.size(iconSize)
+//                    )
+//                } else {
+//                    val resId = if (state == OptionVisualState.CORRECT)
+//                        R.drawable.img_quiz_correct else R.drawable.img_quiz_incorrect
+//                    Icon(
+//                        painter = painterResource(id = resId),
+//                        contentDescription = null,
+//                        tint = Color.Unspecified,
+//                        modifier = Modifier.size(iconSize)
+//                    )
+//                }
+//            }
+//        }
+//    }
+//}
 @Composable
 private fun OptionItem(
     label: String,
@@ -252,16 +326,18 @@ private fun OptionItem(
     onClick: () -> Unit
 ) {
     val shape = RoundedCornerShape(12.dp)
-    val iconSize = 20.dp                    // ← 아이콘 고정 크기
-    val iconSlotWidth = 28.dp               // ← 슬롯 폭(여유 약간)
+    val iconSize = 20.dp
+    val iconSlotWidth = 28.dp
 
+    // 🔵 요구사항 반영: 상태별 배경색
     val bg = when (state) {
-        OptionVisualState.DEFAULT  -> Color.White
-        OptionVisualState.SELECTED -> BrandBlue.copy(alpha = 0.2f)   // 선택(제출 전)
-        OptionVisualState.CORRECT  -> BrandBlue.copy(alpha = 0.2f)   // 정답(제출 후)
-        OptionVisualState.WRONG    -> WrongRed.copy(alpha = 0.2f)    // 오답(제출 후)
+        OptionVisualState.DEFAULT  -> Color(0xFFEFF4FB)            // 선택 전
+        OptionVisualState.SELECTED -> BrandBlue.copy(alpha = 0.2f)  // 선택 후 (제출 전)
+        OptionVisualState.CORRECT  -> BrandBlue.copy(alpha = 0.2f)  // 정답
+        OptionVisualState.WRONG    -> WrongRed.copy(alpha = 0.2f)   // 오답
     }
 
+    // 🔵 상태별 경계선
     val border = when (state) {
         OptionVisualState.DEFAULT  -> Color(0xFFE0E0E0)
         OptionVisualState.SELECTED -> BrandBlue
@@ -269,26 +345,35 @@ private fun OptionItem(
         OptionVisualState.WRONG    -> WrongRed
     }
 
+    // 🔵 상태별 글자색
+    val textColor = when (state) {
+        OptionVisualState.DEFAULT  -> Color.Black
+        OptionVisualState.SELECTED -> BrandBlue
+        OptionVisualState.CORRECT  -> BrandBlue      // 정답 → 파랑
+        OptionVisualState.WRONG    -> WrongRed       // 오답 → 빨강
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .height(65.dp)                 // ← 고정 높이
             .clip(shape)
             .background(bg)
-            .border(width = 2.dp, color = border, shape = shape)
+            .border(width = 1.dp, color = border, shape = shape)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically  // ← 텍스트 수직 가운데 정렬
     ) {
         Text(
             text = label,
             fontFamily = Pretendard,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color.Black,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = textColor,
             modifier = Modifier.weight(1f)
         )
 
-        // ▼ 항상 동일 폭의 아이콘 슬롯 유지 (보여줄 때만 아이콘 배치)
+        // 아이콘 영역
         Box(
             modifier = Modifier
                 .width(iconSlotWidth)
@@ -299,8 +384,10 @@ private fun OptionItem(
                 if (inPreview) {
                     val icon = if (state == OptionVisualState.CORRECT)
                         Icons.Filled.CheckCircle else Icons.Filled.Close
-                    Icon(icon, contentDescription = null, tint =
-                        if (state == OptionVisualState.CORRECT) BrandBlue else WrongRed,
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = if (state == OptionVisualState.CORRECT) BrandBlue else WrongRed,
                         modifier = Modifier.size(iconSize)
                     )
                 } else {
