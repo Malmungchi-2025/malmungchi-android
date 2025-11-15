@@ -41,7 +41,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import com.malmungchi.feature.study.StudyReadingViewModel
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.graphicsLayer
 
 
 @Composable
@@ -53,12 +58,13 @@ fun StudyReadingScreen(
     onNextClick: () -> Unit = {}
 ) {
     LaunchedEffect(Unit) { android.util.Log.d("NAV", ">> study_reading 진입") }
+
     val quote by viewModel.quote.collectAsState()
     val selectedWord by viewModel.selectedWord.collectAsState()
     val highlightWords by viewModel.highlightWords.collectAsState()
     val studyId by viewModel.studyId.collectAsState()
 
-    // ✅ 로딩 판단(에러는 제외)
+    // 로딩 상태
     val isError = quote.startsWith("❗")
     val isQuoteLoading = !isError && (
             quote.isBlank() ||
@@ -68,48 +74,48 @@ fun StudyReadingScreen(
 
     var showBottomSheet by remember { mutableStateOf(false) }
     var yellowPenMode by remember { mutableStateOf(false) }
-
-    // UI 하이라이트용 임시 단어 상태
     var tempSelectedWord by remember { mutableStateOf<String?>(null) }
 
-    val penStates = listOf(R.drawable.img_pen_black, R.drawable.img_pen_yellow, R.drawable.img_pen_blue)
+    val penStates = listOf(
+        R.drawable.img_pen_black_new,
+        R.drawable.img_pen_yellow_new,
+        R.drawable.img_pen_blue_new_new
+    )
     var currentPenIndex by remember { mutableStateOf(0) }
 
     // 수집 말풍선
     var showCollectBubble by remember { mutableStateOf(false) }
     var bubblePosition by remember { mutableStateOf(Offset.Zero) }
 
-    // 오늘의 학습 글감
+    // 오늘의 학습 글감 불러오기
     LaunchedEffect(Unit) { viewModel.fetchTodayQuote() }
 
-    // 본문 공통 modifier (헤더에 영향 없음)
+    // 텍스트 스타일
+    val commonTextStyle = TextStyle(
+        fontSize = 16.sp,
+        fontFamily = Pretendard,
+        fontWeight = FontWeight.Medium,
+        color = Color(0xFF333333),
+        lineHeight = 25.6.sp,
+        letterSpacing = 0.15.sp,
+        textAlign = TextAlign.Start
+    )
+
     val contentModifier = Modifier
         .padding(16.dp)
         .verticalScroll(rememberScrollState())
 
-    // Box 좌표
-    var boxCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
-
-    // 공통 텍스트 스타일
-    val commonTextStyle = TextStyle(
-        fontSize = 16.sp,
-        fontWeight = FontWeight.Medium,
-        lineHeight = (16f * 1.6f).sp,  // == 25.6sp (≈ 160%)
-        color = Color(0xFF333333),
-        textAlign = TextAlign.Justify    // ✅ 양쪽 정렬 (수능 지문 느낌)
-        //textAlign = TextAlign.Start
-    )
     val density = LocalDensity.current
+    var boxCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            // ✅ 헤더(뒤로가기/타이틀, 학습 진행률, 진행바) 좌우 여백 20dp만 적용됨
             .padding(start = 20.dp, end = 20.dp, top = 32.dp, bottom = 16.dp)
             .onGloballyPositioned { coords -> boxCoords = coords }
     ) {
-        // "수집" 말풍선
+        // 수집 말풍선
         if (showCollectBubble && boxCoords != null) {
             Image(
                 painter = painterResource(id = R.drawable.ic_collect_bubble),
@@ -134,18 +140,17 @@ fun StudyReadingScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-            // ⛔️ 기존 Column.padding(16.dp) 제거 → 헤더는 좌우 20dp만 갖게 됨
+                .verticalScroll(rememberScrollState())
         ) {
-            // 상단 바
+            // 상단바
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
                     onClick = onBackClick,
-                    modifier = Modifier.size(48.dp) // 48dp 터치 타겟 유지
+                    modifier = Modifier.size(48.dp)
                 ) {
-                    // ⬇️ 내용 영역을 꽉 채워서 '왼쪽 가운데' 정렬
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.CenterStart
@@ -153,7 +158,7 @@ fun StudyReadingScreen(
                         Image(
                             painter = painterResource(id = R.drawable.btn_img_back),
                             contentDescription = "뒤로가기",
-                            modifier = Modifier.size(24.dp) // 아이콘 자체 크기
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
@@ -166,6 +171,7 @@ fun StudyReadingScreen(
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center
                 )
+
                 Spacer(Modifier.width(48.dp))
             }
 
@@ -180,124 +186,163 @@ fun StudyReadingScreen(
             )
 
             Spacer(Modifier.height(16.dp))
-
-            StepProgressBar(totalSteps, currentStep) // ✅ 내부 가로 패딩 제거됨
-
+            StepProgressBar(totalSteps, currentStep)
             Spacer(Modifier.height(24.dp))
 
-            // 본문
+            // 본문 영역
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = Color(0xFFF9F9F9),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 460.dp)   // 최소 460dp, 그 이상 자동 늘어남
+                    //.height(460.dp)
             ) {
-                when (currentPenIndex) {
-                    1 -> {
-                        ClickableHighlightedText(
-                            text = quote,
-                            selectedWord = tempSelectedWord,
-                            onWordClick = { word, offset ->
-                                tempSelectedWord = word
-                                bubblePosition = offset
-                                showCollectBubble = true
-                            },
-                            modifier = contentModifier,
-                            textStyle = commonTextStyle,
-                            containerCoords = boxCoords
-                        )
-                    }
-                    2 -> {
-                        RegexHighlightedText(
-                            text = quote,
-                            highlights = highlightWords,
-                            modifier = contentModifier,
-                            textStyle = commonTextStyle
-                        )
-                    }
-                    else -> {
-                        // ✅ 문단 분리 대신 전체 텍스트 한 번에 표시 (가장 깔끔한 형태)
-                        Text(
-                            text = quote.trim(),
-                            style = commonTextStyle,
-                            textAlign = TextAlign.Justify,
-                            modifier = contentModifier
-                        )
-                    }
-//                    else -> {
-//                        Column(
-//                            modifier = contentModifier,
-//                            verticalArrangement = Arrangement.spacedBy(16.dp) // ✅ 문단 간 간격 늘림
-//                        ) {
-//                            quote.split(Regex("\n{2,}"))
-//                                .filter { it.isNotBlank() }
-//                                .forEach { paragraph ->
-//                                    Text(
-//                                        text = paragraph.trim(),
-//                                        style = commonTextStyle,
-//                                        textAlign = TextAlign.Justify
-//                                    )
-//                                }
-//                        }
-//                    }
-//                        Text(
-//                            text = quote,
-//                            style = commonTextStyle,
-//                            modifier = contentModifier
-//                        )
+                val cleanedQuote = quote
+                    .replace("\r\n", " ")
+                    .replace("\r", " ")
+                    .replace("\n", " ")
+                    .replace(Regex("[ \t]+"), " ")
+                    .trim()
 
+                when (currentPenIndex) {
+                    1 -> ClickableHighlightedText(
+                        text = cleanedQuote,
+                        selectedWord = tempSelectedWord,
+                        onWordClick = { word, offset ->
+                            tempSelectedWord = word
+                            bubblePosition = offset
+                            showCollectBubble = true
+                        },
+                        //modifier = contentModifier,
+                        modifier = Modifier.padding(16.dp),
+                        textStyle = commonTextStyle,
+                        containerCoords = boxCoords
+                    )
+
+                    2 -> RegexHighlightedText(
+                        text = cleanedQuote,
+                        highlights = highlightWords,
+                        modifier = Modifier.padding(16.dp),
+                        //modifier = contentModifier,
+                        textStyle = commonTextStyle
+                    )
+
+                    else -> Text(
+                        text = cleanedQuote,
+                        style = commonTextStyle,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.padding(16.dp)
+                        //modifier = contentModifier
+                    )
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(100.dp))
+        }
 
-            // 하단 버튼들
+        // ✅ 하단 버튼 (바텀시트 위 정확히 64dp)
+        // ✅ 하단 버튼 (바텀시트 위 정확히 64dp)
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.BottomCenter
+        ) {
             Row(
-                Modifier.fillMaxWidth().padding(bottom = 48.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .offset(y = (-64).dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(
-                    painter = painterResource(id = penStates[currentPenIndex]),
-                    contentDescription = "펜",
+//                // ✏️ 피그마 Drop Shadow 스타일의 펜 버튼
+//                Box(
+//                    modifier = Modifier
+//                        .size(50.dp)
+//                        .clickable {
+//                            currentPenIndex = (currentPenIndex + 1) % penStates.size
+//                            yellowPenMode = (currentPenIndex == 1)
+//                        },
+//                    contentAlignment = Alignment.Center
+//                ) {
+//                    Box(
+//                        modifier = Modifier
+//                            .size(50.dp)
+//                            .graphicsLayer {
+//                                shadowElevation = 16.dp.toPx()          // ✅ blur 강도
+//                                shape = RoundedCornerShape(50)
+//                                clip = false
+//                                ambientShadowColor = Color.Black.copy(alpha = 0.3f) // ✅ 진한 그림자
+//                                spotShadowColor = Color.Black.copy(alpha = 0.3f)
+//                            }
+//                            .background(Color.White, RoundedCornerShape(50)),
+//                        contentAlignment = Alignment.Center
+//                    ) {
+//                        // ✅ 펜 이미지 — 파란펜만 살짝 더 크게!
+//                        val penModifier = when (currentPenIndex) {
+//                            2 -> Modifier.size(64.dp)  // 💙 파란펜만 +2dp 확대
+//                            else -> Modifier.size(52.dp)
+//                        }
+//                        Image(
+//                            painter = painterResource(id = penStates[currentPenIndex]),
+//                            contentDescription = "펜",
+//                            modifier = penModifier
+//                            //modifier = Modifier.size(52.dp)
+//                        )
+//                    }
+//                }
+                Box(
                     modifier = Modifier
-                        .size(64.dp)
-                        .align(Alignment.CenterVertically)
+                        .size(50.dp)
                         .clickable {
                             currentPenIndex = (currentPenIndex + 1) % penStates.size
-                            when (currentPenIndex) {
-                                1 -> yellowPenMode = true
-                                2 -> {
-                                    yellowPenMode = false
-                                    studyId?.let { viewModel.loadVocabularyList(it) }
-                                }
-                                else -> yellowPenMode = false
-                            }
-                        }
-                )
+                            yellowPenMode = (currentPenIndex == 1)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    // ✅ 배경 흰색 원만 (필요하면 유지)
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .background(Color.White, RoundedCornerShape(50)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = penStates[currentPenIndex]),
+                            contentDescription = "펜",
+                            modifier = Modifier.size(52.dp)
+                        )
+                    }
+                }
 
-
+                // ✅ 다음 단계 버튼 (수정 금지)
                 Button(
                     onClick = onNextClick,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
                     shape = RoundedCornerShape(50),
                     modifier = Modifier
-                        .align(Alignment.CenterVertically)
                         .height(42.dp)
                         .width(160.dp)
                 ) {
-                    Text("다음 단계", fontSize = 16.sp, fontFamily = Pretendard, color = Color.White)
+                    Text(
+                        "다음 단계",
+                        fontSize = 16.sp,
+                        fontFamily = Pretendard,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
                 }
             }
         }
 
-        // ===== 🔽🔽🔽 로딩 오버레이(마지막에 그려서 위에 덮어씌움) 🔽🔽🔽
+        // 로딩 오버레이
         if (isQuoteLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .zIndex(2f) // 모든 요소 위
+                    .zIndex(2f)
                     .background(Color.White.copy(alpha = 0.95f))
-                    .clickable( // 터치 막기용
+                    .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
                     ) { },
@@ -310,7 +355,6 @@ fun StudyReadingScreen(
                 )
             }
         }
-        // ===== 🔼🔼🔼 로딩 오버레이 끝 🔼🔼🔼
     }
 
     // 단어 BottomSheet
@@ -333,7 +377,7 @@ fun StudyReadingScreen(
     }
 }
 
-/** 노란펜: 모든 단어 클릭 가능 텍스트 */
+/** 노란펜 클릭 가능한 텍스트 **/
 @Composable
 fun ClickableHighlightedText(
     text: String,
@@ -388,33 +432,32 @@ fun ClickableHighlightedText(
                     val bottom = boxes.maxOf { it.bottom }
                     wordPositions[cleanWord] = Rect(left, top, right, bottom)
                 }
-                startIndex = endIndex + 1 // 공백 포함
+                startIndex = endIndex + 1
             }
         },
         onClick = { offset ->
-            annotated.getStringAnnotations("WORD", offset, offset).firstOrNull()
-                ?.let { annotation ->
-                    val rect = wordPositions[annotation.item]
-                    if (rect != null && textLayoutCoords != null) {
-                        val anchorInText = Offset(rect.left + rect.width / 2, rect.top)
-                        val anchorInBox =
-                            if (containerCoords != null)
-                                containerCoords.localPositionOf(textLayoutCoords!!, anchorInText)
-                            else anchorInText
-                        val bubbleTopLeft = Offset(
-                            x = anchorInBox.x,
-                            y = anchorInBox.y - with(density) { 48.dp.toPx() + 0.dp.toPx() }
-                        )
-                        onWordClick(annotation.item, bubbleTopLeft)
-                    } else {
-                        onWordClick(annotation.item, Offset.Zero)
-                    }
+            annotated.getStringAnnotations("WORD", offset, offset).firstOrNull()?.let { annotation ->
+                val rect = wordPositions[annotation.item]
+                if (rect != null && textLayoutCoords != null) {
+                    val anchorInText = Offset(rect.left + rect.width / 2, rect.top)
+                    val anchorInBox =
+                        if (containerCoords != null)
+                            containerCoords.localPositionOf(textLayoutCoords!!, anchorInText)
+                        else anchorInText
+                    val bubbleTopLeft = Offset(
+                        x = anchorInBox.x,
+                        y = anchorInBox.y - with(density) { 48.dp.toPx() }
+                    )
+                    onWordClick(annotation.item, bubbleTopLeft)
+                } else {
+                    onWordClick(annotation.item, Offset.Zero)
                 }
+            }
         }
     )
 }
 
-/** 파란펜: 서버 단어 목록 Regex 하이라이트 */
+/** 파란펜 하이라이트 **/
 @Composable
 fun RegexHighlightedText(
     text: String,
@@ -422,7 +465,6 @@ fun RegexHighlightedText(
     modifier: Modifier = Modifier,
     textStyle: TextStyle = TextStyle.Default
 ) {
-    // 🚫 remember 제거, 매번 새로 계산되게
     val annotated: AnnotatedString = buildAnnotatedString {
         append(text)
         highlights.forEach { word ->
@@ -436,42 +478,14 @@ fun RegexHighlightedText(
             }
         }
     }
-
-    // highlights가 바뀔 때마다 Text 재구성되도록
-    Text(
-        text = annotated,
-        style = textStyle,
-        modifier = modifier,
-    )
+    Text(text = annotated, style = textStyle, modifier = modifier)
 }
-//@Composable
-//fun RegexHighlightedText(
-//    text: String,
-//    highlights: List<String>,
-//    modifier: Modifier = Modifier,
-//    textStyle: TextStyle = TextStyle.Default
-//) {
-//    val annotated: AnnotatedString = buildAnnotatedString {
-//        append(text)
-//        highlights.forEach { word ->
-//            val regex = Regex(Regex.escape(word))
-//            regex.findAll(text).forEach { match ->
-//                addStyle(
-//                    style = SpanStyle(background = Color(0xFFCCFF00)),
-//                    start = match.range.first,
-//                    end = match.range.last + 1
-//                )
-//            }
-//        }
-//    }
-//    Text(annotated, style = textStyle, modifier = modifier)
-//}
 
-/** ProgressBar (가로 패딩 제거) */
+/** 진행바 **/
 @Composable
 fun StepProgressBar(totalSteps: Int = 3, currentStep: Int = 1) {
     Row(
-        Modifier.fillMaxWidth(), // ⬅️ 좌우 20dp만 적용되도록 추가 패딩 없음
+        Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         repeat(totalSteps) { index ->
@@ -488,31 +502,210 @@ fun StepProgressBar(totalSteps: Int = 3, currentStep: Int = 1) {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 390, heightDp = 844)
 @Composable
 fun PreviewStudyReadingScreen() {
-    // 미리보기용 더미 VM이 없다면, 실제 프로젝트에서는 미리보기 전용 VM을 주입하세요.
-    // 여기선 시그니처만 맞춰둡니다.
-    // StudyReadingScreen(viewModel = hiltViewModel())
+    // ✨ 가짜 데이터 (본문 텍스트만 표시)
+    val dummyQuote = """
+        금일은 날씨가 맑은 날이었다. 아침에는 일찍 일어나 출근을 했다.
+        지하철에서 나는 오늘의 일정을 되새기며 참조했다.
+        회사에 도착하여 업무를 시작했는데, 친구가 생일이라는 사실을 떠올렸다.
+        퇴근 후 마트에 들러 친구의 생일선물을 구매했다.
+        집에 돌아와서 저녁을 먹으며 오늘 하루를 돌아보았다.
+        오늘의 작은 행복을 느끼며 하루를 마무리했다.
+    """.trimIndent()
+
+    // 💡 ViewModel 없이 프리뷰용만 보여줌
+    StudyReadingScreenPreviewOnly(
+        quote = dummyQuote,
+        highlightWords = listOf("날씨", "행복"),
+        selectedWord = null,
+        onNextClick = {},
+        onBackClick = {}
+    )
 }
 
-/** 로딩 전용 미리보기 */
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 360, heightDp = 800)
 @Composable
-fun PreviewStudyReadingScreen_Loading() {
+fun StudyReadingScreenPreviewOnly(
+    quote: String,
+    highlightWords: List<String>,
+    selectedWord: WordItem?,
+    onNextClick: () -> Unit,
+    onBackClick: () -> Unit
+) {
+    var currentPenIndex by remember { mutableStateOf(0) }
+    var yellowPenMode by remember { mutableStateOf(false) }
+
+    val penStates = listOf(
+        R.drawable.img_pen_black,
+        R.drawable.img_pen_yellow,
+        R.drawable.img_pen_blue_new
+        //R.drawable.img_pen_blue
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(start = 20.dp, end = 20.dp, top = 32.dp, bottom = 16.dp),
-        contentAlignment = Alignment.Center
+            .padding(start = 20.dp, end = 20.dp, top = 32.dp, bottom = 16.dp)
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.img_nickname_loading),
-            contentDescription = null,
-            modifier = Modifier.size(120.dp)
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            // 상단 바
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBackClick, modifier = Modifier.size(48.dp)) {
+                    Image(
+                        painter = painterResource(id = R.drawable.btn_img_back),
+                        contentDescription = "뒤로가기",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Text(
+                    text = "오늘의 학습",
+                    fontSize = 20.sp,
+                    fontFamily = Pretendard,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.width(48.dp))
+            }
+
+            Spacer(Modifier.height(24.dp))
+            Text("학습 진행률", fontSize = 16.sp, color = Color.Black)
+            Spacer(Modifier.height(16.dp))
+            StepProgressBar(totalSteps = 3, currentStep = 1)
+            Spacer(Modifier.height(24.dp))
+
+            // 본문
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFF9F9F9),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 460.dp)
+            ) {
+                Text(
+                    text = quote,
+                    fontSize = 16.sp,
+                    fontFamily = Pretendard,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF333333),
+                    lineHeight = 25.6.sp,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+
+            Spacer(Modifier.height(100.dp))
+        }
+
+        // ✅ 하단 버튼 (바텀시트 위 64dp)
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .offset(y = (-64).dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 펜 버튼 (blur 그림자 원 적용)
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clickable {
+                            currentPenIndex = (currentPenIndex + 1) % penStates.size
+                            yellowPenMode = (currentPenIndex == 1)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    // ✅ 그림자 원 (blur 효과)
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(
+                                color = Color.Black.copy(alpha = 0.4f),
+                                shape = RoundedCornerShape(50)
+                            )
+                            .blur(10.dp)
+                    )
+
+                    // ✅ 실제 흰색 원 + 펜 이미지
+                    // ✅ 펜 버튼 (피그마처럼 원 테두리 주변에 그림자)
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clickable {
+                                currentPenIndex = (currentPenIndex + 1) % penStates.size
+                                yellowPenMode = (currentPenIndex == 1)
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+
+
+                        // ✏️ 피그마 Drop Shadow 스타일의 펜 버튼
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clickable {
+                                    currentPenIndex = (currentPenIndex + 1) % penStates.size
+                                    yellowPenMode = (currentPenIndex == 1)
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            // ✅ Drop Shadow만 별도의 Box로 분리 — blur 아님
+                            Box(
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .graphicsLayer {
+                                        shadowElevation = 16.dp.toPx()          // 피그마의 blur 강도에 해당
+                                        shape = RoundedCornerShape(50)
+                                        clip = false
+                                        ambientShadowColor = Color.Black.copy(alpha = 0.3f)
+                                        spotShadowColor = Color.Black.copy(alpha = 0.3f)
+                                    }
+                                    .background(Color.White, RoundedCornerShape(50)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = penStates[currentPenIndex]),
+                                    contentDescription = "펜",
+                                    modifier = Modifier.size(52.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // 다음 단계 버튼
+                Button(
+                    onClick = onNextClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
+                    shape = RoundedCornerShape(50),
+                    modifier = Modifier
+                        .height(42.dp)
+                        .width(160.dp)
+                ) {
+                    Text(
+                        "다음 단계",
+                        fontSize = 16.sp,
+                        fontFamily = Pretendard,
+                        color = Color.White
+                    )
+                }
+            }
+        }
     }
 }
-
 

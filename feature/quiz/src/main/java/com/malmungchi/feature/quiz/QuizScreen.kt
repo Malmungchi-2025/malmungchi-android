@@ -37,16 +37,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.malmungchi.core.designsystem.Pretendard
 import com.malmungchi.feature.quiz.R
 
 
+
 // Pretendard: 프로젝트 공통 FontFamily로 교체해서 사용하세요.
-val Pretendard: FontFamily = FontFamily.Default
+
 
 // ===== 치수 상수 =====
-private val GAP = 12.dp
+private val GAP = 28.dp
 private val CARD_HEIGHT_SMALL = 154.dp   // 심화 / 기초 / 활용 / 고급
-private val CARD_HEIGHT_BIG = 320.dp     // 취업 준비
+private val CARD_HEIGHT_BIG = 336.dp     // 취업 준비
 
 @Composable
 fun QuizScreen(
@@ -126,17 +128,7 @@ fun QuizScreen(
 
                 // PNG 배지 오버레이 (레이아웃 공간 차지 X)
                 val inPreview = LocalInspectionMode.current
-                if (!inPreview) {
-                    Image(
-                        painter = painterResource(R.drawable.img_quiz_recommend),
-                        contentDescription = null,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)        // 왼쪽 컬럼 바닥 기준
-                            .offset(x = 16.dp, y = (-6).dp)     // ▶ 오른쪽(+), ▲ 위쪽(-) — 수치만 조절해서 자리 미세조정
-                            .zIndex(1f)
-                    )
-                }
+
             }
 
             // ===== 오른쪽: 기초 / 활용 / 고급 =====
@@ -197,7 +189,7 @@ private fun QuizInfoCard(
 ) {
     Column(
         modifier = modifier
-            .shadow(6.dp, shape, clip = false)
+            .shadow(4.dp, shape, clip = false)
             .clip(shape)
             .background(background)
             .clickable { onClick() }
@@ -251,22 +243,23 @@ private fun BigIllustrationCard(
                 fontFamily = Pretendard,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF111111)
+                color = Color(0xFF111111),
+                lineHeight = 32.sp
             ),
             modifier = Modifier.align(Alignment.TopStart)
         )
+        // 이미지 (Preview에서도 항상 표시)
+        Image(
+            painter = painterResource(id = imageRes),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .height(246.89.dp),
+            contentScale = ContentScale.Fit
+        )
 
-        val inPreview = LocalInspectionMode.current
-        if (!inPreview) {
-            Image(
-                painter = painterResource(id = imageRes),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .height(160.dp)
-            )
-        }
+        //val inPreview = LocalInspectionMode.current
+
     }
 }
 
