@@ -106,8 +106,8 @@ import com.malmungchi.feature.quiz.QuizRetryIntroScreen
 import com.malmungchi.feature.quiz.QuizSolveHost
 import com.malmungchi.feature.friend.FriendAddScreen
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-
-
+import com.malmungchi.feature.login.OnboardingScreen
+import kotlinx.coroutines.delay
 
 
 /* ────────────────────────────────────────────────────────────────────────────────
@@ -264,6 +264,11 @@ fun MainApp() {
 
     val appContext = LocalContext.current
 
+    //온보딩 플래그 읽기 추가(첫 진입 때만 보여줌.)
+    val context = LocalContext.current
+    val prefs = context.getSharedPreferences("app_flags", Context.MODE_PRIVATE)
+    val hasSeenOnboarding = prefs.getBoolean("seen_onboarding", false)
+
     // ✅ 새 백핸들러 적용
 //    BottomNavBackHandler(navController)
 
@@ -288,22 +293,60 @@ fun MainApp() {
     // 시작은 splash에서 자동 로그인 여부 판단
     //NavHost(navController, startDestination = "splash") {
     // ✅ 온보딩을 가장 먼저 보여줌
-    NavHost(navController, startDestination = "onboarding") {
+    //NavHost(navController, startDestination = "onboarding") {
+    NavHost(
+        navController = navController,
+        startDestination = "app_splash"
+        //startDestination = if (hasSeenOnboarding) "splash" else "onboarding"
+    ) {
+        composable("app_splash") {
+            // 🔵 1) 스플래시 UI 표시
+            AppSplashScreen()
 
-        // ✅ 온보딩 화면 (항상 노출)
-        composable("onboarding") {
-            // feature 모듈의 OnboardingScreen 사용
-            com.malmungchi.feature.login.OnboardingScreen(
-                onFinish = {
-                    // 온보딩 종료 → 기존 splash 로직으로 위임
+            // 🔵 2) 1초 후 온보딩 or 스플래시(로그인 판단)으로 이동
+            LaunchedEffect(Unit) {
+                delay(1000)
+
+                if (hasSeenOnboarding) {
                     navController.navigate("splash") {
-                        popUpTo("onboarding") { inclusive = true }
+                        popUpTo("app_splash") { inclusive = true }
                         launchSingleTop = true
                     }
-                },
-                //autoAdvanceMillis = 1500L
+                } else {
+                    navController.navigate("onboarding") {
+                        popUpTo("app_splash") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            }
+        }
+
+        // ✅ 온보딩 화면 (항상 노출)
+        // ⭐ 온보딩: 최초 1회만
+        composable("onboarding") {
+            OnboardingScreen(
+                onFinish = {
+                    prefs.edit().putBoolean("seen_onboarding", true).apply()
+                    navController.navigate("splash") {
+                        popUpTo("onboarding") { inclusive = true }
+                    }
+                }
             )
         }
+//        composable("onboarding") {
+//            // feature 모듈의 OnboardingScreen 사용
+//            com.malmungchi.feature.login.OnboardingScreen(
+//                onFinish = {
+//                    // 온보딩 종료 → 기존 splash 로직으로 위임
+//                    prefs.edit().putBoolean("seen_onboarding", true).apply()  // 온보딩 제약 추가.
+//                    navController.navigate("splash") {
+//                        popUpTo("onboarding") { inclusive = true }
+//                        launchSingleTop = true
+//                    }
+//                },
+//                //autoAdvanceMillis = 1500L
+//            )
+//        }
 
         composable("splash") {
             LaunchedEffect(Unit) {
@@ -367,9 +410,9 @@ fun MainApp() {
 //                )
 //            }
 
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+//            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+//                CircularProgressIndicator()
+//            }
         }
 //        composable("splash") {
 //            LaunchedEffect(Unit) {
@@ -1305,7 +1348,13 @@ fun MainApp() {
                             popUpTo("study_graph") { inclusive = false }
                         }
                     },
-                    onBackClick = { navController.popBackStack() }
+                    onBackClick = {
+                        navController.navigate("study_weekly") {
+                            launchSingleTop = true
+                            popUpTo("study_graph") { inclusive = false }
+                        }
+                    }
+                    //onBackClick = { navController.popBackStack() }
                 )
             }
 
@@ -1396,7 +1445,8 @@ fun MainApp() {
                         navController.navigate("study_third_intro") {
                             launchSingleTop = true
                             restoreState = true
-                            popUpTo("study_graph") { inclusive = false }
+                            popUpTo("study_second") { inclusive = false }
+                           // popUpTo("study_graph") { inclusive = false }
                         }
                     }
                 )
@@ -1417,7 +1467,8 @@ fun MainApp() {
                         navController.navigate("study_third") {
                             launchSingleTop = true
                             restoreState = true
-                            popUpTo("study_graph") { inclusive = false }
+                            popUpTo("study_second") { inclusive = false }
+                            //popUpTo("study_graph") { inclusive = false }
                         }
                     }
                 )
@@ -1447,20 +1498,23 @@ fun MainApp() {
                         text = text,
                         viewModel = vm,
                         //되돌아가기 버튼 수정
-                        //onBackClick = { navController.popBackStack("study_second", inclusive = false) },
                         onBackClick = {
-                            navController.navigate("study_second") {
-                                launchSingleTop = true
-                                restoreState = true
-                                popUpTo("study_graph") { inclusive = false }
-                            }
-                        }
-//                        onNextClick = {
-//                            navController.navigate("study_third_result/$id") {
+                            navController.popBackStack("study_second", inclusive = false)
+                        },
+                        //onBackClick = { navController.popBackStack("study_second", inclusive = false) },
+//                        onBackClick = {
+//                            navController.navigate("study_second") {
 //                                launchSingleTop = true
 //                                restoreState = true
+//                                popUpTo("study_graph") { inclusive = false }
 //                            }
-//                        }
+//                        },
+                        onNextClick = {
+                            navController.navigate("study_third_result/$id") {
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
                     )
                 }
             }

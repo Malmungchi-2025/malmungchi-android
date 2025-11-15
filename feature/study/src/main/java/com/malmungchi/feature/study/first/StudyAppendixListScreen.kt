@@ -56,12 +56,17 @@ fun StudyAppendixListContent(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(start = 20.dp, end = 20.dp)
+            //.padding(start = 20.dp, end = 20.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 48.dp, bottom = 120.dp) // ✅ 하단 버튼과 겹치지 않게 여백
+                .padding(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = 48.dp,)
+                    //bottom = 48.dp),
+                //.padding(top = 48.dp), //,  bottom = 120.dp) // ✅ 하단 버튼과 겹치지 않게 여백
         ) {
             // ✅ 헤더 (아이콘 + 가운데 타이틀)
             Row(
@@ -121,68 +126,109 @@ fun StudyAppendixListContent(
 //            ) {
                 LazyColumn(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .weight(1f)
+                        //.fillMaxSize()
                         .padding(16.dp)
                 ) {
                     items(words) { WordCard(it) }
                 }
 
         }
-
-        // 🔹 하단 버튼 (Box 스코프 안, align 사용 가능)
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.BottomCenter
+        // ⭕ 버튼: StudyThird와 동일 구조
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 24.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .offset(y = (-64).dp),   // ← StudyThird와 동일
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(
+            OutlinedButton(
+                onClick = onBackClick,
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF195FCF)),
+                border = BorderStroke(1.dp, Color(0xFF195FCF)),
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    //.padding(horizontal = 20.dp)
-                    .offset(y = (-64).dp) // ✅ 바텀시트 위로 64dp 띄움
-                    .fillMaxWidth(),      // ✅ Row 전체 폭 사용
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    .height(42.dp)
+                    .weight(1f)
             ) {
-                OutlinedButton(
-                    onClick = onBackClick,
-                    shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFF195FCF)
-                    ),
-                    border = BorderStroke(1.dp, Color(0xFF195FCF)),
-                    modifier = Modifier
-                        .height(42.dp)
-                        .weight(1f) // ✅ 좌우 길이 자동 맞춤
-                ) {
-                    Text(
-                        "이전 단계",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = Pretendard
-                    )
-                }
+                Text("이전 단계", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            }
 
-                Button(
-                    onClick = onNavigateNext,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF195FCF)
-                    ),
-                    shape = RoundedCornerShape(50),
-                    modifier = Modifier
-                        .height(42.dp)
-                        .weight(1f) // ✅ 좌우 길이 자동 맞춤
-                ) {
-                    Text(
-                        "다음 단계",
-                        fontSize = 16.sp,
-                        fontFamily = Pretendard,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
-                    )
-                }
+            Button(
+                onClick = onNavigateNext,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
+                shape = RoundedCornerShape(50),
+                modifier = Modifier
+                    .height(42.dp)
+                    .weight(1f)
+            ) {
+                Text("다음 단계", fontSize = 16.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
             }
         }
     }
-}
+
+//        // 🔹 하단 버튼 (Box 스코프 안, align 사용 가능)
+//        Box(
+//            modifier = Modifier.fillMaxSize(),
+//            contentAlignment = Alignment.BottomCenter
+//        ) {
+//            Row(
+//                modifier = Modifier
+//                    .align(Alignment.BottomCenter)
+//                    .offset(y = (-64).dp)     // ← 버튼을 강제로 위로 64dp 이동
+////                    .padding(
+////                        bottom = 64.dp       // ⭕ 바텀시트 위로 띄우는 정확한 방법
+////                        //start = 20.dp,
+////                        //end = 20.dp
+////                    )
+//                    .fillMaxWidth()
+//                    .padding(horizontal = 20.dp),
+//
+//                horizontalArrangement = Arrangement.spacedBy(12.dp)
+//            ) {
+//                OutlinedButton(
+//                    onClick = onBackClick,
+//                    shape = RoundedCornerShape(50),
+//                    colors = ButtonDefaults.outlinedButtonColors(
+//                        contentColor = Color(0xFF195FCF)
+//                    ),
+//                    border = BorderStroke(1.dp, Color(0xFF195FCF)),
+//                    modifier = Modifier
+//                        .height(42.dp)
+//                        .weight(1f)
+//                ) {
+//                    Text(
+//                        "이전 단계",
+//                        fontSize = 16.sp,
+//                        fontWeight = FontWeight.SemiBold,
+//                        fontFamily = Pretendard
+//                    )
+//                }
+//
+//                Button(
+//                    onClick = onNavigateNext,
+//                    colors = ButtonDefaults.buttonColors(
+//                        containerColor = Color(0xFF195FCF)
+//                    ),
+//                    shape = RoundedCornerShape(50),
+//                    modifier = Modifier
+//                        .height(42.dp)
+//                        .weight(1f)
+//                ) {
+//                    Text(
+//                        "다음 단계",
+//                        fontSize = 16.sp,
+//                        fontFamily = Pretendard,
+//                        fontWeight = FontWeight.SemiBold,
+//                        color = Color.White
+//                    )
+//                }
+//            }
+//        }
+    }
+
 
 @Composable
 fun StepProgressBarAppendix(totalSteps: Int = 3) {

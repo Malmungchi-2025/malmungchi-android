@@ -80,6 +80,36 @@ private fun painterResourceSafe(id: Int?): Painter? {
 private fun prefixLenNfc(a: String, b: String): Int =
     nfc(a).commonPrefixWith(nfc(b)).length
 
+// "현재 글자가 정답 위치와 정확히 같은지" 검사 => 필사 오류.
+private fun isExactSafePrefix(input: String, original: String): Boolean {
+    val t = nfc(input)
+    val o = nfc(original)
+
+    // 1) 길이가 정답보다 길면 무조건 오타
+    if (t.length > o.length) return false
+
+    // 2) 하나씩 정밀 비교
+    for (i in t.indices) {
+        if (t[i] != o[i]) return false
+    }
+    return true
+}
+
+//조압 중인 글자의 초성 추출
+fun getChoseong(c: Char): Char? {
+    if (c !in '가'..'힣') return null
+    val base = c.code - 0xAC00
+    val choseongIndex = base / (21 * 28)
+    val choseongList = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"
+    return choseongList[choseongIndex]
+}
+
+fun cleanOriginal(text: String): String {
+    return text
+        .trimStart('“', '”', '"', '\uFEFF')  // 따옴표 & BOM 제거
+        .trim()
+}
+
 
 
 /* ---------- 상단바 ---------- */
@@ -269,7 +299,7 @@ private fun HandwritingGuideOverlay(
             if (bubbleRes != null) {
                 // ⬇️ 화면 제약(maxWidth/maxHeight)을 알고 계산하기 위해 사용
 
-                BoxWithConstraints {
+                    BoxWithConstraints {
 
                     val painter = painterResourceSafe(bubbleRes)
                     if (painter != null) {
@@ -428,7 +458,8 @@ private fun BottomNavigationButtons(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
-            .offset(y = (-64).dp),
+            .padding(bottom = 24.dp),
+            //.offset(y = (-64).dp),
     horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         OutlinedButton(
@@ -534,10 +565,19 @@ fun StudySecondScreen(
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(start = 20.dp, end = 20.dp, top = 48.dp, bottom = 48.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 48.dp,bottom = 48.dp)
+                //.padding(start = 20.dp, end = 20.dp, top = 48.dp, bottom = 48.dp)
                 .zIndex(0f)
         ) {
-            TopBar(title = "오늘의 학습", onBackClick = onBackClick)
+            TopBar(
+                title = "오늘의 학습",
+                onBackClick = {
+                    overlayStep = GuideOverlayStep.None   // ⬅️ 오버레이 강제 종료
+                    showSkipDialog = false               // (선택) 스킵 다이얼로그 열려있으면 닫음
+                    onBackClick()                        // 실제 뒤로가기 동작
+                }
+            )
+            //TopBar(title = "오늘의 학습", onBackClick = onBackClick)
 
             Spacer(Modifier.height(24.dp))
             Text("학습 진행률", fontSize = 16.sp, color = Color.Black)
@@ -609,38 +649,143 @@ fun StudySecondScreen(
                         FullWidthInputChip(
                             value = typedValue,
                             onValueChange = { newV ->
-                                if (newV.composition != null) {
-                                    errorIndexUi = null
-                                    typedValue = newV
-                                    return@FullWidthInputChip
-                                }
+                                val newText = nfc(newV.text)
+                                val originalClean = nfc(original)
 
-                                val newText = newV.text
-                                val oldText = typedValue.text
-
-                                if (newText.length <= oldText.length) {
-                                    errorIndexUi = null
+                                // 삭제 허용
+                                if (newText.length <= typedValue.text.length) {
                                     typedValue = newV
+                                    errorIndexUi = null
                                     viewModel.onUserInputChange(newText)
                                     return@FullWidthInputChip
                                 }
 
-                                if (isSafePrefix(newText, original)) {
-                                    errorIndexUi = null
-                                    typedValue = newV
-                                    viewModel.onUserInputChange(nfc(newText))
-
-                                    // ✅ 정답 완성 시: 다음 문장 or 마지막이면 다음 단계
-                                    if (nfc(newText) == nfc(original)) {
-                                        advanceOrFinish()
+                                // 조합 중이면 prefix 체크만 수행
+                                if (newV.composition != null) {
+                                    if (originalClean.startsWith(newText)) {
+                                        typedValue = newV
+                                        errorIndexUi = null
+                                    } else {
+                                        errorIndexUi = newText.length - 1
                                     }
                                     return@FullWidthInputChip
                                 }
 
-                                // 오탈자 표시만
-                                errorIndexUi = prefixLenNfc(oldText, original)
-                                //errorIndexUi = nfc(oldText).length
+                                // 완성된 문자 입력 시 → prefix 체크
+                                if (originalClean.startsWith(newText)) {
+                                    typedValue = newV
+                                    errorIndexUi = null
+                                    viewModel.onUserInputChange(newText)
+
+                                    // 문장 완성
+                                    if (newText == originalClean) advanceOrFinish()
+
+                                    return@FullWidthInputChip
+                                }
+
+                                // 오타
+                                errorIndexUi = newText.length - 1
                             },
+//                            onValueChange = { newV ->
+//                                if (newV.composition != null) {
+//                                    val newText = newV.text
+//                                    val idx = newText.length - 1     // 지금 입력 중인 글자의 위치
+//
+//                                    // original 길이를 넘어가면 오타
+//                                    if (idx >= original.length) {
+//                                        errorIndexUi = idx
+//                                        return@FullWidthInputChip
+//                                    }
+//
+//                                    val composed = newText.last()          // 지금 조합 중인 글자
+//                                    val target   = original[idx]           // 정답의 같은 위치 문자
+//
+//                                    val composedChoseong = getChoseong(composed)
+//                                    val targetChoseong   = getChoseong(target)
+//
+//                                    val allowed =
+//                                        (composed == target) ||            // 완성 글자 일치
+//                                                (composedChoseong != null &&
+//                                                        targetChoseong   != null &&
+//                                                        composedChoseong == targetChoseong)   // 초성 일치
+//
+//                                    if (!allowed) {
+//                                        errorIndexUi = idx
+//                                        return@FullWidthInputChip
+//                                    }
+//
+//                                    typedValue = newV
+//                                    errorIndexUi = null
+//                                    return@FullWidthInputChip
+//                                }
+////                                if (newV.composition != null) {
+////                                    val newText = nfc(newV.text)
+////
+////                                    // 조합 중인 글자 하나만 꺼냄
+////                                    // ex) "ㄱ", "그", "금" → 모두 첫 글자만 본다
+////                                    val composedChar = newText.firstOrNull()
+////                                    val targetChar = original.firstOrNull()
+////
+////                                    // 조합 과정(초성/중성/완성)을 모두 허용하는 안전 검사
+////                                    if (composedChar != null && targetChar != null) {
+////                                        val allowed = composedChar == targetChar ||
+////                                                Normalizer.normalize("$composedChar", Normalizer.Form.NFD)
+////                                                    .startsWith(Normalizer.normalize("$targetChar", Normalizer.Form.NFD)
+////                                                        .first().toString())
+////
+////                                        if (!allowed) {
+////                                            errorIndexUi = newText.length - 1
+////                                            return@FullWidthInputChip
+////                                        }
+////                                    }
+////
+////                                    errorIndexUi = null
+////                                    typedValue = newV
+////                                    return@FullWidthInputChip
+////                                }
+//
+//                                val newText = newV.text
+//                                val oldText = typedValue.text
+//
+//                                if (newText.length <= oldText.length) {
+//                                    errorIndexUi = null
+//                                    typedValue = newV
+//                                    viewModel.onUserInputChange(newText)
+//                                    return@FullWidthInputChip
+//                                }
+//                                // 1) 정답 prefix와 정확히 같은지 검사
+//                                if (isExactSafePrefix(newText, original)) {
+//                                    errorIndexUi = null
+//                                    typedValue = newV
+//                                    viewModel.onUserInputChange(nfc(newText))
+//
+//                                    // 정답 완성
+//                                    if (nfc(newText) == nfc(original)) {
+//                                        advanceOrFinish()
+//                                    }
+//
+//                                    return@FullWidthInputChip
+//                                }
+//
+//// 2) 그 외는 → 즉시 오타 처리
+//                                errorIndexUi = nfc(newText).length - 1
+//
+////                                if (isSafePrefix(newText, original)) {
+////                                    errorIndexUi = null
+////                                    typedValue = newV
+////                                    viewModel.onUserInputChange(nfc(newText))
+////
+////                                    // ✅ 정답 완성 시: 다음 문장 or 마지막이면 다음 단계
+////                                    if (nfc(newText) == nfc(original)) {
+////                                        advanceOrFinish()
+////                                    }
+////                                    return@FullWidthInputChip
+////                                }
+//
+//                                // 오탈자 표시만
+//                                //errorIndexUi = prefixLenNfc(oldText, original)
+//                                //errorIndexUi = nfc(oldText).length
+//                            },
                             placeholder = null,
                             textColor = Gray_616161,
                             background = Field_EFF4FB,
@@ -721,7 +866,7 @@ fun StudySecondScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(start = 24.dp, end = 20.dp, top = 32.dp, bottom = 48.dp)
+                    .padding(start = 24.dp, end = 20.dp, top = 32.dp)//, bottom = 24.dp)
                     .absoluteOffset(x = 0.dp, y = anchorYDp - 20.dp)
                     .zIndex(20f)
             ) {
@@ -758,7 +903,9 @@ fun StudySecondScreen(
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 48.dp)
+                    .padding(bottom = 64.dp)
+                //.offset(y = (-64).dp)
+                //.padding(bottom = 48.dp)
             )
         }
 
@@ -955,8 +1102,17 @@ fun Preview_Handwriting_AfterOnboarding() {
                     value = typedValue,
                     onValueChange = { newV ->
                         if (newV.composition != null) {
+                            val newText = nfc(newV.text)
+
+                            // 조합 중인데 prefix 아닌 경우 → 즉시 오타 처리
+                            if (!isExactSafePrefix(newText, original)) {
+                                errorIndexUi = newText.length - 1
+                                return@FullWidthInputChip
+                            }
+
+                            // prefix 정상 → 입력 허용
                             errorIndexUi = null
-                            typedValue = newV.copy()
+                            typedValue = newV
                             return@FullWidthInputChip
                         }
                         val newText = newV.text
@@ -1009,7 +1165,8 @@ fun Preview_Handwriting_AfterOnboarding() {
             onNextClick = {},
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .offset(y = (-64).dp) // ✅ 바텀시트 위로 64dp 간격
+                .padding(bottom = 64.dp)
+            //.offset(y = (-64).dp) // ✅ 바텀시트 위로 64dp 간격
         )
     }
 }

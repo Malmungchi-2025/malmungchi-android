@@ -48,9 +48,9 @@ fun StudyCompleteScreen(
                 top = 32.dp
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.Top
     ) {
-        Spacer(modifier = Modifier.height(64.dp))
+        Spacer(modifier = Modifier.height(120.dp))
 
         // 🎯 상단 텍스트
         Text(
@@ -62,6 +62,8 @@ fun StudyCompleteScreen(
             textAlign = TextAlign.Center
         )
 
+        Spacer(modifier = Modifier.height(48.dp))
+
         // 🎯 캐릭터 이미지 & XP
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -70,14 +72,14 @@ fun StudyCompleteScreen(
         ) {
             if (showImage) {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_complete_character),
+                    painter = painterResource(id = R.drawable.ic_complete_character_new),
                     contentDescription = null,
                     modifier = Modifier.size(300.dp), // ✅ 1.5배 확대
                     contentScale = ContentScale.Fit
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(64.dp))
 
             Text(
                 text = "15XP 획득",
@@ -88,12 +90,13 @@ fun StudyCompleteScreen(
                 textAlign = TextAlign.Center
             )
         }
+        Spacer(modifier = Modifier.weight(1f))
 
         // 🎯 하단 버튼
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 32.dp),
+                .padding(bottom = 64.dp),
             contentAlignment = Alignment.Center // ✅ 중앙 정렬
         ) {
             Button(
@@ -108,6 +111,7 @@ fun StudyCompleteScreen(
                     text = "학습 마치기",
                     fontSize = 16.sp,
                     fontFamily = Pretendard,
+                    fontWeight = FontWeight.SemiBold,
                     color = Color.White
                 )
             }
