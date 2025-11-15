@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,13 +44,19 @@ fun StudyThirdScreen(
     val quizList by viewModel.quizList.collectAsState()
 
     // ✅ 최초 진입 시 1회 호출
-    LaunchedEffect(Unit) { viewModel.generateQuiz(text, studyId) }
+    LaunchedEffect(studyId) {
+        if (viewModel.quizList.value.isEmpty()) {
+            viewModel.generateQuiz(text, studyId)
+        }
+    }
+    //LaunchedEffect(Unit) { viewModel.generateQuiz(text, studyId) }
 
     // ✅ 로딩 플래그
     val isLoading = quizList.isEmpty()
 
     // ✅ 현재 문제 인덱스 & 선택값 (로딩 때도 state는 유지)
-    var currentIndex by remember { mutableStateOf(0) }
+    var currentIndex by rememberSaveable { mutableStateOf(0) }
+    //var currentIndex by remember { mutableStateOf(0) }
     val selectedAnswers = remember { mutableStateMapOf<Int, Int>() }
 
     val currentQuestion = if (!isLoading) quizList[currentIndex] else null
@@ -62,7 +69,8 @@ fun StudyThirdScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(Color(0xFFF7F7F7))
+            //.background(Color.White)
     ) {
     Column(
         modifier = Modifier
@@ -85,8 +93,8 @@ fun StudyThirdScreen(
                 .fillMaxWidth()
                 .padding(vertical = 4.dp),
             shape = RoundedCornerShape(12.dp),
-            color = Color.White,
-            shadowElevation = 6.dp
+            color = Color(0xFFF7F7F7),
+            shadowElevation = 2.dp
         ) {
             if (isLoading) {
                 Box(
@@ -118,6 +126,7 @@ fun StudyThirdScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // ✅ 선택지 스타일 수정
                     currentQuestion.options.forEachIndexed { index, choice ->
                         val isSelected = selectedAnswer == index
                         Surface(
@@ -125,8 +134,12 @@ fun StudyThirdScreen(
                                 .fillMaxWidth()
                                 .padding(vertical = 6.dp),
                             shape = RoundedCornerShape(12.dp),
-                            color = if (isSelected) Color(0xFF195FCF) else Color.White,
-                            shadowElevation = 2.dp,
+                            color = if (isSelected) Color(0xFFEFF4FB) else Color.White,
+                            border = if (isSelected)
+                                BorderStroke(1.dp, Color(0xFF195FCF))
+                            else
+                                BorderStroke(1.dp, Color.Transparent),
+                            shadowElevation = 1.dp,
                             onClick = { selectedAnswers[currentIndex] = index }
                         ) {
                             Box(
@@ -140,14 +153,15 @@ fun StudyThirdScreen(
                                     fontSize = 16.sp,
                                     fontFamily = Pretendard,
                                     fontWeight = FontWeight.Medium,
-                                    color = if (isSelected) Color.White else Color(0xFF333333)
+                                    color = Color(0xFF333333) // ✅ 항상 검정색
                                 )
                             }
                         }
                     }
                 }
             }
-        }}
+        }
+    }
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -155,9 +169,11 @@ fun StudyThirdScreen(
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 48.dp)          // 세컨드와 동일
+                .padding(bottom = 24.dp)          // 세컨드와 동일
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp),     // 세컨드와 동일
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 64.dp),
+                //.offset(y = (-64).dp),// 세컨드와 동일
             horizontalArrangement = Arrangement.spacedBy(12.dp) // 세컨드와 동일
         ) {
             OutlinedButton(
@@ -165,11 +181,12 @@ fun StudyThirdScreen(
                 enabled = !isLoading && currentIndex > 0,      // 동작만 조건, UI는 동일
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF195FCF)),
+                border = BorderStroke(1.dp, Color(0xFF195FCF)),
                 modifier = Modifier
                     .height(42.dp)   // 세컨드와 동일
                     .weight(1f)      // 세컨드와 동일
             ) {
-                Text("이전 문제", fontSize = 16.sp, fontFamily = Pretendard)
+                Text("이전 문제", fontSize = 16.sp, fontFamily = Pretendard, fontWeight = FontWeight.SemiBold)
             }
 
             Button(
@@ -201,7 +218,8 @@ fun StudyThirdScreen(
                     text = if (!isLoading && currentIndex < (quizList.size - 1)) "다음 문제" else "다음 단계",
                     fontSize = 16.sp,
                     fontFamily = Pretendard,
-                    color = Color.White
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
@@ -415,154 +433,305 @@ fun PreviewStudyThirdScreen() {
 
 
 }
-//
-//@Composable
-//fun StudyThirdScreen(
-//    onBackClick: () -> Unit = {},
-//    onNextClick: () -> Unit = {}
-//) {
-//    val questions = remember {
-//        listOf(
-//            StudyQuestion(
-//                question = "이 글의 핵심 내용을 가장 잘 요약한 것은?",
-//                choices = listOf(
-//                    "말뭉치는 어휘력과 문해력 향상에 도움을 준다",
-//                    "말뭉치는 뭉치와 말치라는 캐릭터가 있으며, 사용자는 치치라고 부른다",
-//                    "디지털미디어학과의 4학년 하이라이트는 캡스톤이다",
-//                    "우리 팀의 캡스톤은 비행기 타고 날아가는 중이다"
-//                ),
-//                correctIndex = 0
-//            ),
-//            StudyQuestion("두 번째 문제 예시입니다", listOf("1", "2", "3", "4"), 2),
-//            StudyQuestion("세 번째 문제 예시입니다", listOf("A", "B", "C", "D"), 3)
-//        )
-//    }
-//
-//    var currentIndex by remember { mutableStateOf(0) }
-//    val selectedAnswers = remember { mutableStateMapOf<Int, Int>() }
-//
-//    val currentQuestion = questions[currentIndex]
-//    val selectedAnswer = selectedAnswers[currentIndex]
-//
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .background(Color.White)
-//            .padding(16.dp)
-//    ) {
-//        // ✅ 상단바
-//        TopBar(title = "오늘의 학습", onBackClick = onBackClick)
-//
-//        Spacer(modifier = Modifier.height(24.dp))
-//        Text("학습 진행률", fontSize = 16.sp, color = Color.Black, modifier = Modifier.padding(start = 8.dp))
-//        Spacer(modifier = Modifier.height(16.dp))
-//        StepProgressBarPreview(totalSteps = 3, currentStep = 3)
-//        Spacer(modifier = Modifier.height(24.dp))
-//
-//        // ✅ 전체 카드 박스
-//        Surface(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(vertical = 4.dp),
-//            shape = RoundedCornerShape(12.dp),
-//            color = Color.White,
-//            shadowElevation = 6.dp // ✅ 그림자만 있음
-//        ) {
-//            Column(modifier = Modifier.padding(16.dp)) {
-//                Text(
-//                    text = "${currentIndex + 1}/${questions.size}",
-//                    fontSize = 12.sp,
-//                    color = Color.Gray,
-//                    fontFamily = Pretendard
-//                )
-//                Spacer(modifier = Modifier.height(8.dp))
-//
-//                Text(
-//                    text = currentQuestion.question,
-//                    fontSize = 18.sp,
-//                    fontWeight = FontWeight.SemiBold,
-//                    fontFamily = Pretendard,
-//                    lineHeight = 26.sp,
-//                    color = Color.Black
-//                )
-//                Spacer(modifier = Modifier.height(16.dp))
-//
-//                currentQuestion.choices.forEachIndexed { index, choice ->
-//                    val isSelected = selectedAnswer == index
-//                    Surface(
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .padding(vertical = 6.dp),
-//                        shape = RoundedCornerShape(12.dp),
-//                        color = if (isSelected) Color(0xFF195FCF) else Color.White,
-//                        shadowElevation = 2.dp,
-//                        onClick = {
-//                            selectedAnswers[currentIndex] = index
-//                        }
-//                    ) {
-//                        Box(
-//                            modifier = Modifier
-//                                .fillMaxWidth()
-//                                .padding(16.dp),
-//                            contentAlignment = Alignment.CenterStart
-//                        ) {
-//                            Text(
-//                                text = choice,
-//                                fontSize = 16.sp,
-//                                fontFamily = Pretendard,
-//                                fontWeight = FontWeight.Medium,
-//                                color = if (isSelected) Color.White else Color(0xFF333333)
-//                            )
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//
-//        Spacer(modifier = Modifier.height(32.dp))
-//
-//        // ✅ 하단 버튼 (2단계와 동일한 위치/스타일)
-//        Row(
-//            Modifier.fillMaxWidth(),
-//            horizontalArrangement = Arrangement.SpaceBetween
-//        ) {
-//            OutlinedButton(
-//                onClick = {
-//                    if (currentIndex > 0) currentIndex--
-//                },
-//                shape = RoundedCornerShape(50),
-//                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF195FCF)),
-//                modifier = Modifier.height(42.dp).width(160.dp)
-//            ) {
-//                Text("이전 문제", fontSize = 16.sp, fontFamily = Pretendard)
-//            }
-//
-//            Button(
-//                onClick = {
-//                    if (currentIndex < questions.lastIndex) {
-//                        currentIndex++
-//                    } else {
-//                        onNextClick() // 마지막 문제 → 다음 단계
-//                    }
-//                },
-//                enabled = selectedAnswer != null,
-//                shape = RoundedCornerShape(50),
-//                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
-//                modifier = Modifier.height(42.dp).width(160.dp)
-//            ) {
-//                Text(
-//                    text = if (currentIndex < questions.lastIndex) "다음 문제" else "다음 단계",
-//                    fontSize = 16.sp,
-//                    fontFamily = Pretendard,
-//                    color = Color.White
-//                )
-//            }
-//        }
-//    }
-//}
-//
-//@Preview(showBackground = true)
-//@Composable
-//fun PreviewStudyThirdScreen() {
-//    StudyThirdScreen()
-//}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 360, heightDp = 800)
+@Composable
+fun Preview_StudyThirdScreen_UI() {
+    // ✅ 더미 데이터
+    val dummyQuestions = listOf(
+        QuizItem(
+            questionIndex = 1,
+            question = "이 글의 핵심 내용을 가장 잘 요약한 것은?",
+            options = listOf(
+                "말뭉치는 어휘력과 문해력 향상에 도움을 준다",
+                "말뭉치는 뭉치와 말치라는 캐릭터가 있으며, 사용자는 치치라고 부른다",
+                "디지털미디어학과의 4학년 하이라이트는 캡스톤이다",
+                "우리 팀의 캡스톤은 비행기 타고 날아가는 중이다"
+            ),
+            answer = "말뭉치는 어휘력과 문해력 향상에 도움을 준다",
+            explanation = "글의 전반적인 목적이 문해력 향상임"
+        ),
+        QuizItem(
+            questionIndex = 2,
+            question = "두 번째 문제 예시입니다",
+            options = listOf("보기1", "보기2", "보기3", "보기4"),
+            answer = "보기2",
+            explanation = "정답은 보기2입니다"
+        )
+    )
+
+    // ✅ 상태 시뮬레이션
+    var currentIndex by remember { mutableStateOf(0) }
+    val selectedAnswers = remember { mutableStateMapOf<Int, Int>() }
+
+    val currentQuestion = dummyQuestions[currentIndex]
+    val selectedAnswer = selectedAnswers[currentIndex]
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF7F7F7))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 16.dp, end = 16.dp, top = 48.dp, bottom = 48.dp)
+        ) {
+            TopBar(title = "오늘의 학습", onBackClick = {})
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                "학습 진행률",
+                fontSize = 16.sp,
+                color = Color.Black,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            StepProgressBarPreview(totalSteps = 3, currentStep = 3)
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                shape = RoundedCornerShape(20.dp),
+                color = Color(0xFFF7F7F7),
+                shadowElevation = 2.dp
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "${currentIndex + 1}/${dummyQuestions.size}",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        fontFamily = Pretendard
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = currentQuestion.question,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = Pretendard,
+                        lineHeight = 26.sp,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    currentQuestion.options.forEachIndexed { index, choice ->
+                        val isSelected = selectedAnswer == index
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isSelected) Color(0xFF195FCF) else Color.White,
+                            shadowElevation = 2.dp,
+                            onClick = { selectedAnswers[currentIndex] = index }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Text(
+                                    text = choice,
+                                    fontSize = 16.sp,
+                                    fontFamily = Pretendard,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (isSelected) Color.White else Color(0xFF333333)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ✅ 하단 버튼 (세컨드 화면과 동일하게 64dp 위로)
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .offset(y = (-64).dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = { if (currentIndex > 0) currentIndex-- },
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF195FCF)),
+                border = BorderStroke(1.dp, Color(0xFF195FCF)),
+                modifier = Modifier
+                    .height(42.dp)
+                    .weight(1f)
+            ) {
+                Text("이전 문제", fontSize = 16.sp, fontFamily = Pretendard)
+            }
+
+            Button(
+                onClick = {
+                    if (currentIndex < dummyQuestions.lastIndex) {
+                        currentIndex++
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
+                shape = RoundedCornerShape(50),
+                modifier = Modifier
+                    .height(42.dp)
+                    .weight(1f)
+            ) {
+                Text(
+                    text = if (currentIndex < dummyQuestions.lastIndex) "다음 문제" else "다음 단계",
+                    fontSize = 16.sp,
+                    fontFamily = Pretendard,
+                    color = Color.White
+                )
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 360, heightDp = 800)
+@Composable
+fun Preview_StudyThirdScreen_Selected() {
+    // ✅ 더미 데이터
+    val dummyQuestions = listOf(
+        QuizItem(
+            questionIndex = 1,
+            question = "이 글의 핵심 내용을 가장 잘 요약한 것은?",
+            options = listOf(
+                "말뭉치는 어휘력과 문해력 향상에 도움을 준다",
+                "말뭉치는 뭉치와 말치라는 캐릭터가 있으며, 사용자는 치치라고 부른다",
+                "디지털미디어학과의 4학년 하이라이트는 캡스톤이다",
+                "우리 팀의 캡스톤은 비행기 타고 날아가는 중이다"
+            ),
+            answer = "말뭉치는 어휘력과 문해력 향상에 도움을 준다",
+            explanation = "글의 전반적인 목적이 문해력 향상임"
+        )
+    )
+
+    var currentIndex by remember { mutableStateOf(0) }
+    val selectedAnswers = remember { mutableStateMapOf<Int, Int>() }
+
+    // ✅ 미리 선택된 상태 (0번 보기 선택)
+    selectedAnswers[currentIndex] = 0
+
+    val currentQuestion = dummyQuestions[currentIndex]
+    val selectedAnswer = selectedAnswers[currentIndex]
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF7F7F7))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 16.dp, end = 16.dp, top = 48.dp, bottom = 48.dp)
+        ) {
+            TopBar(title = "오늘의 학습", onBackClick = {})
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                "학습 진행률",
+                fontSize = 16.sp,
+                color = Color.Black,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            StepProgressBarPreview(totalSteps = 3, currentStep = 3)
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ✅ 문제 카드
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                shape = RoundedCornerShape(20.dp),
+                color = Color(0xFFF7F7F7),
+                shadowElevation = 2.dp
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "${currentIndex + 1}/${dummyQuestions.size}",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        fontFamily = Pretendard
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = currentQuestion.question,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = Pretendard,
+                        lineHeight = 26.sp,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // ✅ 보기 표시 (수정된 부분)
+                    currentQuestion.options.forEachIndexed { index, choice ->
+                        val isSelected = selectedAnswer == index
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isSelected) Color(0xFFEFF4FB) else Color.White, // ✅ 연파랑 배경
+                            border = if (isSelected)
+                                BorderStroke(1.dp, Color(0xFF195FCF)) // ✅ 파랑 테두리
+                            else
+                                BorderStroke(1.dp, Color.Transparent),
+                            shadowElevation = 1.dp
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Text(
+                                    text = choice,
+                                    fontSize = 16.sp,
+                                    fontFamily = Pretendard,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFF333333) // ✅ 항상 검정
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ✅ 하단 버튼
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .offset(y = (-64).dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = { if (currentIndex > 0) currentIndex-- },
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF195FCF)),
+                border = BorderStroke(1.dp, Color(0xFF195FCF)),
+                modifier = Modifier
+                    .height(42.dp)
+                    .weight(1f)
+            ) {
+                Text("이전 문제", fontSize = 16.sp, fontFamily = Pretendard)
+            }
+
+            Button(
+                onClick = {},
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
+                shape = RoundedCornerShape(50),
+                modifier = Modifier
+                    .height(42.dp)
+                    .weight(1f)
+            ) {
+                Text("다음 문제", fontSize = 16.sp, fontFamily = Pretendard, color = Color.White)
+            }
+        }
+    }
+}
