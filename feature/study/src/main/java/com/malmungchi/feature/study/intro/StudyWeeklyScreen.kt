@@ -393,7 +393,7 @@ private fun OverviewCard(
             Column(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .padding(16.dp),
+                    .padding(24.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 // 상단 날짜 + 본문
@@ -403,10 +403,11 @@ private fun OverviewCard(
                         fontSize = 14.sp,
                         fontFamily = Pretendard,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF616161)
+                        color = Color(0xFF616161),
+                        modifier = Modifier.offset(x = 4.dp,y = 12.dp)
                     )
 
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(24.dp))
 
                     Text(
                         text = bodyText?.takeIf { it.isNotBlank() } ?: "학습한 글감이 없습니다.",
@@ -437,15 +438,17 @@ private fun OverviewCard(
 
                     Text(
                         text = "학습하러 가기 →",
-                        fontSize = 12.sp,
+                        fontSize = 16.sp,
                         fontFamily = Pretendard,
                         fontWeight = FontWeight.Medium,
                         color = buttonColor,
-                        modifier = Modifier.clickable(
-                            enabled = btnEnabled,
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() }
-                        ) { if (btnEnabled) onGoStudyClick() }
+                        modifier = Modifier
+                            .offset(x = (-10).dp, y = (-16).dp)  // ← 왼쪽 25dp, 위로 25dp 이동!!
+                            .clickable(
+                                enabled = btnEnabled,
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) { if (btnEnabled) onGoStudyClick() }
                     )
                 }
             }
