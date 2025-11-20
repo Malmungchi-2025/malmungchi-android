@@ -116,6 +116,19 @@ fun StudyAppendixListContent(
 
             Spacer(Modifier.height(16.dp))
 
+            //empty 일 때,
+            if (words.isEmpty()) {
+                EmptyWordBox()
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(16.dp)
+                ) {
+                    items(words) { WordCard(it) }
+                }
+            }
+
             // 🔹 단어 카드 리스트(남은 높이 채우기)
 //            Surface(
 //                shape = RoundedCornerShape(12.dp),
@@ -124,14 +137,14 @@ fun StudyAppendixListContent(
 //                    .fillMaxWidth()
 //                    .weight(1f) // ✅ Column 안에서 남은 공간
 //            ) {
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        //.fillMaxSize()
-                        .padding(16.dp)
-                ) {
-                    items(words) { WordCard(it) }
-                }
+//                LazyColumn(
+//                    modifier = Modifier
+//                        .weight(1f)
+//                        //.fillMaxSize()
+//                        .padding(16.dp)
+//                ) {
+//                    items(words) { WordCard(it) }
+//                }
 
         }
         // ⭕ 버튼: StudyThird와 동일 구조
@@ -168,65 +181,6 @@ fun StudyAppendixListContent(
             }
         }
     }
-
-//        // 🔹 하단 버튼 (Box 스코프 안, align 사용 가능)
-//        Box(
-//            modifier = Modifier.fillMaxSize(),
-//            contentAlignment = Alignment.BottomCenter
-//        ) {
-//            Row(
-//                modifier = Modifier
-//                    .align(Alignment.BottomCenter)
-//                    .offset(y = (-64).dp)     // ← 버튼을 강제로 위로 64dp 이동
-////                    .padding(
-////                        bottom = 64.dp       // ⭕ 바텀시트 위로 띄우는 정확한 방법
-////                        //start = 20.dp,
-////                        //end = 20.dp
-////                    )
-//                    .fillMaxWidth()
-//                    .padding(horizontal = 20.dp),
-//
-//                horizontalArrangement = Arrangement.spacedBy(12.dp)
-//            ) {
-//                OutlinedButton(
-//                    onClick = onBackClick,
-//                    shape = RoundedCornerShape(50),
-//                    colors = ButtonDefaults.outlinedButtonColors(
-//                        contentColor = Color(0xFF195FCF)
-//                    ),
-//                    border = BorderStroke(1.dp, Color(0xFF195FCF)),
-//                    modifier = Modifier
-//                        .height(42.dp)
-//                        .weight(1f)
-//                ) {
-//                    Text(
-//                        "이전 단계",
-//                        fontSize = 16.sp,
-//                        fontWeight = FontWeight.SemiBold,
-//                        fontFamily = Pretendard
-//                    )
-//                }
-//
-//                Button(
-//                    onClick = onNavigateNext,
-//                    colors = ButtonDefaults.buttonColors(
-//                        containerColor = Color(0xFF195FCF)
-//                    ),
-//                    shape = RoundedCornerShape(50),
-//                    modifier = Modifier
-//                        .height(42.dp)
-//                        .weight(1f)
-//                ) {
-//                    Text(
-//                        "다음 단계",
-//                        fontSize = 16.sp,
-//                        fontFamily = Pretendard,
-//                        fontWeight = FontWeight.SemiBold,
-//                        color = Color.White
-//                    )
-//                }
-//            }
-//        }
     }
 
 
@@ -293,6 +247,37 @@ fun WordCard(item: WordItem) {
     }
 }
 
+
+//empty
+@Composable
+fun EmptyWordBox() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 120.dp)
+            .padding(horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.img_word_empty_icon),
+            contentDescription = "단어 없음",
+            modifier = Modifier.size(128.dp)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "수집한 단어가 없어요,\n이전 단계로 돌아가 단어를 수집 해보세요",
+            fontSize = 16.sp,
+            fontFamily = Pretendard,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF333333),
+            textAlign = TextAlign.Center,
+            lineHeight = 24.sp      // ← 16sp × 1.5 = 24sp (줄간격 150%)
+        )
+    }
+}
+
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 360, heightDp = 800)
 @Composable
 fun PreviewStudyAppendixListScreen() {
@@ -301,4 +286,14 @@ fun PreviewStudyAppendixListScreen() {
         WordItem("부여하다", "어떤 자격을 주다.", "추석 전날을 공휴일로 지정하다.")
     )
     StudyAppendixListContent(words = dummyWords, onBackClick = {}, onNavigateNext = {})
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 360, heightDp = 800)
+@Composable
+fun PreviewEmptyWordScreen() {
+    StudyAppendixListContent(
+        words = emptyList(),   // 빈 리스트 전달
+        onBackClick = {},
+        onNavigateNext = {}
+    )
 }
