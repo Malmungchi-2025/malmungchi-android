@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -147,16 +148,23 @@ fun AiScreen(
         Spacer(Modifier.height(16.dp))
 
         // 자유롭게 대화하기 (반폭 + 가운데)
+        // yw- 그림자 추가하였습니다.
         Button(
             onClick = onFreeChat,
             modifier = Modifier
                 .fillMaxWidth(0.5f)
                 .align(Alignment.CenterHorizontally),
+            shape = RoundedCornerShape(20.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Gray_EFF4FB,
                 contentColor = Blue_195FCF
             ),
-            shape = RoundedCornerShape(20.dp)
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 2.dp,
+                pressedElevation = 2.dp,
+                focusedElevation = 6.dp,
+                hoveredElevation = 6.dp
+            )
         ) {
             Text(
                 "자유롭게 대화하기",
