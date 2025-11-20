@@ -62,6 +62,8 @@ fun FriendAddScreen(
     var codeInput by remember { mutableStateOf("") }
     var showCopied by remember { mutableStateOf(false) }
     var showAddedToast by remember { mutableStateOf(false) }
+    // yw- 검색 누르고 인지를 위한 변수 생성
+    var searchPressed by remember { mutableStateOf(false) }
 
     // isAdded 변경 시 하단 토스트 노출
     LaunchedEffect(isAdded) {
@@ -132,8 +134,49 @@ fun FriendAddScreen(
                 ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(
-                    onSearch = { if (codeInput.isNotBlank()) onSearch(codeInput) }
+                    onSearch = {
+                        if (codeInput.isNotBlank()) {
+                            onSearch(codeInput)
+                            searchPressed = true   // 검색 후 X로 전환
+                        }
+                    }
                 ),
+
+                // yw- 돋보기 아이콘 추가 및 기능 구현
+                // 기본 상태 돋보기였다가 검색을 누르면 x로 전환 x로 누르면 다시 돋보기 아이콘으로
+                trailingIcon = {
+                    if (!searchPressed) {
+                        IconButton(
+                            onClick = {
+                                if (codeInput.isNotBlank()) {
+                                    onSearch(codeInput)
+                                    searchPressed = true   //  검색 후 X로 전환
+                                }
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_friendsearch_new01),
+                                contentDescription = "검색",
+                                modifier = Modifier.size(24.dp),
+                                tint = Color.Unspecified
+                            )
+                        }
+                    } else {
+                        IconButton(
+                            onClick = {
+                                codeInput = ""
+                                searchPressed = false   // 다시 돋보기로 복귀
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_frienddelet_new01), // X 아이콘
+                                contentDescription = "삭제",
+                                modifier = Modifier.size(22.dp),
+                                tint = Color.Black
+                            )
+                        }
+                    }
+                },
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = BrandBlue,
                     unfocusedIndicatorColor = CopyBg,
