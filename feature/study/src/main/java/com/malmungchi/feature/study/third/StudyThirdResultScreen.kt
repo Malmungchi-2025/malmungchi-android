@@ -120,7 +120,7 @@ private fun AnswerExplanationBlock(
     ) {
         Column(
             modifier = Modifier
-                .padding(top = 40.dp, bottom = 24.dp) // 세로 여백
+                .padding(top = 56.dp, bottom = 24.dp) // 세로 여백
                 .padding(start = 20.dp, end = 12.dp)   // ▶ 좌우 6dp (좌측 치우침 방지)
         ) {
             Text(
@@ -486,10 +486,15 @@ fun StudyThirdResultScreen(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .offset(
-                                y = if (index == 0 || index == 2) 160.dp else 140.dp
-                                //y = if (index == 0) 160.dp else 140.dp //1번만 간격을 크게!
+                                y = run {
+                                    val isPrevExplanationLong =
+                                        if (index > 0)
+                                            questions[index - 1].explanation.length > 40
+                                        else false
+
+                                    if (isPrevExplanationLong) 172.dp else 152.dp
+                                }
                             )
-                            //.offset(y = 140.dp) //  해설 블록을 약간 더 아래로 내려서 보이게!
                             .zIndex(0f)
                     ) {
                         AnswerExplanationBlock(
