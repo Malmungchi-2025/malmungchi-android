@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,6 +33,7 @@ fun EndChatConfirmDialog(
             )
         },
         // ✅ 본문을 아예 없애서 간격 제거
+        // 버튼 안 border 색상 변경
         text = null,
         confirmButton = {
             Row(
@@ -41,11 +43,18 @@ fun EndChatConfirmDialog(
                 OutlinedButton(
                     onClick = onYes,
                     shape = RoundedCornerShape(50),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF195FCF)),
-                    modifier = Modifier.height(42.dp).weight(1f)
+                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                        width = 1.dp,
+                        brush = SolidColor(Color(0xFF195FCF))
+                    ),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFF195FCF)
+                    ),
+                    modifier = Modifier
+                        .height(42.dp)
+                        .weight(1f)
                 ) {
-                    Text("네", fontFamily = Pretendard, fontSize = 16.sp)
+                    Text("네", fontFamily = Pretendard, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
 
                 Button(
@@ -54,7 +63,7 @@ fun EndChatConfirmDialog(
                     shape = RoundedCornerShape(50),
                     modifier = Modifier.height(42.dp).weight(1f)
                 ) {
-                    Text("아니요", fontFamily = Pretendard, fontSize = 16.sp, color = Color.White)
+                    Text("아니요", fontFamily = Pretendard, fontSize = 16.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
                 }
             }
         },
