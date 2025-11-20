@@ -13,12 +13,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -30,15 +30,18 @@ import androidx.compose.ui.unit.sp
 import com.malmungchi.core.designsystem.Pretendard
 import com.malmungchi.feature.friend.R
 
-private val BrandBlue   = Color(0xFF195FCF)
-private val GrayBgChip  = Color(0xFFF7F7F7)
+// ─────────────────── COLORS ───────────────────
+private val BrandBlue = Color(0xFF195FCF)
+private val GrayBgChip = Color(0xFFF7F7F7)
 private val GrayTextSub = Color(0xFF989898)
 private val RankNumGray = Color(0xFF616161)
-private val Gold        = Color(0xFFFFD91C)
+private val Gold = Color(0xFFFFD91C)
 
 private val HorizontalPad = 20.dp
-private val VerticalPad   = 48.dp
+private val VerticalPad = 48.dp
 
+
+// ─────────────────── MAIN SCREEN ───────────────────
 @Composable
 fun FriendScreen(
     onAddFriend: () -> Unit = {},
@@ -46,25 +49,10 @@ fun FriendScreen(
     onSelectFriendTab: () -> Unit,
     onSelectAllTab: () -> Unit,
     ranks: List<FriendRank>,
-    loading: Boolean
+    loading: Boolean,
 ) {
-    // ─────────────────────────────────────────
-    // Top3: 실제 데이터가 있으면 보여주고, 부족한 칸만 플레이스홀더로 채움
-    // ─────────────────────────────────────────
-    val top3ForUi: List<FriendRank> = buildTop3Padded(ranks)
-
-    // 4위부터: 항상 4, 5등은 채워주기
-    val listRows: List<FriendRank> = ranks.drop(3)
-//    val base = ranks.drop(3) // 실제 4위 이후
-//    val needPlaceholders = (4..5).map { targetRank ->
-//        val hasThisIndex = (targetRank - 4) < base.size
-//        if (hasThisIndex) null else placeholderRank(targetRank)
-//    }.filterNotNull()
-//
-//    val listRows: List<FriendRank> = buildList {
-//        addAll(base)
-//        addAll(needPlaceholders)
-//    }
+    val top3ForUi = buildTop3Padded(ranks)
+    val listRows = ranks.drop(3)
 
     LazyColumn(
         modifier = Modifier
@@ -77,7 +65,8 @@ fun FriendScreen(
             bottom = VerticalPad
         )
     ) {
-        // 헤더
+
+        // ───── 헤더 ─────
         item {
             Box(
                 modifier = Modifier.fillMaxWidth(),
@@ -93,6 +82,7 @@ fun FriendScreen(
                         tint = Color.Unspecified
                     )
                 }
+
                 Text(
                     text = "친구목록",
                     fontFamily = Pretendard,
@@ -105,7 +95,7 @@ fun FriendScreen(
 
         item { Spacer(Modifier.height(24.dp)) }
 
-        // 탭
+        // ───── 탭 ─────
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -128,6 +118,7 @@ fun FriendScreen(
 
         item { Spacer(Modifier.height(32.dp)) }
 
+        // ───── 로딩 ─────
         if (loading) {
             item {
                 Box(
@@ -140,32 +131,84 @@ fun FriendScreen(
                 }
             }
         } else {
-            // Top3 (은·금·동)
-            item {
-                Top3RowSilverGoldBronze(items = top3ForUi)
-            }
 
-            item { Spacer(Modifier.height(20.dp)) }
+            // ───── 친구 없음 UI ─────
+            // yw- 친구가 없을 때 화면 생성
+            if (ranks.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 70.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-            // 4위 이후
-            items(
-                items = listRows,
-                key = { item -> item.rank }   // 👈 추가: rank나 id 등 고유값
-            ) { item ->
-                RankRow(item = item)
-                Spacer(Modifier.height(10.dp))
+                            AvatarThumb(size = 86.dp, painterRes = null,)
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Text(
+                                text = "금동돋",   // yw- 내 정보 불러오기 부탁해요..
+                                fontFamily = Pretendard,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF195FCF)
+                            )
+
+                            Spacer(Modifier.height(2.dp))
+
+                            Text(
+                                text = "1027px", // yw- 내 정보 불러오기 부탁해요..
+                                fontFamily = Pretendard,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF989898)
+                            )
+
+                            Spacer(Modifier.height(40.dp))
+
+                            Text(
+                                text = "아직 친구 목록이 없군요 :(",
+                                fontFamily = Pretendard,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF616161)
+                            )
+
+                            Spacer(Modifier.height(4.dp))
+
+                            Text(
+                                text = "친구와 초대코드를 주고받아 함께 학습해보세요!",
+                                fontFamily = Pretendard,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF616161)
+                            )
+                        }
+                    }
+                }
+            } else {
+
+                // ───── TOP 3 ─────
+                item {
+                    Top3RowSilverGoldBronze(items = top3ForUi)
+                }
+
+                item { Spacer(Modifier.height(20.dp)) }
+
+                // ───── 4위 이하 ─────
+                items(listRows, key = { it.rank }) { item ->
+                    RankRow(item = item)
+                    Spacer(Modifier.height(10.dp))
+                }
             }
-//            items(listRows) { item ->
-//                RankRow(item = item)
-//                Spacer(Modifier.height(10.dp))
-//            }
         }
     }
 }
 
-// ────────────────────────────────
-// 유틸: Top3 채우기
-// ────────────────────────────────
+
+// ─────────────────── UTIL ───────────────────
 private fun buildTop3Padded(ranks: List<FriendRank>): List<FriendRank> {
     val top = ranks.take(3).toMutableList()
     while (top.size < 3) {
@@ -174,9 +217,8 @@ private fun buildTop3Padded(ranks: List<FriendRank>): List<FriendRank> {
     return top
 }
 
-// ────────────────────────────────
-// 컴포저블들
-// ────────────────────────────────
+
+// ─────────────────── COMPONENTS ───────────────────
 @Composable
 private fun RankTabChip(
     label: String,
@@ -185,17 +227,14 @@ private fun RankTabChip(
 ) {
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (selected) BrandBlue else GrayBgChip,
-        shadowElevation = 0.dp,
-        tonalElevation = 0.dp
+        color = if (selected) BrandBlue else GrayBgChip
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .height(30.dp)
                 .padding(horizontal = 12.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .clickable { onClick() }
+                .clickable(onClick = onClick)
         ) {
             Text(
                 text = label,
@@ -210,26 +249,24 @@ private fun RankTabChip(
 
 @Composable
 private fun Top3RowSilverGoldBronze(items: List<FriendRank>) {
-    // 은, 금, 동 순서로 재배치
     val safe = listOf(
-        items.getOrElse(1) { placeholderRank(2) },
-        items.getOrElse(0) { placeholderRank(1) },
-        items.getOrElse(2) { placeholderRank(3) }
+        items[1],
+        items[0],
+        items[2]
     )
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Top
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Box(Modifier.weight(1f).offset(y = 10.dp), contentAlignment = Alignment.TopCenter) {
-            Top3Item(item = safe[0], raise = false) // 은
+            Top3Item(safe[0], raise = false)
         }
         Box(Modifier.weight(1f), contentAlignment = Alignment.TopCenter) {
-            Top3Item(item = safe[1], raise = true)  // 금
+            Top3Item(safe[1], raise = true)
         }
         Box(Modifier.weight(1f).offset(y = 10.dp), contentAlignment = Alignment.TopCenter) {
-            Top3Item(item = safe[2], raise = false) // 동
+            Top3Item(safe[2], raise = false)
         }
     }
 }
@@ -251,6 +288,7 @@ private fun Top3Item(item: FriendRank, raise: Boolean) {
                 border = BorderStroke(2.dp, borderColor),
                 painterRes = item.avatarRes
             )
+
             if (item.rank == 1) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_crown),
@@ -262,7 +300,9 @@ private fun Top3Item(item: FriendRank, raise: Boolean) {
                 )
             }
         }
+
         Spacer(Modifier.height(8.dp))
+
         Text(
             text = item.name,
             fontFamily = Pretendard,
@@ -272,7 +312,9 @@ private fun Top3Item(item: FriendRank, raise: Boolean) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
+
         Spacer(Modifier.height(2.dp))
+
         Text(
             text = "${item.points}P",
             fontFamily = Pretendard,
@@ -286,18 +328,18 @@ private fun Top3Item(item: FriendRank, raise: Boolean) {
 @Composable
 private fun RankRow(item: FriendRank) {
     val outline =
-        if (item.isMe) BorderStroke(2.dp, BrandBlue) else BorderStroke(1.dp, Color(0x14000000))
+        if (item.isMe) BorderStroke(2.dp, BrandBlue)
+        else BorderStroke(1.dp, Color(0x14000000))
 
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = Color.White,
-        tonalElevation = 0.dp,
         shadowElevation = 2.dp,
         border = outline,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier
+            Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -309,19 +351,24 @@ private fun RankRow(item: FriendRank) {
                 fontWeight = FontWeight.Medium,
                 color = RankNumGray
             )
+
             Spacer(Modifier.width(12.dp))
+
             AvatarThumb(size = 44.dp, painterRes = item.avatarRes)
+
             Spacer(Modifier.width(12.dp))
+
             Text(
                 text = item.name,
                 fontFamily = Pretendard,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.Black,
+                modifier = Modifier.weight(1f),
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
+                overflow = TextOverflow.Ellipsis
             )
+
             Text(
                 text = "${item.points}P",
                 fontFamily = Pretendard,
@@ -341,15 +388,15 @@ private fun AvatarThumb(
 ) {
     val isPreview = LocalInspectionMode.current
     val shape = CircleShape
-    // ✅ 추가: painterResource 캐싱
-    // ✅ painterResource 호출은 remember 밖으로 분리
-    val painter = if (painterRes != null) painterResource(painterRes) else null
 
     Box(
         modifier = Modifier
             .size(size)
             .clip(shape)
-            .then(if (border != null) Modifier.border(border, shape) else Modifier),
+            .then(
+                if (border != null) Modifier.border(border, shape)
+                else Modifier
+            ),
         contentAlignment = Alignment.Center
     ) {
         if (painterRes != null) {
@@ -378,9 +425,8 @@ private fun AvatarThumb(
     }
 }
 
-// ────────────────────────────────
-// 플레이스홀더 유틸
-// ────────────────────────────────
+
+// ─────────────────── PLACEHOLDER ───────────────────
 private fun placeholderRank(rank: Int) = FriendRank(
     rank = rank,
     name = "말뭉치",
@@ -389,33 +435,25 @@ private fun placeholderRank(rank: Int) = FriendRank(
     avatarRes = null
 )
 
-private fun placeholderMe(rank: Int) = FriendRank(
-    rank = rank,
-    name = "말뭉치",
-    points = 0,
-    isMe = true,
-    avatarRes = null
-)
 
-// ── 프리뷰
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "친구 탭(친구 없음)")
+// ─────────────────── PREVIEW ───────────────────
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "친구 없음")
 @Composable
 private fun PreviewFriendScreenEmpty() {
     MaterialTheme {
-        Surface {
-            FriendScreen(
-                onAddFriend = {},
-                tab = RankTab.FRIEND,
-                onSelectFriendTab = {},
-                onSelectAllTab = {},
-                ranks = emptyList(), // 친구 없음
-                loading = false
-            )
-        }
+        val displayUi = null
+        FriendScreen(
+            onAddFriend = {},
+            tab = RankTab.FRIEND,
+            onSelectFriendTab = {},
+            onSelectAllTab = {},
+            ranks = emptyList(),
+            loading = false
+        )
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "친구 탭(친구 5명)")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "친구 5명")
 @Composable
 private fun PreviewFriendScreenFriend() {
     val dummy = listOf(
@@ -426,18 +464,17 @@ private fun PreviewFriendScreenFriend() {
         FriendRank(5, "김뭉치", 1700, true, null)
     )
     MaterialTheme {
-        Surface {
-            FriendScreen(
-                onAddFriend = {},
-                tab = RankTab.FRIEND,
-                onSelectFriendTab = {},
-                onSelectAllTab = {},
-                ranks = dummy,
-                loading = false
-            )
-        }
+        FriendScreen(
+            onAddFriend = {},
+            tab = RankTab.FRIEND,
+            onSelectFriendTab = {},
+            onSelectAllTab = {},
+            ranks = dummy,
+            loading = false
+        )
     }
 }
+
 
 //package com.malmungchi.feature.friend
 //
