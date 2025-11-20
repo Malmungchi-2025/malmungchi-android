@@ -82,14 +82,15 @@ private fun AiChatCompleteContent(
 
             Spacer(Modifier.height(24.dp))
 
+            // yw- 사진 이미지 변경
             Image(
-                painter = painterResource(id = R.drawable.ic_complete_character),
+                painter = painterResource(id = R.drawable.ic_complete_character_new01),
                 contentDescription = null,
-                modifier = Modifier.size(220.dp),
+                modifier = Modifier.size(260.dp),
                 contentScale = ContentScale.Fit
             )
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(20.dp))
 
             Text(
                 text = "15XP 획득",
@@ -117,6 +118,7 @@ private fun AiChatCompleteContent(
                 text = if (loading) "지급 중..." else "종료하기",
                 fontSize = 16.sp,
                 fontFamily = Pretendard,
+                fontWeight = FontWeight.SemiBold,
                 color = Color.White
             )
         }
