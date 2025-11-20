@@ -59,6 +59,9 @@ fun StudyReadingScreen(
 ) {
     LaunchedEffect(Unit) { android.util.Log.d("NAV", ">> study_reading 진입") }
 
+    // ① 기능 가이드 보여줄지 여부
+    var showGuide by remember { mutableStateOf(true) }
+
     val quote by viewModel.quote.collectAsState()
     val selectedWord by viewModel.selectedWord.collectAsState()
     val highlightWords by viewModel.highlightWords.collectAsState()
@@ -66,11 +69,7 @@ fun StudyReadingScreen(
 
     // 로딩 상태
     val isError = quote.startsWith("❗")
-    val isQuoteLoading = !isError && (
-            quote.isBlank() ||
-                    quote == "생성 중…" ||
-                    quote.startsWith("로딩 중")
-            )
+
 
     var showBottomSheet by remember { mutableStateOf(false) }
     var yellowPenMode by remember { mutableStateOf(false) }
@@ -335,25 +334,14 @@ fun StudyReadingScreen(
             }
         }
 
+
         // 로딩 오버레이
-        if (isQuoteLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .zIndex(2f)
-                    .background(Color.White.copy(alpha = 0.95f))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { },
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.img_nickname_loading),
-                    contentDescription = null,
-                    modifier = Modifier.size(120.dp)
-                )
-            }
+        // -> 제거. 지저분함.
+        //가이드 오버레이 추가함.
+        if (showGuide) {
+            StudyReadingGuideScreen(
+                onDismiss = { showGuide = false }
+            )
         }
     }
 
