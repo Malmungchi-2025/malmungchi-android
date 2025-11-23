@@ -85,8 +85,8 @@ fun RemindSettingsScreen(
     SideEffect {
         // ✅ 상태바/내비게이션바 배경 흰색 + 아이콘 흰색
         systemUiController.setStatusBarColor(
-            color = Color.White,
-            darkIcons = false
+            color = Bg_EFF4FB,
+            darkIcons = true
         )
         systemUiController.setNavigationBarColor(
             color = Color.White,
@@ -168,7 +168,7 @@ fun RemindSettingsScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color.White)
+                        .background(Bg_EFF4FB)
                 ) {
                     TopBar(title = "리마인드 알림 설정", onBack = onBack)
                     Divider(color = Color.Transparent, thickness = 12.dp)
