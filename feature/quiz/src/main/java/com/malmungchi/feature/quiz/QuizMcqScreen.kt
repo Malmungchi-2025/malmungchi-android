@@ -24,8 +24,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -86,7 +90,7 @@ fun QuizMcqScreen(
             IconButton(onClick = onBack) {
                 if (inPreview) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        painter = painterResource(id = R.drawable.ic_back),
                         contentDescription = "뒤로",
                         tint = Color.Black
                     )
@@ -153,13 +157,9 @@ fun QuizMcqScreen(
             Spacer(Modifier.height(10.dp))
 
             // 문제 본문
-            Text(
-                text = question?.text.orEmpty(),
-                fontFamily = Pretendard,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.Black,
-                lineHeight = 24.sp
+            UnderlinedText(
+                full = question?.text.orEmpty(),
+                target = question?.underline
             )
 
             Spacer(Modifier.height(20.dp))
@@ -214,6 +214,51 @@ fun QuizMcqScreen(
             Spacer(Modifier.height(8.dp))
         }
     }
+}
+
+//밑줄 ui 추가
+@Composable
+fun UnderlinedText(
+    full: String,
+    target: String?
+) {
+    if (target.isNullOrBlank()) {
+        Text(
+            text = full,
+            fontFamily = Pretendard,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.Black
+        )
+        return
+    }
+
+    val annotated = buildAnnotatedString {
+        val start = full.indexOf(target)
+        if (start >= 0) {
+            append(full.substring(0, start))
+            withStyle(
+                style = SpanStyle(
+                    color = BrandBlue,
+                    fontWeight = FontWeight.SemiBold,
+                    textDecoration = TextDecoration.Underline
+                )
+            ) {
+                append(target)
+            }
+            append(full.substring(start + target.length))
+        } else {
+            append(full)
+        }
+    }
+
+    Text(
+        text = annotated,
+        fontFamily = Pretendard,
+        fontSize = 20.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = Color.Black
+    )
 }
 
 //        // 버튼: 제출 전엔 선택해야 활성화, 제출 후엔 항상 활성화(다음/결과)
