@@ -423,7 +423,7 @@ class QuizFlowViewModel @Inject constructor(
                 total = set.total, index = 0,
                 completed = 0, progress = 0f,
                 displayStep = 1,
-                current = set.steps.firstOrNull(),
+                current = cleanedSteps.firstOrNull(),
                 finished = false, correctCount = 0,
                 showExplanation = false, explanation = null
             )
