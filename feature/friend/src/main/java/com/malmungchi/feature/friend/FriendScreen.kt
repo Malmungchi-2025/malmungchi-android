@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -135,6 +136,16 @@ fun FriendScreen(
             // ───── 친구 없음 UI ─────
             // yw- 친구가 없을 때 화면 생성
             if (ranks.isEmpty()) {
+
+                // 내 정보 가져오기 (실제 앱에서는 항상 있음)
+                val me = ranks.firstOrNull { it.isMe } ?: FriendRank(
+                    rank = 1,
+                    name = "나",
+                    points = 0,
+                    isMe = true,
+                    avatarRes = null
+                )
+
                 item {
                     Box(
                         modifier = Modifier
@@ -144,46 +155,60 @@ fun FriendScreen(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-                            AvatarThumb(size = 86.dp, painterRes = null,)
+                            // ---- 아바타 + 금색 테두리 + 왕관 ----
+                            Box(
+                                modifier = Modifier.size(86.dp),
+                                contentAlignment = Alignment.TopCenter
+                            ) {
+                                AvatarThumb(
+                                    size = 86.dp,
+                                    border = BorderStroke(2.dp, Gold),   // ⭐ 금색 테두리
+                                    painterRes = me.avatarRes
+                                )
+
+                                // ⭐ 왕관
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_crown),
+                                    contentDescription = null,
+                                    tint = Color.Unspecified,
+                                    modifier = Modifier
+                                        .size(30.dp)
+                                        .offset(y = (-16).dp)
+                                )
+                            }
 
                             Spacer(Modifier.height(8.dp))
 
+                            // ---- 내 이름 ----
                             Text(
-                                text = "금동돋",   // yw- 내 정보 불러오기 부탁해요..
+                                text = me.name,
                                 fontFamily = Pretendard,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF195FCF)
+                                color = BrandBlue
                             )
 
                             Spacer(Modifier.height(2.dp))
 
+                            // ---- 내 포인트 ----
                             Text(
-                                text = "1027px", // yw- 내 정보 불러오기 부탁해요..
+                                text = "${me.points} P",
                                 fontFamily = Pretendard,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = Color(0xFF989898)
+                                color = GrayTextSub
                             )
 
                             Spacer(Modifier.height(40.dp))
 
                             Text(
-                                text = "아직 친구 목록이 없군요 :(",
+                                text = "아직 친구 목록이 없군요 :(\n친구와 초대코드를 주고받아 함께 학습해보세요!",
                                 fontFamily = Pretendard,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = Color(0xFF616161)
-                            )
-
-                            Spacer(Modifier.height(4.dp))
-
-                            Text(
-                                text = "친구와 초대코드를 주고받아 함께 학습해보세요!",
-                                fontFamily = Pretendard,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF616161)
+                                color = Color(0xFF616161),
+                                lineHeight = 24.sp,   //  줄간격 150%
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
@@ -273,8 +298,8 @@ private fun Top3RowSilverGoldBronze(items: List<FriendRank>) {
 
 @Composable
 private fun Top3Item(item: FriendRank, raise: Boolean) {
-    val borderColor = if (item.rank == 1) Gold else RankNumGray
-
+    //val borderColor = if (item.rank == 1) Gold else RankNumGray
+    val borderColor = if (item.rank == 1) Gold else Color.Transparent
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = if (raise) Modifier.offset(y = (-10).dp) else Modifier
@@ -308,7 +333,7 @@ private fun Top3Item(item: FriendRank, raise: Boolean) {
             fontFamily = Pretendard,
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
-            color = Color.Black,
+            color = if (item.isMe && item.rank in 1..3) BrandBlue else Color.Black,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -333,7 +358,7 @@ private fun RankRow(item: FriendRank) {
 
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = Color.White,
+        color = Color(0xFFEFF4FB),
         shadowElevation = 2.dp,
         border = outline,
         modifier = Modifier.fillMaxWidth()
@@ -341,6 +366,7 @@ private fun RankRow(item: FriendRank) {
         Row(
             Modifier
                 .fillMaxWidth()
+                .height(68.dp)
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
