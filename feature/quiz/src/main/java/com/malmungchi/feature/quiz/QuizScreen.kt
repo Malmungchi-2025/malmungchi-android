@@ -86,7 +86,8 @@ fun QuizScreen(
 
         Row(
             modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.spacedBy(GAP)
+            horizontalArrangement = Arrangement.spacedBy(20.dp)
+            //horizontalArrangement = Arrangement.spacedBy(GAP)
         ) {
             // 좌/우 전체 높이 계산 → 짧은 쪽에만 보정 Spacer 추가
             val leftTotal  = CARD_HEIGHT_BIG + GAP + CARD_HEIGHT_SMALL               // 328 + 12 + 154 = 494
@@ -189,7 +190,7 @@ private fun QuizInfoCard(
 ) {
     Column(
         modifier = modifier
-            .shadow(4.dp, shape, clip = false)
+            .shadow(2.dp, shape, clip = false)
             .clip(shape)
             .background(background)
             .clickable { onClick() }
@@ -231,7 +232,7 @@ private fun BigIllustrationCard(
 ) {
     Box(
         modifier = modifier
-            .shadow(6.dp, shape, clip = false)
+            .shadow(2.dp, shape, clip = false)
             .clip(shape)
             .background(background)
             .clickable { onClick() }

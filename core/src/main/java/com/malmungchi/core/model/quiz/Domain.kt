@@ -17,7 +17,9 @@ data class McqStep(
     val text: String,
     val options: List<QuizOption>,
     val correctOptionId: Int?,
-    val explanation: String? = null
+    val explanation: String? = null,
+    // 새로 추가된 필드 — 특정 단어 밑줄 강조용
+    val underline: String? = null
 ) : QuizStep { override val type = QuizType.MCQ }
 
 data class OxStep(

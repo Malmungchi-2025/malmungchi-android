@@ -48,9 +48,42 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.graphicsLayer
 
-
 @Composable
 fun StudyReadingScreen(
+    viewModel: StudyReadingViewModel,
+    totalSteps: Int = 3,
+    currentStep: Int = 1,
+    onBackClick: () -> Unit = {},
+    onNextClick: () -> Unit = {}
+) {
+    var showGuide by remember { mutableStateOf(true) }
+
+    // padding 없는 최상위 Box
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+
+        // 기존 UI 전체를 content로 분리
+        StudyReadingContent(
+            viewModel = viewModel,
+            totalSteps = totalSteps,
+            currentStep = currentStep,
+            onBackClick = onBackClick,
+            onNextClick = onNextClick,
+
+        )
+
+        // 가이드 오버레이는 항상 최상위 박스에서 표시해야 한다
+        if (showGuide) {
+            StudyReadingGuideScreen(
+                onDismiss = { showGuide = false }
+            )
+        }
+    }
+}
+
+@Composable
+fun StudyReadingContent(
     viewModel: StudyReadingViewModel,
     totalSteps: Int = 3,
     currentStep: Int = 1,
@@ -60,7 +93,7 @@ fun StudyReadingScreen(
     LaunchedEffect(Unit) { android.util.Log.d("NAV", ">> study_reading 진입") }
 
     // ① 기능 가이드 보여줄지 여부
-    var showGuide by remember { mutableStateOf(true) }
+    //var showGuide by remember { mutableStateOf(true) }
 
     val quote by viewModel.quote.collectAsState()
     val selectedWord by viewModel.selectedWord.collectAsState()
@@ -338,11 +371,11 @@ fun StudyReadingScreen(
         // 로딩 오버레이
         // -> 제거. 지저분함.
         //가이드 오버레이 추가함.
-        if (showGuide) {
-            StudyReadingGuideScreen(
-                onDismiss = { showGuide = false }
-            )
-        }
+//        if (showGuide) {
+//            StudyReadingGuideScreen(
+//                onDismiss = { showGuide = false }
+//            )
+//        }
     }
 
     // 단어 BottomSheet
