@@ -1,5 +1,6 @@
 import java.util.Properties
 import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -8,13 +9,22 @@ plugins {
     // Hilt
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
-
-
 }
 
 android {
     namespace = "com.example.malmungchi"
     compileSdk = 35
+
+    signingConfigs {
+        create("release") {
+            val storeFilePath = project.properties["STORE_FILE"] as String
+            storeFile = file(storeFilePath)
+
+            storePassword = project.properties["STORE_PASSWORD"] as String
+            keyAlias = project.properties["KEY_ALIAS"] as String
+            keyPassword = project.properties["KEY_PASSWORD"] as String
+        }
+    }
 
     defaultConfig {
         applicationId = "com.example.malmungchi"
@@ -25,14 +35,29 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // ✅ 간단하게 BASE_URL 하드코딩 (local.properties 제거)
-        buildConfigField("String", "BASE_URL", "\"https://malmungchi-server.onrender.com\"")
+        // BASE_URL (local.properties → BuildConfig)
+        buildConfigField(
+            "String",
+            "BASE_URL",
+            "\"${project.properties["BASE_URL"]}\""
+        )
 
+        // Kakao Key (local.properties → BuildConfig)
+        buildConfigField(
+            "String",
+            "KAKAO_APP_KEY",
+            "\"${project.properties["KAKAO_NATIVE_APP_KEY"]}\""
+        )
+
+        // manifest에 주입
+        manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] =
+            project.properties["KAKAO_NATIVE_APP_KEY"] as String
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -40,28 +65,27 @@ android {
         }
     }
 
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-
         isCoreLibraryDesugaringEnabled = true
     }
+
     kotlinOptions {
         jvmTarget = "17"
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
     }
+
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.11"
     }
-
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -70,6 +94,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -77,6 +102,10 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Kakao SDK
+    implementation("com.kakao.sdk:v2-user:2.20.5")
+    implementation("com.kakao.sdk:v2-auth:2.20.5")
 
     // Hilt
     implementation(libs.hilt.android)
@@ -87,29 +116,28 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
-    // Core & Design 모듈 참조
+    // Core modules
     implementation(project(":core"))
     implementation(project(":design"))
     implementation(project(":data"))
-    //implementation(project(":feature"))
 
-    implementation("com.google.accompanist:accompanist-systemuicontroller:0.34.0")
-
-    //implementation("com.google.accompanist:accompanist-systemuicontroller:0.35.0-alpha")
-
-    implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-
-    implementation("androidx.core:core-splashscreen:1.0.1")
-    //다른 모듈 참조
+    // Feature modules
     implementation(project(":feature:ai"))
     implementation(project(":feature:friend"))
     implementation(project(":feature:quiz"))
     implementation(project(":feature:study"))
     implementation(project(":feature:mypage"))
     implementation(project(":feature:login"))
+
+    // Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.34.0")
 
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

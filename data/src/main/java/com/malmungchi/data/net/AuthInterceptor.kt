@@ -11,7 +11,8 @@ private fun isPublicPath(path: String): Boolean {
     return path.startsWith("/api/auth/login") ||
             path.startsWith("/api/auth/register") ||
             path.startsWith("/api/auth/refresh") ||
-            path.startsWith("/api/health")
+            path.startsWith("/api/health") ||
+            path.startsWith("/auth/kakao")
 }
 
 class AuthInterceptor(

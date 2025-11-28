@@ -3,6 +3,7 @@ package com.malmungchi.data.api
 
 import com.malmungchi.core.model.*
 import com.malmungchi.data.api.dto.BaseResponse
+import com.malmungchi.data.api.dto.KakaoLoginRequest
 import retrofit2.http.*
 
 interface AuthService {
@@ -86,4 +87,8 @@ interface AuthService {
     suspend fun updateRepresentativeBadge(
         @Body body: Map<String, String>
     )
+
+    //카카오 로그인
+    @POST("/api/auth/kakao/app-login")
+    suspend fun kakaoAppLogin(@Body body: KakaoLoginRequest): LoginResponse
 }

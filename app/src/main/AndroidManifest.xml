@@ -31,11 +31,30 @@
         android:theme="@style/Theme.Malmungchi"
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="31">
+
+        <meta-data
+            android:name="com.kakao.sdk.AppKey"
+            android:value="914410e1996d6afee39176f9f8ea782e" />
+
+        <activity
+            android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="kakao914410e1996d6afee39176f9f8ea782e"
+                    android:host="oauth" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.Malmungchi.Splash">
+
+
         <!--            android:theme="@style/Theme.Malmungchi">-->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -43,6 +62,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+
 
         <receiver
             android:name="com.malmungchi.feature.mypage.remind.ReminderReceiver"

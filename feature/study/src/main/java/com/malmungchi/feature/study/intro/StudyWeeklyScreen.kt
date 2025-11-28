@@ -106,7 +106,7 @@ private fun AppLogo(
 fun StudyWeeklyScreen(
     vm: StudyReadingViewModel, // ✅ 추가
     initialDateLabel: String,
-    onDateChange: (String) -> Unit,
+    onDateChange: suspend (String) -> Unit,
     bodyText: String?,
     onBackClick: () -> Unit = {},
     onGoStudyClick: () -> Unit = {},
@@ -126,6 +126,8 @@ fun StudyWeeklyScreen(
     val latestOnDateChange by rememberUpdatedState(onDateChange)
     val isPreview = LocalInspectionMode.current
 
+    var isLoading by remember { mutableStateOf(false) }
+
     // 오늘 날짜 ("YYYY-MM-DD")
     val today = remember { toDateLabel(Calendar.getInstance()) }
     val isPast = selected < today // YYYY-MM-DD 포맷은 문자열 비교로 과거 판별 가능
@@ -133,7 +135,12 @@ fun StudyWeeklyScreen(
     // 프리뷰에선 네트워크/콜백 실행 X
     if (!isPreview) {
         LaunchedEffect(selected) {
-            latestOnDateChange(selected)
+            isLoading = true       //  글감 불러오기 시작
+            try {
+                latestOnDateChange(selected)
+            } finally {
+                isLoading = false  //  글감 불러오기 끝
+            }
         }
     }
 
@@ -166,6 +173,7 @@ fun StudyWeeklyScreen(
         OverviewCard(
             dateLabelForDisplay = selected.replace("-", "."),
             bodyText = bodyText,
+            isLoading = isLoading,
             onGoStudyClick = onGoStudyClick,
             onBodyClick = {
                 if (isPast) onOpenPastStudy(selected)
@@ -367,6 +375,7 @@ private fun WeeklyCalendarBar(
 private fun OverviewCard(
     dateLabelForDisplay: String,   // "YYYY.MM.DD"
     bodyText: String?,
+    isLoading: Boolean,
     onGoStudyClick: () -> Unit,
     onBodyClick: () -> Unit,
     showResetToToday: Boolean,
@@ -374,7 +383,13 @@ private fun OverviewCard(
 ) {
     val today = remember { toDateLabel(Calendar.getInstance()) }
     val selectedDate = dateLabelForDisplay.replace(".", "-")
-    val btnEnabled = selectedDate == today
+    // bodyText가 null이 아니고 비어있지 않을 때 true
+    val hasBody = bodyText?.isNotBlank() == true
+
+
+
+    // 조건: 오늘 날짜 AND 글감 존재 -> 오늘의 학습 글감이 다 눌러온 뒤에만 학습하러가기 버튼 활성화되게 수정함.
+    val btnEnabled = (selectedDate == today) && hasBody && !isLoading
 
     // ✅ 카드 + 칩 전체를 감싸는 Box
     Box(
@@ -409,8 +424,16 @@ private fun OverviewCard(
 
                     Spacer(Modifier.height(24.dp))
 
+                    // 로딩 중에는 “글감을 불러오는 중입니다.” 표시
+                    val displayText = when {
+                        isLoading || bodyText == null -> "글감이 생성 중입니다 :)"
+                        bodyText.isNotBlank() -> bodyText
+                        else -> "학습한 글감이 없습니다."
+                    }
+
                     Text(
-                        text = bodyText?.takeIf { it.isNotBlank() } ?: "학습한 글감이 없습니다.",
+                        //text = bodyText?.takeIf { it.isNotBlank() } ?: "학습한 글감이 없습니다.",
+                        text = displayText,
                         fontSize = 16.sp,
                         fontFamily = Pretendard,
                         fontWeight = FontWeight.Medium,
@@ -421,6 +444,7 @@ private fun OverviewCard(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
                             .clickable(
+                                enabled = !isLoading,
                                 indication = null,
                                 interactionSource = remember { MutableInteractionSource() }
                             ) { onBodyClick() }
@@ -582,6 +606,7 @@ private fun StudyWeeklyScreenPreviewOnly(
         OverviewCard(
             dateLabelForDisplay = selected.replace("-", "."),
             bodyText = bodyText,
+            isLoading = false,
             onGoStudyClick = {},
             onBodyClick = {},
             showResetToToday = selected != today,
@@ -596,6 +621,7 @@ private fun Preview_OverviewCard_TodayButtonBottomCenter() {
     OverviewCard(
         dateLabelForDisplay = "2025.11.11",
         bodyText = "",
+        isLoading = false,
         onGoStudyClick = {},
         onBodyClick = {},
         showResetToToday = true, // ✅ 프리뷰에서 표시되게

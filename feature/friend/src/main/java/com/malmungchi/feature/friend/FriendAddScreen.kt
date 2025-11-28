@@ -122,7 +122,7 @@ fun FriendAddScreen(
                         fontFamily = Pretendard,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
-                        color = GrayTextSub
+                        color = Color(0xFF989898)
                     )
                 },
                 singleLine = true,
@@ -142,7 +142,7 @@ fun FriendAddScreen(
                     }
                 ),
 
-                // yw- 돋보기 아이콘 추가 및 기능 구현
+                // yw- 돋보기 아이콘 추가 및 기능 구현 -> 사랑해요...
                 // 기본 상태 돋보기였다가 검색을 누르면 x로 전환 x로 누르면 다시 돋보기 아이콘으로
                 trailingIcon = {
                     if (!searchPressed) {
@@ -179,8 +179,8 @@ fun FriendAddScreen(
                 },
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = BrandBlue,
-                    unfocusedIndicatorColor = CopyBg,
-                    disabledIndicatorColor = CopyBg,
+                    unfocusedIndicatorColor = Color.Black,
+                    disabledIndicatorColor = Color.Black,
                     cursorColor = BrandBlue,
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,

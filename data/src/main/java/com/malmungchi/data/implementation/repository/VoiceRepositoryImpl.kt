@@ -9,8 +9,11 @@ import com.malmungchi.core.model.VoiceChatResponse
 import com.malmungchi.core.model.VoiceHelloResp
 import com.malmungchi.data.api.VoiceApi
 import com.malmungchi.data.net.RetrofitProvider
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 
 
 class VoiceRepositoryImpl(
@@ -33,6 +36,29 @@ class VoiceRepositoryImpl(
 
     override suspend fun completeAiChatReward(autoTouch: Int): AiChatRewardResp =
         api.completeAiChatReward(autoTouch)
+
+    // ================================
+    // 텍스트 기반 GPT 첫 메시지 시작
+    // ================================
+    suspend fun voiceChatSendText(text: String): VoiceChatResponse {
+
+        // 1) dummy audio 파일 생성
+        val dummyFile = File.createTempFile("dummy_audio_", ".m4a", context.cacheDir)
+        dummyFile.writeBytes(ByteArray(1))   // 1바이트짜리 더미 데이터
+
+        // 2) 파일을 Part 형태로 생성 (서버는 audio가 비어도 GPT reply 생성)
+        val audioBody = dummyFile
+            .asRequestBody("audio/mp4".toMediaType())
+
+        val part = MultipartBody.Part.createFormData(
+            "audio",
+            dummyFile.name,
+            audioBody
+        )
+
+        // 3) API 호출
+        return api.voiceChat(part)
+    }
 }
 
 //class VoiceRepositoryImpl(

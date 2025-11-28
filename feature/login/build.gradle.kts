@@ -63,6 +63,9 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
 
 
+    implementation("com.kakao.sdk:v2-user:2.20.5")
+    implementation("com.kakao.sdk:v2-auth:2.20.5")
+
 
     // Core & Design 모듈
     implementation(project(":core"))

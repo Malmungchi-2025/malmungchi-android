@@ -70,15 +70,20 @@ private fun StepDto.toDomain(idx: Int): QuizStep = when (type.uppercase()) {
     "MCQ" -> McqStep(
         id = (index ?: (idx + 1)).toString(),
         text = text.orEmpty(),
-        options = (options ?: emptyList()).map { QuizOption(it.id, it.label) },
+        options = (options ?: emptyList()).map {
+            QuizOption(
+                it.id,
+                cleanOptionLabel(it.label)
+            )
+        },
         correctOptionId = correctOptionId,
-        explanation = explanation                 // ★ 전달
+        explanation = explanation
     )
     "OX" -> OxStep(
         id = (index ?: (idx + 1)).toString(),
         statement = statement.orEmpty(),
         answerIsO = answerIsO,
-        explanation = explanation                 // ★ 전달
+        explanation = explanation
     )
     else -> ShortStep(
         id = (index ?: (idx + 1)).toString(),
@@ -88,6 +93,14 @@ private fun StepDto.toDomain(idx: Int): QuizStep = when (type.uppercase()) {
         answerText = answerText,
         explanation = explanation                 // ★ 전달
     )
+}
+
+//  옵션 텍스트에서 _밑줄_ 패턴 제거 & 변환
+private fun cleanOptionLabel(label: String?): String {
+    if (label == null) return ""
+    return label.replace(Regex("_(.*?)_")) { match ->
+        "<${match.groupValues[1]}>"     // _피력_ → <피력>
+    }
 }
 
 private fun toCategory(code: String): QuizCategory = when (code) {

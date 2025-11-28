@@ -1,4 +1,6 @@
 *.iml
+*.jks
+*.keystore
 .gradle
 /local.properties
 /.idea/caches
@@ -13,16 +15,6 @@
 .externalNativeBuild
 .cxx
 local.properties
-# 🔒 Android signing keys
-*.jks
-*.keystore
-
-# 🔒 Release signing files (key properties)
-key.properties
-signing.properties
-
-# 🔒 Sensitive configs
-*.keystore
-*.jks
-**/release/*.keystore
-**/release/*.jks
+app/build.gradle.kts
+app/src/main/AndroidManifest.xml
+app/src/main/java/com/example/malmungchi/MalmungchiApp.kt
