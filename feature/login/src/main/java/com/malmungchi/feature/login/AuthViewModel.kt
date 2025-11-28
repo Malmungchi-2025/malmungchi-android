@@ -231,7 +231,7 @@ class AuthViewModel @Inject constructor(
             _ui.update { it.copy(loading = true, error = null) }
 
             runCatching {
-                repo.kakaoAppLogin(accessToken, nickname)
+                repo.kakaoAppLogin(accessToken)
             }.onSuccess { res ->
                 val user = res.user
                 val token = res.token

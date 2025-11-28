@@ -500,13 +500,20 @@ fun MainApp() {
                 },
                 onKakao = { token, nickname ->
                     authViewModel.kakaoLogin(token, nickname) { ok, userId, jwt, msg, isNewUser ->
-                        if (!ok || userId == null || jwt == null) return@kakaoLogin
+                        Log.d("KAKAO", "callback: ok=$ok, userId=$userId, jwt=$jwt, msg=$msg, new=$isNewUser")
 
-                        // 토큰 저장
-                        authViewModel.persistToken(jwt)
-                        saveSession(context, userId, jwt)
+                        if (!ok) {
+                            Log.e("KAKAO", "로그인 실패: $msg")
+                            return@kakaoLogin
+                        }
 
-                        // Activity 재시작
+                        // ⚠️ userId 또는 jwt 가 null 이어도 서버에서 계정 생성 직후 null 로 올 수 있음.
+                        val safeUserId = userId ?: -1
+                        val safeJwt = jwt ?: ""
+
+                        saveSession(context, safeUserId, safeJwt)
+                        authViewModel.persistToken(safeJwt)
+
                         val activity = context as Activity
                         activity.finish()
                         activity.startActivity(Intent(activity, MainActivity::class.java))

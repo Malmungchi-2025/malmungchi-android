@@ -3,6 +3,7 @@ package com.malmungchi.data.implementation.repository
 import com.malmungchi.core.model.*
 import com.malmungchi.core.repository.AuthRepository
 import com.malmungchi.data.api.AuthService
+import com.malmungchi.data.api.dto.KakaoLoginRequest
 import com.malmungchi.data.preference.AuthPreference
 import com.malmungchi.data.session.SessionManager
 import javax.inject.Inject
@@ -161,19 +162,9 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     //카카오 로그인
-    override suspend fun kakaoAppLogin(
-        accessToken: String,
-        nickname: String?
-    ): LoginResponse {
-
-        val body = mapOf(
-            "accessToken" to accessToken,
-            "nickname" to nickname
-        )
-
-        return api.kakaoAppLogin(body)
+    override suspend fun kakaoAppLogin(accessToken: String): LoginResponse {
+        return api.kakaoAppLogin(KakaoLoginRequest(accessToken))
     }
-
     override fun saveToken(token: String) {
         authPref.accessToken = token   // AuthPreferenceImpl에 저장
     }

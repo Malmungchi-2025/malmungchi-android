@@ -45,10 +45,7 @@ interface AuthRepository {
     suspend fun saveLocalRepresentativeBadge(key: String)
     suspend fun getLocalRepresentativeBadge(): String?
     //카카오 로그인 api 선언
-    suspend fun kakaoAppLogin(
-        accessToken: String,
-        nickname: String?
-    ): LoginResponse
+    suspend fun kakaoAppLogin(accessToken: String): LoginResponse
 
 
 
