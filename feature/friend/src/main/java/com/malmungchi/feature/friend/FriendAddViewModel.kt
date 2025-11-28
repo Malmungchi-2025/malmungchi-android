@@ -50,7 +50,7 @@ data class FriendRank(
 private fun UserDto.toFriendSummary() = FriendSummary(
     id = id,
     name = name,
-    avatar_name = avatar_name,
+    avatar_name = avatarName,
     point = point,
     friend_code = friend_code
 )

@@ -385,9 +385,37 @@ class QuizFlowViewModel @Inject constructor(
     private fun loadWithSet(set: QuizSet) {
         if (rootSet == null) rootSet = set
 
-        quizSet = set
+        //  MCQ 텍스트 정제 + 언더라인 단어 자동 추출
+        val cleanedSteps = set.steps.map { step ->
+            when (step) {
+                is McqStep -> {
+                    val (cleanText, underline) = extractUnderlineFromMarkdown(step.text)
+                    step.copy(
+                        text = cleanText,
+                        underline = underline
+                    )
+                }
+
+                is ShortStep -> {
+                    val (cleanSentence, underline, _) =
+                        extractUnderlineFromMarkdownShort(step.sentence, step.underlineText)
+
+                    step.copy(
+                        sentence = cleanSentence,
+                        underlineText = underline
+                    )
+                }
+
+                else -> step
+            }
+        }
+
+
+        //quizSet = set
+        quizSet = set.copy(steps = cleanedSteps)
         selections.clear()
         submitted.clear()
+
         _ui.update {
             it.copy(
                 loading = false, error = null,
@@ -395,7 +423,7 @@ class QuizFlowViewModel @Inject constructor(
                 total = set.total, index = 0,
                 completed = 0, progress = 0f,
                 displayStep = 1,
-                current = set.steps.firstOrNull(),
+                current = cleanedSteps.firstOrNull(),
                 finished = false, correctCount = 0,
                 showExplanation = false, explanation = null
             )
@@ -568,4 +596,46 @@ class QuizFlowViewModel @Inject constructor(
         val set = quizSet ?: return true
         return _ui.value.index >= set.steps.lastIndex
     }
+
+    //마크다운 제가 로직 추가
+    fun removeMarkdownItalics(s: String): String {
+        return s.replace(Regex("_(.*?)_"), "$1")
+    }
+
+    // 내부: _단어_ → underline 추출 + 제거
+    private fun extractUnderlineFromMarkdown(s: String): Pair<String, String?> {
+        val regex = Regex("_(.*?)_")
+        val match = regex.find(s)
+
+        return if (match != null) {
+            val underline = match.groupValues[1]   // 밑줄 단어
+            val cleaned = s.replace(regex, underline) // _ 제거된 문장
+            cleaned to underline
+        } else {
+            s to null
+        }
+    }
+
+    // ShortStep용: sentence 안의 _단어_ → underlineText 추출
+    private fun extractUnderlineFromMarkdownShort(
+        sentence: String,
+        existingUnderline: String?
+    ): Triple<String, String?, Boolean> {
+        // 우선 서버가 underlineText를 보내줬다면 그대로 사용함
+        if (!existingUnderline.isNullOrBlank()) {
+            return Triple(sentence, existingUnderline, false)
+        }
+
+        val regex = Regex("_(.*?)_")
+        val match = regex.find(sentence)
+        return if (match != null) {
+            val underline = match.groupValues[1]
+            val cleaned = sentence.replace(regex, underline)
+            Triple(cleaned, underline, true)
+        } else {
+            Triple(sentence, null, false)
+        }
+    }
+
+
 }

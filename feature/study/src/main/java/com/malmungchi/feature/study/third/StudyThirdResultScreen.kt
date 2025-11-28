@@ -470,7 +470,7 @@ fun StudyThirdResultScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 180.dp)
-                        //.padding(vertical = 50.dp)
+                    //.padding(vertical = 50.dp)
                 ) {
                     Image(
                         painter = painterResource(id = resultIcon),
@@ -488,11 +488,17 @@ fun StudyThirdResultScreen(
                             .offset(
                                 y = run {
                                     val isPrevExplanationLong =
-                                        if (index > 0)
-                                            questions[index - 1].explanation.length > 40
-                                        else false
+                                        if (index > 0) questions[index - 1].explanation.length > 40 else false
 
-                                    if (isPrevExplanationLong) 172.dp else 152.dp
+                                    // aseY는 반드시 run 블록 안에서 선언해야 한다
+                                    val baseY = if (isPrevExplanationLong) 172.dp else 152.dp
+
+                                    // 두 번째 문제만 18dp 당김
+                                    if (index == 1) {
+                                        baseY - 10.dp
+                                    } else {
+                                        baseY
+                                    }
                                 }
                             )
                             .zIndex(0f)

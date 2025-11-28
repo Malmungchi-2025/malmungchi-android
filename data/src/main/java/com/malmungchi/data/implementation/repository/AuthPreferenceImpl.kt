@@ -3,8 +3,10 @@ package com.malmungchi.data.implementation.repository
 import android.content.Context
 import android.content.SharedPreferences
 import com.malmungchi.data.preference.AuthPreference
+import javax.inject.Inject
 
-class AuthPreferenceImpl(context: Context) : AuthPreference {
+class AuthPreferenceImpl @Inject constructor
+    (context: Context) : AuthPreference {
 
     private val prefs =
         context.getSharedPreferences("session_prefs", Context.MODE_PRIVATE) // ★ 통일
@@ -21,7 +23,10 @@ class AuthPreferenceImpl(context: Context) : AuthPreference {
         set(value) {
             prefs.edit().apply {
                 if (value == null) remove("token") else putString("token", value)
-            }.apply()
+            }.commit()
+//            prefs.edit().apply {
+//                if (value == null) remove("token") else putString("token", value)
+//            }.apply()
         }
 
     override var refreshToken: String?

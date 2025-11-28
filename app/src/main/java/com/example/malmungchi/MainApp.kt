@@ -2,7 +2,9 @@ package com.example.malmungchi
 
 
 
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.BackHandler
@@ -76,6 +78,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.malmungchi.navigation.BottomNavItem
@@ -106,6 +109,8 @@ import com.malmungchi.feature.quiz.QuizRetryIntroScreen
 import com.malmungchi.feature.quiz.QuizSolveHost
 import com.malmungchi.feature.friend.FriendAddScreen
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.kakao.sdk.user.UserApiClient
+import com.malmungchi.feature.login.AuthViewModel
 import com.malmungchi.feature.login.OnboardingScreen
 import kotlinx.coroutines.delay
 
@@ -258,6 +263,9 @@ fun MainApp() {
     WhiteSystemBars()
     val navController = rememberNavController()
 
+    //AuthViewModel 선언
+    val authViewModel: AuthViewModel = hiltViewModel()
+
 
     // ✅ 항상 최상단에서 감시하는 Alert 핸들러 추가
     GlobalStudyBackHandler(navController)
@@ -376,7 +384,7 @@ fun MainApp() {
                     val level = meResult.level ?: 0
                     if (level <= 0) {
                         // 레벨 0 → 레벨 테스트 인트로
-                        navController.navigate("level_intro") {
+                        navController.navigate("level_graph") {
                             popUpTo("splash") { inclusive = true }
                             launchSingleTop = true
                         }
@@ -490,7 +498,27 @@ fun MainApp() {
                 onSignUp = {
                     navController.navigate(TermsRoute.Agreement)
                 },
-                onKakao = { /* 소셜 로그인 연결 시 사용 */ },
+                onKakao = { token, nickname ->
+                    authViewModel.kakaoLogin(token, nickname) { ok, userId, jwt, msg, isNewUser ->
+                        Log.d("KAKAO", "callback: ok=$ok, userId=$userId, jwt=$jwt, msg=$msg, new=$isNewUser")
+
+                        if (!ok) {
+                            Log.e("KAKAO", "로그인 실패: $msg")
+                            return@kakaoLogin
+                        }
+
+                        // ⚠️ userId 또는 jwt 가 null 이어도 서버에서 계정 생성 직후 null 로 올 수 있음.
+                        val safeUserId = userId ?: -1
+                        val safeJwt = jwt ?: ""
+
+                        saveSession(context, safeUserId, safeJwt)
+                        authViewModel.persistToken(safeJwt)
+
+                        val activity = context as Activity
+                        activity.finish()
+                        activity.startActivity(Intent(activity, MainActivity::class.java))
+                    }
+                },
                 onNaver = { /* 소셜 로그인 연결 시 사용 */ },
                 onGoogle = { /* 소셜 로그인 연결 시 사용 */ }
             )

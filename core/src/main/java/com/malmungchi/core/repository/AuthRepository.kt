@@ -44,4 +44,10 @@ interface AuthRepository {
     // ✅ 로컬 저장 전용 함수 추가
     suspend fun saveLocalRepresentativeBadge(key: String)
     suspend fun getLocalRepresentativeBadge(): String?
+    //카카오 로그인 api 선언
+    suspend fun kakaoAppLogin(accessToken: String): LoginResponse
+
+
+
+    fun saveToken(token: String)
 }

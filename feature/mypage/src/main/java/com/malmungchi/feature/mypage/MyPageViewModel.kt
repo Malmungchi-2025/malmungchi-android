@@ -49,7 +49,7 @@ data class MyPageUiState(
         }
 
     val avatarName: String
-        get() = user?.avatar_name?.takeIf { it.isNotBlank() } ?: "img_malchi"
+        get() = user?.avatarName?.takeIf { it.isNotBlank() } ?: "img_malchi"
 
     val levelInt: Int get() = user?.level ?: 0
 
@@ -258,7 +258,7 @@ class MyPageViewModel @Inject constructor(
                 if (oldUser != null) {
                     val newUi = _ui.value.copy(
                         loading = false,
-                        user = oldUser.copy(avatar_name = avatarName)
+                        user = oldUser.copy(avatarName = avatarName)
                     )
                     _ui.value = newUi
                     MyPageCache.cachedUi = newUi // ✅ 캐시 즉시 반영

@@ -110,6 +110,7 @@ private fun AiChatCompleteContent(
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF195FCF)),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
                 .padding(bottom = 48.dp)
                 .fillMaxWidth(0.5f)
                 .height(48.dp)

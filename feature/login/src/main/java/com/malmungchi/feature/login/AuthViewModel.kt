@@ -220,4 +220,48 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    // 카카오 로그인 (AccessToken → 서버 검증)
+    // Kakao Login (AccessToken → server verify)
+    fun kakaoLogin(
+        accessToken: String,
+        nickname: String?,
+        onResult: (ok: Boolean, userId: Int?, token: String?, message: String?, isNewUser: Boolean) -> Unit
+    ){
+        viewModelScope.launch {
+            _ui.update { it.copy(loading = true, error = null) }
+
+            runCatching {
+                repo.kakaoAppLogin(accessToken)
+            }.onSuccess { res ->
+                val user = res.user
+                val token = res.token
+
+                if (res.success && token != null && user != null) {
+                    val userIdInt = try { user.id.toInt() } catch (_: Exception) { null }
+
+                    if (userIdInt != null) {
+                        _ui.update { it.copy(loading = false, lastLogin = res) }
+                        onResult(true, userIdInt, token, null, res.isNewUser ?: false)
+                    } else {
+                        _ui.update { it.copy(loading = false) }
+                        onResult(false, null, null, "잘못된 사용자 ID 형식", false)   // ← 수정됨
+                    }
+                } else {
+                    _ui.update { it.copy(loading = false) }
+                    val msg = res.message ?: "카카오 로그인 실패"
+                    onResult(false, null, null, msg, false)   // ← 수정됨
+                }
+
+            }.onFailure { e ->
+                _ui.update { it.copy(loading = false) }
+                onResult(false, null, null, e.message ?: "네트워크 오류", false)   // ← 수정됨
+            }
+        }
+    }
+
+    //토큰 저장하는 함수
+    fun persistToken(token: String) {
+        repo.saveToken(token)
+    }
+
 }
