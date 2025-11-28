@@ -12,3 +12,27 @@ plugins {
     alias(libs.plugins.ksp) apply false
 }
 
+
+
+// local.properties 로딩
+
+val localProps = java.util.Properties()
+val localFile = rootProject.file("local.properties")
+
+if (localFile.exists()) {
+    localFile.inputStream().use { localProps.load(it) }
+}
+
+// 안전한 getter
+fun prop(key: String): String? = localProps.getProperty(key)
+
+
+// 전역 변수(ext)에 등록
+
+ext["BASE_URL"] = prop("BASE_URL")
+ext["KAKAO_NATIVE_APP_KEY"] = prop("KAKAO_NATIVE_APP_KEY")
+
+ext["STORE_FILE"] = prop("STORE_FILE")
+ext["STORE_PASSWORD"] = prop("STORE_PASSWORD")
+ext["KEY_ALIAS"] = prop("KEY_ALIAS")
+ext["KEY_PASSWORD"] = prop("KEY_PASSWORD")
