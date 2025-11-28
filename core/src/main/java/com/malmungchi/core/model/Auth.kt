@@ -21,23 +21,39 @@ data class UserDto(
     val email: String,
     val name: String,
     val nickname: String?,
-    val is_verified: Boolean,
-    val level: Int ? = null,         // ✅ 서버가 내려주는 1~4
-    val point: Int? = null,           // 👈 추가
-    // 서버는 nicknameTitle 로 내려요!
-//    @SerializedName("nicknameTitle")
-//    val nickname_title: String? = null,
+    @SerializedName("is_verified")
+    val isVerified: Boolean,
+    val level: Int? = null,
+    val point: Int? = null,
     @SerializedName("nicknameTitle")
     val nicknameTitle: String? = null,
     @SerializedName("avatarName")
-
-    val avatar_name: String? = null,      // ✅ 추가: drawable 이름(String)
-    //val nickname_title: String? = null // 추가된 nickname_title 필드
+    val avatarName: String? = null,
     @SerializedName("friendCode")
-    val friend_code: String,           // ✅ 필수값(서버 NOT NULL)
-
-
+    val friend_code: String
 )
+//data class UserDto(
+//    val id: Int,
+//    val email: String,
+//    val name: String,
+//    val nickname: String?,
+//    val is_verified: Boolean,
+//    val level: Int ? = null,         // ✅ 서버가 내려주는 1~4
+//    val point: Int? = null,           // 👈 추가
+//    // 서버는 nicknameTitle 로 내려요!
+////    @SerializedName("nicknameTitle")
+////    val nickname_title: String? = null,
+//    @SerializedName("nicknameTitle")
+//    val nicknameTitle: String? = null,
+//    @SerializedName("avatarName")
+//
+//    val avatar_name: String? = null,      // ✅ 추가: drawable 이름(String)
+//    //val nickname_title: String? = null // 추가된 nickname_title 필드
+//    @SerializedName("friendCode")
+//    val friend_code: String,           // ✅ 필수값(서버 NOT NULL)
+//
+//
+//)
 
 data class RegisterRequest(
     val email: String,
@@ -53,11 +69,13 @@ data class RegisterResponse(
 
 
 data class LoginRequest(val email: String, val password: String)
+
 data class LoginResponse(
     val success: Boolean,
-    val token: String?,
-    val user: UserDto?,            // ✅ user.level 포함
-    val message: String? = null
+    val message: String?,
+    val token: String,
+    val user: UserDto,
+    val isNewUser: Boolean
 )
 
 data class VocabularyDto(

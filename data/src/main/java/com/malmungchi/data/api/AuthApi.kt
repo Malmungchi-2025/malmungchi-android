@@ -86,4 +86,8 @@ interface AuthService {
     suspend fun updateRepresentativeBadge(
         @Body body: Map<String, String>
     )
+
+    //카카오 로그인
+    @POST("/api/auth/kakao/app-login")
+    suspend fun kakaoAppLogin(@Body body: Map<String, Any?>): LoginResponse
 }

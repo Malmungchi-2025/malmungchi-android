@@ -42,6 +42,8 @@ class AuthRepositoryImpl @Inject constructor(
                     token  = res.token.orEmpty(),
                     level  = user.level               // ✅ 새 파라미터
                 )
+                //  SharedPreferences 에 JWT 저장
+                authPref.accessToken = res.token.orEmpty()
             }
         }
         return res
@@ -156,6 +158,24 @@ class AuthRepositoryImpl @Inject constructor(
     // ✅ 대표 배지 로컬 불러오기
     override suspend fun getLocalRepresentativeBadge(): String? {
         return authPref.getRepresentativeBadge()
+    }
+
+    //카카오 로그인
+    override suspend fun kakaoAppLogin(
+        accessToken: String,
+        nickname: String?
+    ): LoginResponse {
+
+        val body = mapOf(
+            "accessToken" to accessToken,
+            "nickname" to nickname
+        )
+
+        return api.kakaoAppLogin(body)
+    }
+
+    override fun saveToken(token: String) {
+        authPref.accessToken = token   // AuthPreferenceImpl에 저장
     }
 
 

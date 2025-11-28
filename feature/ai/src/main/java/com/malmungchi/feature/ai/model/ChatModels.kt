@@ -12,6 +12,7 @@ data class ChatMessage(
 data class ChatUiState(
     val messages: List<ChatMessage> = emptyList(),
     val isRecording: Boolean = false,
+    val isTranscribing: Boolean = false,
     val isLoading: Boolean = false,
     val botReplyCount: Int = 0
 )

@@ -298,7 +298,9 @@ fun ChatScreen(
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 state = listState,
-                contentPadding = PaddingValues(bottom = 72.dp) // 마이크/하단 여유
+                contentPadding = PaddingValues(
+                    bottom = 140.dp   //  마이크(56dp) + 최소 간격(20dp) + 여유치(44dp)
+                )
             ) {
                 // (A) 과거 메시지들 — 기본 화면에선 스크롤 올려야 보임
                 itemsIndexed(older) { index, msg ->
@@ -388,11 +390,17 @@ fun ChatScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                // 🔵 안내 멘트 (녹음 여부에 따라 색상/텍스트 변경)
-                val guideText = if (vm.ui.value.isRecording) {
-                    "마이크 활성화 — 완료 시 중단 버튼을 눌러주세요!"
-                } else {
-                    "하단의 마이크를 눌러주세요."
+                // 안내 멘트 (녹음 / 음성 인식 / 기본 상태)
+                val guideText = when {
+                    vm.ui.value.isRecording -> {
+                        "마이크 활성화 — 완료 시 중단 버튼을 눌러주세요!"
+                    }
+                    vm.ui.value.isTranscribing -> {
+                        "음성 인식 중..."
+                    }
+                    else -> {
+                        "하단의 마이크를 눌러주세요."
+                    }
                 }
 
                 val guideColor = if (vm.ui.value.isRecording)

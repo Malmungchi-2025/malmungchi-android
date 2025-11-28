@@ -5,6 +5,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,6 +19,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import com.example.malmungchi.ui.theme.MalmungchiTheme
+import com.kakao.sdk.common.util.Utility
 import java.io.File
 import java.io.FileOutputStream
 import dagger.hilt.android.AndroidEntryPoint
@@ -33,6 +35,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val keyHash = Utility.getKeyHash(this)
+        Log.d("KAKAO_KEYHASH", "keyHash = $keyHash")
 
 
 
