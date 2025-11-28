@@ -15,3 +15,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+app/build.gradle.kts
+app/src/main/AndroidManifest.xml
+app/src/main/java/com/example/malmungchi/MalmungchiApp.kt
