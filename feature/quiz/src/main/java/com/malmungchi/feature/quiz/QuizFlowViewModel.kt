@@ -125,6 +125,9 @@ class QuizFlowViewModel @Inject constructor(
 
     /** 카테고리 선택 → 새 세트 생성 후 화면 상태 로딩 */
     fun startQuiz(categoryKorForApi: String, len: Int? = 80) {
+
+        // 새 카테고리 시작 → 모든 기록 초기화
+        resetAttemptHistory()
         viewModelScope.launch {
             _ui.update { it.copy(loading = true, error = null) }
             runCatching { repo.createBatch(categoryKorForApi, len) }
@@ -137,6 +140,8 @@ class QuizFlowViewModel @Inject constructor(
 
     /** 기존 배치 이어하기 */
     fun loadExistingBatch(batchId: Long) {
+        // 이어하기도 새로운 세트 취급 → 기록 초기화
+        resetAttemptHistory()
         viewModelScope.launch {
             _ui.update { it.copy(loading = true, error = null) }
             runCatching { repo.getBatch(batchId) }
@@ -207,6 +212,17 @@ class QuizFlowViewModel @Inject constructor(
                 _ui.update { it.copy(error = e.message ?: "제출 실패") }
             }
         }
+    }
+    //기존 퀴즈 세트 초기화
+
+    private fun resetAttemptHistory() {
+        rootSet = null
+        isRetryMode = false
+
+        firstSelections.clear()
+        firstCorrectness.clear()
+        secondSelections.clear()
+        secondCorrectness.clear()
     }
 
     /** 현재 문항의 서버 채점 결과 (정답/오답 플래시 등에서 사용 가능) */
@@ -456,6 +472,16 @@ class QuizFlowViewModel @Inject constructor(
         val idx = _ui.value.index
         val last = idx >= set.steps.lastIndex
         if (last) {
+            //퀴즈 전체 완료 -> 포인트 지급 api호출!
+            rewardCurrentAttempt(
+                onSuccess = { result ->
+                    println("포인트 지급 성공 → ${result.rewardPoint}점 / 총점 ${result.totalPoint}")
+                },
+                onError = { msg ->
+                    println("포인트 지급 실패 → $msg")
+                }
+            )
+
             _ui.update {
                 it.copy(
                     finished = true,
@@ -621,21 +647,22 @@ class QuizFlowViewModel @Inject constructor(
         sentence: String,
         existingUnderline: String?
     ): Triple<String, String?, Boolean> {
-        // 우선 서버가 underlineText를 보내줬다면 그대로 사용함
-        if (!existingUnderline.isNullOrBlank()) {
-            return Triple(sentence, existingUnderline, false)
-        }
 
+        // 기존 underlineText가 비어있지 않아도 _단어_가 sentence 안에 있다면 무조건 제거해야 함
         val regex = Regex("_(.*?)_")
         val match = regex.find(sentence)
+
         return if (match != null) {
             val underline = match.groupValues[1]
             val cleaned = sentence.replace(regex, underline)
             Triple(cleaned, underline, true)
         } else {
-            Triple(sentence, null, false)
+            // 마크다운 없음 → underlineText 그대로 사용
+            Triple(sentence, existingUnderline, false)
         }
     }
+
+
 
 
 }

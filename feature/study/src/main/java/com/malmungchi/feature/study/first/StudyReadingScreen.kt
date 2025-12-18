@@ -120,7 +120,10 @@ fun StudyReadingContent(
     var bubblePosition by remember { mutableStateOf(Offset.Zero) }
 
     // 오늘의 학습 글감 불러오기
-    LaunchedEffect(Unit) { viewModel.fetchTodayQuote() }
+    LaunchedEffect(true) {
+        viewModel.fetchTodayQuote(force = true)
+    }
+    //LaunchedEffect(Unit) { viewModel.fetchTodayQuote() }
 
     // 텍스트 스타일
     val commonTextStyle = TextStyle(
@@ -172,7 +175,7 @@ fun StudyReadingContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                //.verticalScroll(rememberScrollState())
         ) {
             // 상단바
             Row(
@@ -222,6 +225,11 @@ fun StudyReadingContent(
             Spacer(Modifier.height(24.dp))
 
             // 본문 영역
+            Box(
+                modifier = Modifier
+                    .weight(1f)                         // ⭐ 핵심
+                    .verticalScroll(rememberScrollState())
+            ){
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = Color(0xFFF9F9F9),
@@ -271,6 +279,8 @@ fun StudyReadingContent(
             }
 
             Spacer(Modifier.height(100.dp))
+            }
+
         }
 
         // ✅ 하단 버튼 (바텀시트 위 정확히 64dp)
@@ -570,11 +580,7 @@ fun StudyReadingScreenPreviewOnly(
             .background(Color.White)
             .padding(start = 20.dp, end = 20.dp, top = 32.dp, bottom = 16.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-        ) {
+
             // 상단 바
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -604,6 +610,12 @@ fun StudyReadingScreenPreviewOnly(
             Spacer(Modifier.height(16.dp))
             StepProgressBar(totalSteps = 3, currentStep = 1)
             Spacer(Modifier.height(24.dp))
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
 
             // 본문
             Surface(

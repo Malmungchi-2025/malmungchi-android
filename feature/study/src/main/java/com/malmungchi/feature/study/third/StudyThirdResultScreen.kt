@@ -455,131 +455,153 @@ fun StudyThirdResultScreen(
     ) {
         TopBar(title = "오늘의 학습", onBackClick = onBackClick)
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(Modifier.height(24.dp))
         Text("학습 진행률", fontSize = 16.sp, color = Color.Black, modifier = Modifier.padding(start = 8.dp))
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
         StepProgressBarPreview(totalSteps = 3, currentStep = 3)
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
 
-        LazyColumn(modifier = Modifier.weight(1f), contentPadding = PaddingValues(top = 8.dp)) {
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp)
+        ) {
             itemsIndexed(questions) { index, q ->
-                val isCorrect = q.userAnswerIndex != null && q.userAnswerIndex == q.correctIndex
-                val resultIcon = if (isCorrect) R.drawable.ic_correct else R.drawable.ic_wrong
+                val isCorrect = q.userAnswerIndex == q.correctIndex
+                val iconRes = if (isCorrect) R.drawable.ic_correct else R.drawable.ic_wrong
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 180.dp)
-                    //.padding(vertical = 50.dp)
-                ) {
-                    Image(
-                        painter = painterResource(id = resultIcon),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)   // ⭐ 필수!!
-                            .size(140.dp)
-                            .offset(x = (-46).dp, y = (-42).dp)
-                            .zIndex(10f)
-                    )
-                    // ① 해설 블록 (뒤쪽)
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .offset(
-                                y = run {
-                                    val isPrevExplanationLong =
-                                        if (index > 0) questions[index - 1].explanation.length > 40 else false
+                Box(Modifier.fillMaxWidth()) {
 
-                                    // aseY는 반드시 run 블록 안에서 선언해야 한다
-                                    val baseY = if (isPrevExplanationLong) 172.dp else 152.dp
+                    Column(Modifier.fillMaxWidth()) {
 
-                                    // 두 번째 문제만 18dp 당김
-                                    if (index == 1) {
-                                        baseY - 10.dp
-                                    } else {
-                                        baseY
+                        /* ---------- 문제 카드 ---------- */
+                        Card(
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(4.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .zIndex(1f)
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Text(
+                                    text = "${index + 1}/${questions.size}",
+                                    fontFamily = Pretendard,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = LabelGray
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = q.question,
+                                    fontFamily = Pretendard,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.Black,
+                                    lineHeight = 26.sp
+                                )
+                                Spacer(Modifier.height(16.dp))
+
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    q.choices.forEachIndexed { i, choice ->
+                                        ChoiceRowModern(
+                                            text = choice,
+                                            isCorrectAnswer = i == q.correctIndex,
+                                            isUserSelectedWrong =
+                                                (i == q.userAnswerIndex && q.userAnswerIndex != q.correctIndex)
+                                        )
                                     }
-                                }
-                            )
-                            .zIndex(0f)
-                    ) {
-                        AnswerExplanationBlock(
-                            answerText = q.choices.getOrNull(q.correctIndex).orEmpty(),
-                            explanation = q.explanation
-                        )
-                    }
-
-                    // ② 문제 카드 (앞쪽)
-                    Card(
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7)),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.TopCenter)
-                            .zIndex(1f)       // 해설 위로
-                            .offset(y = 12.dp) // 시각적으로 맞닿게 아래로 살짝
-                    ) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text(
-                                text = "${index + 1}/${questions.size}",
-                                fontFamily = Pretendard,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = LabelGray
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                text = q.question,
-                                fontFamily = Pretendard,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.Black,
-                                lineHeight = 26.sp
-                            )
-                            Spacer(Modifier.height(16.dp))
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                q.choices.forEachIndexed { i, choice ->
-                                    val isCorrectAnswer = (i == q.correctIndex)
-                                    val isUserSelectedWrong =
-                                        (i == q.userAnswerIndex) && (q.userAnswerIndex != q.correctIndex)
-                                    ChoiceRowModern(
-                                        text = choice,
-                                        isCorrectAnswer = isCorrectAnswer,
-                                        isUserSelectedWrong = isUserSelectedWrong
-                                    )
                                 }
                             }
                         }
+
+                        /* ---------- 정답 / 해설 (QuizRetry와 동일) ---------- */
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .zIndex(0f)
+                                .clip(
+                                    RoundedCornerShape(
+                                        topStart = 0.dp, topEnd = 0.dp,
+                                        bottomStart = 12.dp, bottomEnd = 12.dp
+                                    )
+                                )
+                                .background(BgBlue)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(top = 12.dp, bottom = 24.dp)
+                                    .padding(start = 20.dp, end = 12.dp)
+                            ) {
+                                Text(
+                                    text = "정답",
+                                    fontFamily = Pretendard,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = LabelGray
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = q.choices[q.correctIndex],
+                                    fontFamily = Pretendard,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.Black
+                                )
+
+                                Spacer(Modifier.height(12.dp))
+
+                                Text(
+                                    text = "해설",
+                                    fontFamily = Pretendard,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = LabelGray
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = q.explanation,
+                                    fontFamily = Pretendard,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.Black,
+                                    lineHeight = 20.sp
+                                )
+                            }
+                        }
                     }
+
+                    /* ---------- 결과 아이콘 ---------- */
+                    Image(
+                        painter = painterResource(id = iconRes),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .offset(x = (-12).dp, y = (-12).dp)
+                            .size(100.dp)
+                            .zIndex(2f)
+                    )
                 }
+
+                Spacer(Modifier.height(32.dp))
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // 하단 버튼(그대로 유지)
         Row(
-            Modifier
-                .fillMaxWidth()
-                .offset(y = (-20).dp)
-                .padding(end = 20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
         ) {
-            Spacer(modifier = Modifier.width(150.dp))
-
             Button(
                 onClick = onFinishClick,
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
-                modifier = Modifier
-                    .height(42.dp)
-                    .width(160.dp)
+                modifier = Modifier.height(42.dp).width(160.dp)
             ) {
                 Text(
                     text = "다음 단계",
-                    fontSize = 16.sp,
                     fontFamily = Pretendard,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White
                 )
@@ -587,6 +609,152 @@ fun StudyThirdResultScreen(
         }
     }
 }
+//@Composable
+//fun StudyThirdResultScreen(
+//    questions: List<StudyResultQuestion>,
+//    onBackClick: () -> Unit = {},
+//    onFinishClick: () -> Unit = {}
+//) {
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .background(Color.White)
+//            .padding(horizontal = 20.dp, vertical = 48.dp)
+//    ) {
+//        TopBar(title = "오늘의 학습", onBackClick = onBackClick)
+//
+//        Spacer(modifier = Modifier.height(24.dp))
+//        Text("학습 진행률", fontSize = 16.sp, color = Color.Black, modifier = Modifier.padding(start = 8.dp))
+//        Spacer(modifier = Modifier.height(12.dp))
+//        StepProgressBarPreview(totalSteps = 3, currentStep = 3)
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        LazyColumn(modifier = Modifier.weight(1f), contentPadding = PaddingValues(top = 8.dp)) {
+//            itemsIndexed(questions) { index, q ->
+//                val isCorrect = q.userAnswerIndex != null && q.userAnswerIndex == q.correctIndex
+//                val resultIcon = if (isCorrect) R.drawable.ic_correct else R.drawable.ic_wrong
+//
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(bottom = 180.dp)
+//                    //.padding(vertical = 50.dp)
+//                ) {
+//                    Image(
+//                        painter = painterResource(id = resultIcon),
+//                        contentDescription = null,
+//                        modifier = Modifier
+//                            .align(Alignment.TopStart)   // ⭐ 필수!!
+//                            .size(140.dp)
+//                            .offset(x = (-46).dp, y = (-42).dp)
+//                            .zIndex(10f)
+//                    )
+//                    // ① 해설 블록 (뒤쪽)
+//                    Box(
+//                        modifier = Modifier
+//                            .align(Alignment.BottomCenter)
+//                            .offset(
+//                                y = run {
+//                                    val isPrevExplanationLong =
+//                                        if (index > 0) questions[index - 1].explanation.length > 40 else false
+//
+//                                    // aseY는 반드시 run 블록 안에서 선언해야 한다
+//                                    val baseY = if (isPrevExplanationLong) 172.dp else 152.dp
+//
+//                                    // 두 번째 문제만 18dp 당김
+//                                    if (index == 1) {
+//                                        baseY - 10.dp
+//                                    } else {
+//                                        baseY
+//                                    }
+//                                }
+//                            )
+//                            .zIndex(0f)
+//                    ) {
+//                        AnswerExplanationBlock(
+//                            answerText = q.choices.getOrNull(q.correctIndex).orEmpty(),
+//                            explanation = q.explanation
+//                        )
+//                    }
+//
+//                    // ② 문제 카드 (앞쪽)
+//                    Card(
+//                        shape = RoundedCornerShape(12.dp),
+//                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7)),
+//                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .align(Alignment.TopCenter)
+//                            .zIndex(1f)       // 해설 위로
+//                            .offset(y = 12.dp) // 시각적으로 맞닿게 아래로 살짝
+//                    ) {
+//                        Column(Modifier.padding(16.dp)) {
+//                            Text(
+//                                text = "${index + 1}/${questions.size}",
+//                                fontFamily = Pretendard,
+//                                fontSize = 12.sp,
+//                                fontWeight = FontWeight.Medium,
+//                                color = LabelGray
+//                            )
+//                            Spacer(Modifier.height(8.dp))
+//                            Text(
+//                                text = q.question,
+//                                fontFamily = Pretendard,
+//                                fontSize = 18.sp,
+//                                fontWeight = FontWeight.SemiBold,
+//                                color = Color.Black,
+//                                lineHeight = 26.sp
+//                            )
+//                            Spacer(Modifier.height(16.dp))
+//                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+//                                q.choices.forEachIndexed { i, choice ->
+//                                    val isCorrectAnswer = (i == q.correctIndex)
+//                                    val isUserSelectedWrong =
+//                                        (i == q.userAnswerIndex) && (q.userAnswerIndex != q.correctIndex)
+//                                    ChoiceRowModern(
+//                                        text = choice,
+//                                        isCorrectAnswer = isCorrectAnswer,
+//                                        isUserSelectedWrong = isUserSelectedWrong
+//                                    )
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        // 하단 버튼(그대로 유지)
+//        Row(
+//            Modifier
+//                .fillMaxWidth()
+//                .offset(y = (-20).dp)
+//                .padding(end = 20.dp),
+//            horizontalArrangement = Arrangement.SpaceBetween
+//        ) {
+//            Spacer(modifier = Modifier.width(150.dp))
+//
+//            Button(
+//                onClick = onFinishClick,
+//                shape = RoundedCornerShape(50),
+//                colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
+//                modifier = Modifier
+//                    .height(42.dp)
+//                    .width(160.dp)
+//            ) {
+//                Text(
+//                    text = "다음 단계",
+//                    fontSize = 16.sp,
+//                    fontFamily = Pretendard,
+//                    fontWeight = FontWeight.SemiBold,
+//                    color = Color.White
+//                )
+//            }
+//        }
+//    }
+//}
 
 @Composable
 @Preview(

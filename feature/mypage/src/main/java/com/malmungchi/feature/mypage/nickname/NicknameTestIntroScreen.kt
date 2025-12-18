@@ -106,6 +106,7 @@ fun NicknameTestIntroScreen(
             shape = MaterialTheme.shapes.extraLarge,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
                 .padding(bottom = 48.dp)
                 .height(48.dp)
                 .width(200.dp)

@@ -157,7 +157,11 @@ fun MyPageRoute(
                 NicknameCardDialog(
                     nickname = nicknameTitle,
                     onExit = { showNicknameCard = false },
-                    onSaveImage = { _ -> showNicknameCard = false }
+                    onSaveImage = { _ -> showNicknameCard = false },
+                    onRetry = {
+                        showNicknameCard = false
+                        onClickViewNicknameTest()
+                    }
                 )
             }
 

@@ -1,5 +1,6 @@
 package com.malmungchi.feature.quiz
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -68,7 +69,7 @@ fun QuizExitAlert(
                 OutlinedButton(
                     onClick = onConfirmQuit,
                     shape = RoundedCornerShape(50),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp),
+                    border = BorderStroke(1.dp, BrandBlue),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = BrandBlue),
                     modifier = Modifier
                         .height(42.dp)

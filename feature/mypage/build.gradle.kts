@@ -69,5 +69,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":design"))
 
+    implementation(libs.androidx.datastore.preferences)
+
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.33.2-alpha")
 }

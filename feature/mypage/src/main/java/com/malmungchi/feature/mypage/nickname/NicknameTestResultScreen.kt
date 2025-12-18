@@ -31,6 +31,7 @@ import android.provider.MediaStore
 import androidx.annotation.DrawableRes
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.zIndex
 
 @Composable
 fun NicknameTestResultScreen(
@@ -89,24 +90,30 @@ fun NicknameTestResultScreen(
                     .clip(RoundedCornerShape(16.dp))
                     .align(Alignment.TopCenter)
             ) {
-                Image(
-                    painter = painterResource(id = imgRes),
-                    contentDescription = "별명 카드 이미지",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.matchParentSize()
-                )
-                if (!userName.isNullOrBlank()) {
-                    Text(
-                        text = "$userName 님의 별명은",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = Pretendard,
-                        color = Color.Black,
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 24.dp)
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clip(RoundedCornerShape(16.dp))
+                ) {
+                    Image(
+                        painter = painterResource(id = imgRes),
+                        contentDescription = "별명 카드 이미지",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.matchParentSize()
                     )
                 }
+
+//                Image(
+//                    painter = painterResource(id = MyPageR.drawable.btn_re_test),
+//                    contentDescription = "다시 검사하기",
+//                    modifier = Modifier
+//                        .size(120.dp)
+//                        .offset(x = -(20).dp, y = -(20).dp)// 버튼 크기 (필요시 조절) //버튼 위치 수정!
+//                        .align(Alignment.TopEnd)      // 카드 오른쪽 상단
+//                        //.padding(12.dp)
+//                        .zIndex(1f)
+//                        .clickable { onRetry() }      //  핵심
+//                )
             }
         } else {
             // ← 로딩/스켈레톤 (원하면 다른 UI로 교체 가능)
@@ -207,7 +214,7 @@ private fun getNicknameCardImageResOrNull(nickname: String?): Int? = when (nickn
     "단어수집가"  -> MyPageR.drawable.img_word3
     "의미해석가"  -> MyPageR.drawable.img_context2
     "언어모험가"  -> MyPageR.drawable.img_language2
-    else -> MyPageR.drawable.img_nickname_loading        // ← ★ 기본(프리뷰용) 이미지 리턴 금지
+    else -> MyPageR.drawable.img_language2       // ← ★ 기본(프리뷰용) 이미지 리턴 금지
 }
 private fun saveDrawableToPictures(
     context: Context,

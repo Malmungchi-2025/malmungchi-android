@@ -62,13 +62,14 @@ fun FriendScreen(
         contentPadding = PaddingValues(
             start = HorizontalPad,
             end = HorizontalPad,
-            top = VerticalPad,
+            //top = VerticalPad,
             bottom = VerticalPad
         )
     ) {
 
         // ───── 헤더 ─────
         item {
+            Spacer(Modifier.height(36.dp))
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center

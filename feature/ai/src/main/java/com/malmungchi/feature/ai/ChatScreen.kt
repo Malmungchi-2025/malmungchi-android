@@ -106,8 +106,9 @@ private fun MessageRow(msg: MChatMessage) {
                 painter = painterResource(id = R.drawable.img_chatbot_malchi),
                 contentDescription = "Bot",
                 modifier = Modifier
-                    .size(40.dp) // ✅ 48 → 40으로 줄여서 말풍선 높이와 시각적으로 맞춤
+                    .size(52.dp) // ✅ 48 → 40으로 줄여서 말풍선 높이와 시각적으로 맞춤
                     .align(Alignment.Top) // ✅ Row 내에서 세로 정렬 맞추기
+                    .offset(y = (-12).dp)
             )
             Spacer(Modifier.width(4.dp)) // ✅ 여백 살짝 줄이기 (6 → 4)
             ChatBubbleRectTopLeftSharp(

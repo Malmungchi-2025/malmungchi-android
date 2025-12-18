@@ -223,18 +223,47 @@ private fun OriginalWithTypos(
     errorIndex: Int? = null,
     color: Color = Color.Black,
 ) {
-   // val match = typed.commonPrefixWith(original).length
     val match = nfc(typed).commonPrefixWith(nfc(original)).length
+
+    val safeErrorIndex =
+        errorIndex
+            ?.coerceIn(0, original.lastIndex)
+            ?.takeIf { it >= match }
+
     val annotated = buildAnnotatedString {
+        // ✅ 1. 정상 prefix
         append(AnnotatedString(original.take(match), SpanStyle(color = color)))
-        if (errorIndex != null && errorIndex in original.indices) {
-            append(AnnotatedString(original.substring(match, errorIndex), SpanStyle(color = color)))
-            append(AnnotatedString(original[errorIndex].toString(), SpanStyle(color = Red_FF0D0D)))
-            append(AnnotatedString(original.drop(errorIndex + 1), SpanStyle(color = color)))
+
+        if (safeErrorIndex != null) {
+            // ✅ 2. match ~ errorIndex 전까지 정상
+            append(
+                AnnotatedString(
+                    original.substring(match, safeErrorIndex),
+                    SpanStyle(color = color)
+                )
+            )
+
+            // ✅ 3. 오타 글자
+            append(
+                AnnotatedString(
+                    original[safeErrorIndex].toString(),
+                    SpanStyle(color = Red_FF0D0D)
+                )
+            )
+
+            // ✅ 4. 나머지
+            append(
+                AnnotatedString(
+                    original.drop(safeErrorIndex + 1),
+                    SpanStyle(color = color)
+                )
+            )
         } else {
+            // ✅ 오타 없으면 나머지 전부 정상
             append(AnnotatedString(original.drop(match), SpanStyle(color = color)))
         }
     }
+
     Text(
         text = annotated,
         fontFamily = Pretendard,
@@ -494,6 +523,8 @@ fun StudySecondScreen(
     val currentIndexFromVm by viewModel.currentIndex.collectAsState()
     val typedFromVm by viewModel.userInput.collectAsState()
 
+    var inputLocked by rememberSaveable { mutableStateOf(false) }
+
 
     var overlayStep by rememberSaveable { mutableStateOf(GuideOverlayStep.Step1) }
 
@@ -519,13 +550,17 @@ fun StudySecondScreen(
     val displaySentence =
         if (overlayStep == GuideOverlayStep.None) sentenceFromUi else GuideSentence
 
-    var typedValue by remember { mutableStateOf(TextFieldValue("")) }
-    LaunchedEffect(typedFromVm, sentenceFromUi) {
-        if (typedFromVm != typedValue.text) {
-            typedValue =
-                typedValue.copy(text = typedFromVm, selection = TextRange(typedFromVm.length))
-        }
+    //val typedText by viewModel.userInput.collectAsState()
+    var typedValue by remember {
+        mutableStateOf(TextFieldValue(""))
     }
+
+//    LaunchedEffect(typedText) {
+//        typedValue = TextFieldValue(
+//            text = typedText,
+//            selection = TextRange(typedText.length)
+//        )
+//    }
 
     var errorIndexUi by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(overlayStep) { errorIndexUi = null }
@@ -545,6 +580,8 @@ fun StudySecondScreen(
 
     // ✅ 문장 완료 시 동작: 마지막이면 다음 단계, 아니면 다음 문장으로
     val advanceOrFinish: () -> Unit = {
+        inputLocked = false
+        errorIndexUi = null
         if (uiIndex < sentences.lastIndex) {
             uiIndex += 1
             // VM/로컬 입력 초기화
@@ -646,51 +683,52 @@ fun StudySecondScreen(
                         }
                         Spacer(Modifier.height(12.dp))
 
+//                        // UI가 유일한 TextFieldValue 소유자
+//                        var typedValue by remember {
+//                            mutableStateOf(TextFieldValue(""))
+//                        }
+
                         FullWidthInputChip(
                             value = typedValue,
                             onValueChange = { newV ->
 
-                                val newTextRaw = newV.text
-                                val newText = nfc(newTextRaw)
-                                val originalClean = nfc(original)
-                                val oldText = typedValue.text
+                                val oldText = nfc(typedValue.text)
+                                val newText = nfc(newV.text)
+                                val originalText = nfc(original)
 
-                                // 1) 삭제 허용
-                                if (newText.length <= oldText.length) {
-                                    errorIndexUi = null
+                                // 1️⃣ 삭제는 항상 허용
+                                if (newText.length < oldText.length) {
                                     typedValue = newV
-                                    viewModel.onUserInputChange(newText)
+                                    inputLocked = false
+                                    errorIndexUi = null
                                     return@FullWidthInputChip
                                 }
 
-                                // 2) 조합 중일 때 — 무조건 prefix 검사만
+                                // 2️⃣ IME 조합 중이면 판단하지 않음
                                 if (newV.composition != null) {
-                                    if (originalClean.startsWith(newText) ||
-                                        originalClean.startsWith(newText.dropLast(1)) // 초성만 들어온 경우 허용
-                                    ) {
-                                        errorIndexUi = null
-                                        typedValue = newV
-                                    } else {
-                                        errorIndexUi = newText.length - 1
-                                    }
-                                    return@FullWidthInputChip
-                                }
-
-                                // 3) 완성형 입력 — prefix 검사
-                                if (originalClean.startsWith(newText)) {
-                                    errorIndexUi = null
                                     typedValue = newV
-                                    viewModel.onUserInputChange(newText)
-
-                                    // 문장 완성
-                                    if (newText == originalClean) {
-                                        advanceOrFinish()
-                                    }
                                     return@FullWidthInputChip
                                 }
 
-                                // 4) 오타
-                                errorIndexUi = newText.length - 1
+                                // 3️⃣ 락 상태면 입력 차단
+                                if (inputLocked) return@FullWidthInputChip
+
+                                // 4️⃣ prefix 검사
+                                if (!originalText.startsWith(newText)) {
+                                    val diff = firstDiffIndex(newText, originalText)
+                                    errorIndexUi = diff
+                                    inputLocked = true
+                                    return@FullWidthInputChip
+                                }
+
+                                // 5️⃣ 정상 입력
+                                typedValue = newV
+                                errorIndexUi = null
+
+                                // 6️⃣ 문장 완성
+                                if (newText == originalText) {
+                                    advanceOrFinish()
+                                }
                             },
 //                            onValueChange = { newV ->
 //                                if (newV.composition != null) {
@@ -932,6 +970,29 @@ fun StudySecondScreen(
     }
 }
 
+private fun firstDiffIndex(a: String, b: String): Int? {
+    val minLen = minOf(a.length, b.length)
+    for (i in 0 until minLen) {
+        if (a[i] != b[i]) return i
+    }
+    return if (a.length != b.length) minLen else null
+}
+
+
+//한글 조합 판별
+fun canStillBecome(inputChar: Char, targetChar: Char): Boolean {
+    // 완성 글자면 바로 비교
+    if (inputChar == targetChar) return true
+
+    val inputNfd =
+        Normalizer.normalize(inputChar.toString(), Normalizer.Form.NFD)
+    val targetNfd =
+        Normalizer.normalize(targetChar.toString(), Normalizer.Form.NFD)
+
+    // 🔥 핵심: "될 수 있는가" = prefix인가
+    return targetNfd.startsWith(inputNfd)
+}
+
 /* ---------- 프리뷰 ---------- */
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 360)
 @Composable
@@ -1107,33 +1168,32 @@ fun Preview_Handwriting_AfterOnboarding() {
                 FullWidthInputChip(
                     value = typedValue,
                     onValueChange = { newV ->
-                        if (newV.composition != null) {
-                            val newText = nfc(newV.text)
+                        val newText = nfc(newV.text)
+                        val originalClean = nfc(original)
+                        val oldText = nfc(typedValue.text)
 
-                            // 조합 중인데 prefix 아닌 경우 → 즉시 오타 처리
-                            if (!isExactSafePrefix(newText, original)) {
-                                errorIndexUi = newText.length - 1
-                                return@FullWidthInputChip
-                            }
+                        typedValue = newV
 
-                            // prefix 정상 → 입력 허용
-                            errorIndexUi = null
-                            typedValue = newV
-                            return@FullWidthInputChip
-                        }
-                        val newText = newV.text
-                        val oldText = typedValue.text
                         if (newText.length <= oldText.length) {
                             errorIndexUi = null
-                            typedValue = newV
                             return@FullWidthInputChip
                         }
-                        if (isSafePrefix(newText, original)) {
+
+                        if (newV.composition != null) {
+                            val safe =
+                                originalClean.startsWith(newText) ||
+                                        originalClean.startsWith(newText.dropLast(1))
+
+                            errorIndexUi = if (safe) null else newText.length - 1
+                            return@FullWidthInputChip
+                        }
+
+                        if (originalClean.startsWith(newText)) {
                             errorIndexUi = null
-                            typedValue = newV
                             return@FullWidthInputChip
                         }
-                        errorIndexUi = nfc(oldText).length
+
+                        errorIndexUi = newText.length - 1
                     },
                     textColor = Gray_616161,
                     background = Field_EFF4FB

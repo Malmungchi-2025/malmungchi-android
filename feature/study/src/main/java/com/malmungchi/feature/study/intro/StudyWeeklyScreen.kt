@@ -126,7 +126,8 @@ fun StudyWeeklyScreen(
     val latestOnDateChange by rememberUpdatedState(onDateChange)
     val isPreview = LocalInspectionMode.current
 
-    var isLoading by remember { mutableStateOf(false) }
+    //var isLoading by remember { mutableStateOf(false) }
+    val isQuoteReady by vm.isQuoteReady.collectAsState()
 
     // 오늘 날짜 ("YYYY-MM-DD")
     val today = remember { toDateLabel(Calendar.getInstance()) }
@@ -135,13 +136,16 @@ fun StudyWeeklyScreen(
     // 프리뷰에선 네트워크/콜백 실행 X
     if (!isPreview) {
         LaunchedEffect(selected) {
-            isLoading = true       //  글감 불러오기 시작
-            try {
-                latestOnDateChange(selected)
-            } finally {
-                isLoading = false  //  글감 불러오기 끝
-            }
+            latestOnDateChange(selected)
         }
+//        LaunchedEffect(selected) {
+//            isLoading = true       //  글감 불러오기 시작
+//            try {
+//                latestOnDateChange(selected)
+//            } finally {
+//                isLoading = false  //  글감 불러오기 끝
+//            }
+//        }
     }
 
     Column(
@@ -173,7 +177,7 @@ fun StudyWeeklyScreen(
         OverviewCard(
             dateLabelForDisplay = selected.replace("-", "."),
             bodyText = bodyText,
-            isLoading = isLoading,
+            isLoading = !isQuoteReady,
             onGoStudyClick = onGoStudyClick,
             onBodyClick = {
                 if (isPast) onOpenPastStudy(selected)
@@ -385,8 +389,6 @@ private fun OverviewCard(
     val selectedDate = dateLabelForDisplay.replace(".", "-")
     // bodyText가 null이 아니고 비어있지 않을 때 true
     val hasBody = bodyText?.isNotBlank() == true
-
-
 
     // 조건: 오늘 날짜 AND 글감 존재 -> 오늘의 학습 글감이 다 눌러온 뒤에만 학습하러가기 버튼 활성화되게 수정함.
     val btnEnabled = (selectedDate == today) && hasBody && !isLoading

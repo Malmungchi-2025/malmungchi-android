@@ -29,7 +29,9 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.annotation.DrawableRes
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.zIndex
 
 /**
  * 마이페이지 위에 떠 있는 커스텀 모달(투명 스크림)
@@ -40,7 +42,8 @@ import androidx.compose.ui.platform.LocalContext
 fun NicknameCardDialog(
     nickname: String?,
     onExit: () -> Unit = {},
-    onSaveImage: (String) -> Unit = {}
+    onSaveImage: (String) -> Unit = {},
+    onRetry: () -> Unit
 ) {
     Dialog(
         onDismissRequest = onExit,
@@ -57,6 +60,7 @@ fun NicknameCardDialog(
                 nickname = nickname,
                 onExit = onExit,
                 onSaveImage = onSaveImage,
+                onRetry = onRetry,
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(horizontal = 20.dp) // 피그마 여백
@@ -69,20 +73,17 @@ private fun NicknameCardDialogBody(
     nickname: String?,
     onExit: () -> Unit,
     onSaveImage: (String) -> Unit,
+    onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val imgRes = getNicknameCardImageResOrNull(nickname)
     val context = LocalContext.current
 
-    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        // 버튼영역(48dp) + 간격(16dp) = 64dp 만큼은 카드 아래 공간으로 비워둠
-        val reservedForButton = 64.dp
-        // 사용 가능한 최대 카드 높이(= 다이얼로그 영역 - 버튼영역)
-        val availableCardHeight = (maxHeight - reservedForButton)
-        // 카드 높이: 가용 높이를 넘지 않되, 최대 600dp 유지
-        val cardHeight = availableCardHeight.coerceAtMost(450.dp)
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+        Column(
+            modifier = modifier,
+            horizontalAlignment = Alignment.CenterHorizontally) {
             // ── 카드 이미지 ──
             Box(
                 modifier = Modifier
@@ -129,7 +130,20 @@ private fun NicknameCardDialogBody(
                         modifier = Modifier.size(24.dp)
 
                     )
-                }
+                } // 🔁 다시 검사하기 버튼 (이게 없어서 안 보였음)
+                Image(
+                    painter = painterResource(id = MyPageR.drawable.btn_re_test),
+                    contentDescription = "다시 검사하기",
+                    modifier = Modifier
+                        .size(120.dp)
+                        .align(Alignment.TopEnd)
+                        .offset(x = (-120).dp, y = -(32).dp)
+                        .zIndex(3f)
+                        .clickable {
+                            onExit()
+                            onRetry()
+                        }
+                )
             }
 
             Spacer(Modifier.height(16.dp))
@@ -171,7 +185,7 @@ private fun NicknameCardDialogBody(
             }
         }
     }
-}
+
 
 private fun saveDrawableToPictures(
     context: Context,
@@ -336,6 +350,7 @@ private fun NicknameCardDialogPreview() {
                 nickname = "언어연금술사",
                 onExit = {},
                 onSaveImage = {},
+                onRetry = {},
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(horizontal = 20.dp, vertical = 24.dp)
@@ -362,6 +377,7 @@ private fun NicknameCardDialogLoadingPreview() {
                 nickname = null, // 로딩 예시
                 onExit = {},
                 onSaveImage = {},
+                onRetry = {},
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(horizontal = 20.dp)

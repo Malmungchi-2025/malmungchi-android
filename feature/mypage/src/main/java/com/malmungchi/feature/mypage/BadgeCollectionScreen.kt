@@ -167,7 +167,7 @@ private fun BadgeCollectionScreen(
             .fillMaxSize()
             .background(Color.White)
             .padding(horizontal = 20.dp)
-            .verticalScroll(scrollState)
+            //.verticalScroll(scrollState)
     ) {
         Spacer(Modifier.height(48.dp))
 
@@ -199,97 +199,106 @@ private fun BadgeCollectionScreen(
             }
         }
 
-        // === 나의 대표 배지 ===
-        Spacer(Modifier.height(24.dp))
-        Text(
-            text = "나의 대표 배지",
-            style = TextStyle(
-                fontFamily = Pretendard,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 20.sp,
-                color = Color.Black
-            ),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(12.dp))
-        Text(
-            text = "모은 배지 중 가장 보람찬 배지를 골라\n대표 배지로 설정해주세요!",
-            style = TextStyle(
-                fontFamily = Pretendard,
-                fontWeight = FontWeight.Medium,
-                fontSize = 14.sp,
-                color = Gray_989898,
-                lineHeight = 14.sp * 1.6f
-            ),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
-        )
-
-        Spacer(Modifier.height(20.dp))
-
-        // === 대표 배지 카드 ===
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                //.padding(horizontal = 20.dp)
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+
+            // === 나의 대표 배지 ===
+            Spacer(Modifier.height(24.dp))
+            Text(
+                text = "나의 대표 배지",
+                style = TextStyle(
+                    fontFamily = Pretendard,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 20.sp,
+                    color = Color.Black
+                ),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = "모은 배지 중 가장 보람찬 배지를 골라\n대표 배지로 설정해주세요!",
+                style = TextStyle(
+                    fontFamily = Pretendard,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp,
+                    color = Gray_989898,
+                    lineHeight = 14.sp * 1.6f
+                ),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
+            )
+
+            Spacer(Modifier.height(20.dp))
+
+            // === 대표 배지 카드 ===
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
             ) {
-                if (representativeBadge != null) { // ✅ 대표 배지만 표시
-                    val resId = badgeResMap[representativeBadge!!.key] ?: MyPageR.drawable.ic_lock_on
-                    Image(
-                        painter = painterResource(id = resId),
-                        contentDescription = representativeBadge!!.title, // ✅ 수정됨
-                        modifier = Modifier
-                            .size(96.dp)
-                            .clip(RoundedCornerShape(12.dp)),
-                        contentScale = ContentScale.Crop   // ✅ 박스를 꽉 채움
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        text = representativeBadge!!.title,
-                        style = TextStyle(
-                            fontFamily = Pretendard,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 18.sp,
-                            color = Color.Black
-                        ),
-                        textAlign = TextAlign.Center
-                    )
-                } else {
-                    Text(
-                        text = "아직 대표 배지를 선택하지 않았어요!",
-                        style = TextStyle(
-                            fontFamily = Pretendard,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 14.sp,
-                            color = Gray_989898
-                        ),
-                        textAlign = TextAlign.Center
-                    )
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (representativeBadge != null) { // ✅ 대표 배지만 표시
+                        val resId =
+                            badgeResMap[representativeBadge!!.key] ?: MyPageR.drawable.ic_lock_on
+                        Image(
+                            painter = painterResource(id = resId),
+                            contentDescription = representativeBadge!!.title, // ✅ 수정됨
+                            modifier = Modifier
+                                .size(96.dp)
+                                .clip(RoundedCornerShape(12.dp)),
+                            contentScale = ContentScale.Crop   // ✅ 박스를 꽉 채움
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            text = representativeBadge!!.title,
+                            style = TextStyle(
+                                fontFamily = Pretendard,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 18.sp,
+                                color = Color.Black
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+                    } else {
+                        Text(
+                            text = "아직 대표 배지를 선택하지 않았어요!",
+                            style = TextStyle(
+                                fontFamily = Pretendard,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp,
+                                color = Gray_989898
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
+
+            Spacer(Modifier.height(V_SECTION))
+
+            // === 전체 배지 리스트 ===
+            BadgeGrid(
+                badges = badges,
+                onSelect = { badge ->
+                    if (badge.unlocked) {
+                        selectedBadge = badge      // ✅ 선택만 함
+                        showSheet = true            // ✅ 시트만 열림
+                    }
+                }
+            )
+
+            Spacer(Modifier.height(60.dp))
         }
-
-        Spacer(Modifier.height(V_SECTION))
-
-        // === 전체 배지 리스트 ===
-        BadgeGrid(
-            badges = badges,
-            onSelect = { badge ->
-                if (badge.unlocked) {
-                    selectedBadge = badge      // ✅ 선택만 함
-                    showSheet = true            // ✅ 시트만 열림
-                }
-            }
-        )
-
-        Spacer(Modifier.height(60.dp))
     }
 
     // ✅ 시트에서 대표 배지 설정할 때만 실제 저장

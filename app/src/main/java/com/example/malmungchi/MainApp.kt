@@ -1292,11 +1292,21 @@ fun MainApp() {
                 ) { innerPadding ->
                     Box(Modifier.padding(innerPadding).background(Color.White)) {
                         StudyWeeklyScreen(
-                            vm = vm,  // ✅ 추가
+                            vm = vm,  // 추가
                             initialDateLabel = today,
                             onDateChange = { label ->
                                 runCatching { LocalDate.parse(label) }.onSuccess { picked ->
-                                    vm.fetchPastStudyByDate(picked)
+                                    val todayDate = LocalDate.now()
+
+                                    if (picked == todayDate) {
+                                        // 오늘이면 생성 API
+                                        vm.fetchTodayQuote()
+                                    } else {
+                                        // 과거면 조회 API
+                                        vm.fetchPastStudyByDate(picked)
+                                    }
+
+                                    // 주간 진행도는 항상 갱신
                                     vm.refreshStudyProgressForWeek(picked)
                                 }
                             },
@@ -1749,9 +1759,14 @@ fun MainApp() {
             }
 
             // 6) 완료
-            composable("quiz_complete") {
+            composable("quiz_complete") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("quiz_graph")
+                }
+                val vm: QuizFlowViewModel = hiltViewModel(parentEntry)
+
                 QuizCompleteScreen(
-                    vm = hiltViewModel<QuizFlowViewModel>(),
+                    vm = vm,
                     onNextClick = {
                         navController.navigate("quiz_home") {
                             popUpTo("quiz_graph") { inclusive = false }
@@ -2159,13 +2174,30 @@ fun MainApp() {
 
             // ✅ 화면 대신 모달 다이얼로그를 바로 띄운다
             NicknameCardDialog(
-                nickname = nicknameArg.ifBlank { null },     // 빈 문자열이면 null 처리 → 로딩 일러스트
-                onExit = { navController.popBackStack() },    // 닫기 = 기존 ic_back 역할
-                onSaveImage = { selectedNickname ->
-                    // TODO: 저장 로직 연결(필요 시)
-                    // ex) viewModel.saveCardImage(selectedNickname)
-                }
+                nickname = nicknameArg.ifBlank { null },
+                onExit = { navController.popBackStack() },
+
+                onRetry = {
+                    // 1️⃣ 다이얼로그 닫기
+                    navController.popBackStack()
+
+                    // 2️⃣ 닉네임 테스트 처음부터 다시 시작
+                    navController.navigate("nickname_test_loading") {
+                        popUpTo("nickname_test_flow") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+
+                onSaveImage = { }
             )
+//            NicknameCardDialog(
+//                nickname = nicknameArg.ifBlank { null },     // 빈 문자열이면 null 처리 → 로딩 일러스트
+//                onExit = { navController.popBackStack() },    // 닫기 = 기존 ic_back 역할
+//                onSaveImage = { selectedNickname ->
+//                    // TODO: 저장 로직 연결(필요 시)
+//                    // ex) viewModel.saveCardImage(selectedNickname)
+//                }
+//            )
         }
 //        composable(
 //            route = "nickname_card_screen?nickname={nickname}&userName={userName}",

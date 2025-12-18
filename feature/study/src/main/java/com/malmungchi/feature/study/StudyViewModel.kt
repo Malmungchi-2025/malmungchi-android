@@ -18,6 +18,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 
 @HiltViewModel
@@ -30,6 +32,9 @@ class StudyReadingViewModel @Inject constructor(
     // -------------------------------
     private val _progressLevel = MutableStateFlow(0) // 0~3단계
     val progressLevel: StateFlow<Int> = _progressLevel
+
+    private val _isQuoteReady = MutableStateFlow(false)
+    val isQuoteReady: StateFlow<Boolean> = _isQuoteReady //ready 파악 중.
 
     private val _quote = MutableStateFlow("생성 중…")
     val quote: StateFlow<String> = _quote
@@ -169,25 +174,53 @@ class StudyReadingViewModel @Inject constructor(
 //                }
 //            }
 //    }
+    private val quoteMutex = Mutex()
     /** ✅ 오늘의 학습 글감 API 호출 (토큰 인자 제거) */
-    fun fetchTodayQuote() {
+    fun fetchTodayQuote(force: Boolean = false) {
         viewModelScope.launch {
-            repository.generateTodayQuote()
-                .onSuccess {
-                    val cleaned = it.content
-                        .replace("\r\n", " ")
-                        .replace("\r", " ")
-                        .replace("\n", " ")
-                        .replace(Regex("[ \t]+"), " ")
-                        .trim()
-                    _quote.value = cleaned
-                    _studyId.value = it.studyId
-                }
-                .onFailure { e ->
-                    _quote.value = "❗ 오류: ${e.message}"
-                }
+            quoteMutex.withLock {
+                if (!force && _isQuoteReady.value) return@withLock
+
+                _isQuoteReady.value = false
+
+                repository.generateTodayQuote()
+                    .onSuccess {
+                        _quote.value = it.content
+                            .replace("\r\n", " ")
+                            .replace("\n", " ")
+                            .replace(Regex("[ \t]+"), " ")
+                            .trim()
+
+                        _studyId.value = it.studyId
+                        _isQuoteReady.value = true
+                    }
+                    .onFailure { e ->
+                        _quote.value = "❗ 오류: ${e.message}"
+                        _isQuoteReady.value = false
+                    }
+            }
         }
     }
+//    fun fetchTodayQuote(force: Boolean = false) {
+//        if (!force && _isQuoteReady.value) return
+//
+//        viewModelScope.launch {
+//            _isQuoteReady.value = false
+//            repository.generateTodayQuote()
+//                .onSuccess {
+//                    _quote.value = it.content
+//                        .replace("\r\n", " ")
+//                        .replace("\n", " ")
+//                        .replace(Regex("[ \t]+"), " ")
+//                        .trim()
+//                    _studyId.value = it.studyId
+//                    _isQuoteReady.value = true
+//                }
+//                .onFailure { e ->
+//                    _quote.value = "❗ 오류: ${e.message}"
+//                }
+//        }
+//    }
 //    fun fetchTodayQuote() {
 //        Log.d("API_FETCH_QUOTE", "📡 [요청] /api/gpt/generate-quote")
 //        viewModelScope.launch {
@@ -359,27 +392,40 @@ class StudyReadingViewModel @Inject constructor(
 
     /** ✅ 2단계 전용: 오늘의 학습 글감 + 문장 분리 (토큰 인자 제거) */
     fun initHandwritingStudy() {
-        Log.d("API_FETCH_QUOTE_2STEP", "📡 [요청] /api/gpt/generate-quote (필사용)")
-        viewModelScope.launch {
-            repository.generateTodayQuote()
-                .onSuccess {
-                    _quote.value = it.content
-                    _studyId.value = it.studyId
+        // 이미 fetchTodayQuote()에서 불러온 데이터 재사용
+        val content = _quote.value
+        if (content.isBlank()) return
 
-                    _sentences.value = it.content
-                        .replace("\r\n", "\n")
-                        .split(Regex("(?<=[.!?])\\s+|\n+"))
-                        .map(String::trim)
-                        .filter { s -> s.isNotEmpty() }
+        _sentences.value = content
+            .replace("\r\n", "\n")
+            .split(Regex("(?<=[.!?])\\s+|\n+"))
+            .map(String::trim)
+            .filter { it.isNotEmpty() }
 
-                    // ✅ studyId가 세팅된 후 필사 데이터 호출
-                    fetchHandwriting()
-                }
-                .onFailure { e ->
-                    _quote.value = "❗ 오류: ${e.message}"
-                }
-        }
+        fetchHandwriting()
     }
+//    fun initHandwritingStudy() {
+//        Log.d("API_FETCH_QUOTE_2STEP", "📡 [요청] /api/gpt/generate-quote (필사용)")
+//        viewModelScope.launch {
+//            repository.generateTodayQuote()
+//                .onSuccess {
+//                    _quote.value = it.content
+//                    _studyId.value = it.studyId
+//
+//                    _sentences.value = it.content
+//                        .replace("\r\n", "\n")
+//                        .split(Regex("(?<=[.!?])\\s+|\n+"))
+//                        .map(String::trim)
+//                        .filter { s -> s.isNotEmpty() }
+//
+//                    // ✅ studyId가 세팅된 후 필사 데이터 호출
+//                    fetchHandwriting()
+//                }
+//                .onFailure { e ->
+//                    _quote.value = "❗ 오류: ${e.message}"
+//                }
+//        }
+//    }
 
 
     fun setInputFor(index: Int, value: String) {
